@@ -138,6 +138,9 @@ async def on_shutdown(bot: Bot, dispatcher: Dispatcher) -> None:
     """
     logger.info("🛑 Cerrando bot...")
 
+    # Activar timeout de emergencia por si el shutdown se cuelga
+    _activate_shutdown_timeout()
+
     # Detener background tasks (sin bloquear)
     stop_background_tasks()
 
@@ -215,22 +218,32 @@ async def main() -> None:
             logger.warning(f"⚠️ Error cerrando sesión: {e}")
 
 
-def _setup_signal_handlers():
+_shutdown_timeout_active = False
+
+
+def _activate_shutdown_timeout():
     """
-    Configura handlers de señales para graceful shutdown con timeout.
-    Aiogram ya captura SIGINT, pero aseguramos timeout si se queda colgado.
+    Activa timeout de emergencia para forzar salida si el shutdown se cuelga.
+    Esta función debe llamarse solo cuando se inicia el shutdown.
     """
+    global _shutdown_timeout_active
+
+    if _shutdown_timeout_active:
+        return
+
+    _shutdown_timeout_active = True
 
     def force_exit_after_timeout():
         """Fuerza salida si pasa demasiado tiempo en shutdown."""
         import time
-        time.sleep(12)  # Dar máximo 12s para shutdown (cleanup + timeout notif)
+        time.sleep(15)  # Dar 15s para shutdown limpio
         logger.critical("💥 TIMEOUT CRÍTICO: Forzando salida del proceso...")
         os._exit(1)  # Salida forzada
 
     # Registrar timeout thread (daemon para no bloquear)
     timeout_thread = threading.Thread(target=force_exit_after_timeout, daemon=True)
     timeout_thread.start()
+    logger.info("⏱️ Timeout de shutdown activado (15s)")
 
 
 if __name__ == "__main__":
@@ -243,9 +256,6 @@ if __name__ == "__main__":
     Para ejecutar en background (Termux):
         nohup python main.py > bot.log 2>&1 &
     """
-    # Configurar timeout de shutdown global
-    _setup_signal_handlers()
-
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
