@@ -15,6 +15,7 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - T10: Middlewares - Implementación de AdminAuthMiddleware y DatabaseMiddleware para autenticación de administradores e inyección automática de sesiones de base de datos
 - T11: FSM States - Implementación de estados FSM para administradores y usuarios para flujos de configuración y canje de tokens
 - T12: Admin Handler - Handler del comando /admin que muestra el menú principal de administración con navegación, verificación de estado de configuración y teclado inline
+- T13: Handlers VIP y Free - Submenú VIP (gestión del canal VIP con generación de tokens de invitación), Configuración del canal VIP (configuración del canal VIP por reenvío de mensajes), Generación de tokens de invitación (creación de tokens VIP con duración configurable), Submenú Free (gestión del canal Free con configuración de tiempo de espera), Configuración del canal Free (configuración del canal Free por reenvío de mensajes), Configuración de tiempo de espera (configuración de tiempo de espera para acceso Free)
 
 ## [1.0.0] - 2025-12-11
 
@@ -57,6 +58,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - T12: Callback handlers para navegación entre menús
 - T12: Teclado inline con opciones de administración
 - T12: Documentación completa del handler admin con ejemplos de uso
+- T13: Handlers VIP y Free - Submenú VIP (gestión del canal VIP con generación de tokens de invitación), Configuración del canal VIP (configuración del canal VIP por reenvío de mensajes), Generación de tokens de invitación (creación de tokens VIP con duración configurable), Submenú Free (gestión del canal Free con configuración de tiempo de espera), Configuración del canal Free (configuración del canal Free por reenvío de mensajes), Configuración de tiempo de espera (configuración de tiempo de espera para acceso Free)
+- T13: Implementación de submenú VIP con opciones de generación de tokens y reconfiguración de canal
+- T13: Implementación de submenú Free con opciones de configuración de tiempo de espera y reconfiguración de canal
+- T13: Implementación de flujo de configuración de canales por reenvío de mensajes con validación de permisos
+- T13: Implementación de generación de tokens VIP con duración configurable
+- T13: Implementación de configuración de tiempo de espera para acceso Free con validación de entrada numérica
+- T13: Implementación de teclados inline específicos para los menús VIP y Free
+- T13: Documentación completa de los handlers VIP y Free con ejemplos de uso
 
 ### Changed
 - Refactorización completa de la arquitectura de servicios para usar el contenedor

@@ -324,6 +324,568 @@ async def callback_admin_main(callback: CallbackQuery, session: AsyncSession):
     await callback.answer()
 ```
 
+### VIP and Free Handlers (T13)
+Handlers para la gestión de canales VIP y Free con funcionalidades completas de configuración y administración:
+
+- **Submenú VIP:** Gestión del canal VIP con generación de tokens de invitación
+- **Configuración del canal VIP:** Configuración del canal VIP por reenvío de mensajes
+- **Generación de tokens de invitación:** Creación de tokens VIP con duración configurable
+- **Submenú Free:** Gestión del canal Free con configuración de tiempo de espera
+- **Configuración del canal Free:** Configuración del canal Free por reenvío de mensajes
+- **Configuración de tiempo de espera:** Configuración de tiempo de espera para acceso Free
+
+**Ejemplo de uso de los handlers VIP y Free:**
+```python
+from aiogram import Router, F
+from aiogram.types import CallbackQuery, Message
+from aiogram.fsm.context import FSMContext
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from bot.handlers.admin.main import admin_router
+from bot.states.admin import ChannelSetupStates, WaitTimeSetupStates
+from bot.services.container import ServiceContainer
+from bot.utils.keyboards import create_inline_keyboard
+
+# Submenú VIP
+def vip_menu_keyboard(is_configured: bool) -> "InlineKeyboardMarkup":
+    """
+    Keyboard del submenú VIP.
+
+    Args:
+        is_configured: Si el canal VIP está configurado
+
+    Returns:
+        InlineKeyboardMarkup con opciones VIP
+    """
+    buttons = []
+
+    if is_configured:
+        buttons.extend([
+            [{"text": "🎟️ Generar Token de Invitación", "callback_data": "vip:generate_token"}],
+            [{"text": "🔧 Reconfigurar Canal", "callback_data": "vip:setup"}],
+        ])
+    else:
+        buttons.append([{"text": "⚙️ Configurar Canal VIP", "callback_data": "vip:setup"}])
+
+    buttons.append([{"text": "🔙 Volver", "callback_data": "admin:main"}])
+
+    return create_inline_keyboard(buttons)
+
+@admin_router.callback_query(F.data == "admin:vip")
+async def callback_vip_menu(callback: CallbackQuery, session: AsyncSession):
+    """
+    Muestra el submenú de gestión VIP.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD (inyectada por middleware)
+    """
+    logger.debug(f"📺 Usuario {callback.from_user.id} abrió menú VIP")
+
+    container = ServiceContainer(session, callback.bot)
+
+    # Verificar si canal VIP está configurado
+    is_configured = await container.channel.is_vip_channel_configured()
+
+    if is_configured:
+        vip_channel_id = await container.channel.get_vip_channel_id()
+
+        # Obtener info del canal
+        channel_info = await container.channel.get_channel_info(vip_channel_id)
+        channel_name = channel_info.title if channel_info else "Canal VIP"
+
+        text = (
+            f"📺 <b>Gestión Canal VIP</b>\n\n"
+            f"✅ Canal configurado: <b>{channel_name}</b>\n"
+            f"ID: <code>{vip_channel_id}</code>\n\n"
+            f"Selecciona una opción:"
+        )
+    else:
+        text = (
+            "📺 <b>Gestión Canal VIP</b>\n\n"
+            "⚠️ Canal VIP no configurado\n\n"
+            "Configura el canal para comenzar a generar tokens de invitación."
+        )
+
+    try:
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=vip_menu_keyboard(is_configured),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje VIP: {e}")
+
+    await callback.answer()
+
+# Configuración del canal VIP
+@admin_router.callback_query(F.data == "vip:setup")
+async def callback_vip_setup(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Inicia el proceso de configuración del canal VIP.
+
+    Entra en estado FSM esperando que el admin reenvíe un mensaje del canal.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+        state: FSM context
+    """
+    logger.info(f"⚙️ Usuario {callback.from_user.id} iniciando setup VIP")
+
+    # Entrar en estado FSM
+    await state.set_state(ChannelSetupStates.waiting_for_vip_channel)
+
+    text = (
+        "⚙️ <b>Configurar Canal VIP</b>\n\n"
+        "Para configurar el canal VIP, necesito que:\n\n"
+        "1️⃣ Vayas al canal VIP\n"
+        "2️⃣ Reenvíes cualquier mensaje del canal a este chat\n"
+        "3️⃣ Yo extraeré el ID automáticamente\n\n"
+        "⚠️ <b>Importante:</b>\n"
+        "- El bot debe ser administrador del canal\n"
+        "- El bot debe tener permiso para invitar usuarios\n\n"
+        "👉 Reenvía un mensaje del canal ahora..."
+    )
+
+    try:
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=create_inline_keyboard([
+                [{"text": "❌ Cancelar", "callback_data": "admin:vip"}]
+            ]),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje setup VIP: {e}")
+
+    await callback.answer()
+
+# Procesamiento del reenvío para configuración del canal VIP
+@admin_router.message(ChannelSetupStates.waiting_for_vip_channel)
+async def process_vip_channel_forward(
+    message: Message,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Procesa el mensaje reenviado para configurar el canal VIP.
+
+    Extrae el ID del canal del forward y lo configura.
+
+    Args:
+        message: Mensaje reenviado del canal
+        session: Sesión de BD
+        state: FSM context
+    """
+    # Verificar que es un forward de un canal
+    if not message.forward_from_chat:
+        await message.answer(
+            "❌ Debes <b>reenviar</b> un mensaje del canal VIP.\n\n"
+            "No me envíes el ID manualmente, reenvía un mensaje.",
+            parse_mode="HTML"
+        )
+        return
+
+    forward_chat = message.forward_from_chat
+
+    # Verificar que es un canal (no grupo ni usuario)
+    if forward_chat.type not in ["channel", "supergroup"]:
+        await message.answer(
+            "❌ El mensaje debe ser de un <b>canal</b> o <b>supergrupo</b>.\n\n"
+            "Reenvía un mensaje del canal VIP.",
+            parse_mode="HTML"
+        )
+        return
+
+    channel_id = str(forward_chat.id)
+    channel_title = forward_chat.title
+
+    logger.info(f"📺 Configurando canal VIP: {channel_id} ({channel_title})")
+
+    container = ServiceContainer(session, message.bot)
+
+    # Intentar configurar el canal
+    success, msg = await container.channel.setup_vip_channel(channel_id)
+
+    if success:
+        # Configuración exitosa
+        await message.answer(
+            f"✅ <b>Canal VIP Configurado</b>\n\n"
+            f"Canal: <b>{channel_title}</b>\n"
+            f"ID: <code>{channel_id}</code>\n\n"
+            f"Ya puedes generar tokens de invitación.",
+            parse_mode="HTML",
+            reply_markup=vip_menu_keyboard(True)
+        )
+
+        # Limpiar estado FSM
+        await state.clear()
+    else:
+        # Error en configuración
+        await message.answer(
+            f"{msg}\n\n"
+            f"Verifica que:\n"
+            f"• El bot es administrador del canal\n"
+            f"• El bot tiene permiso para invitar usuarios\n\n"
+            f"Intenta nuevamente reenviando un mensaje del canal.",
+            parse_mode="HTML"
+        )
+        # Mantener estado FSM para reintentar
+
+# Generación de tokens VIP
+@admin_router.callback_query(F.data == "vip:generate_token")
+async def callback_generate_vip_token(
+    callback: CallbackQuery,
+    session: AsyncSession
+):
+    """
+    Genera un token de invitación VIP.
+
+    Token válido por 24 horas, un solo uso.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+    """
+    logger.info(f"🎟️ Usuario {callback.from_user.id} generando token VIP")
+
+    container = ServiceContainer(session, callback.bot)
+
+    # Verificar que canal VIP está configurado
+    if not await container.channel.is_vip_channel_configured():
+        await callback.answer(
+            "❌ Debes configurar el canal VIP primero",
+            show_alert=True
+        )
+        return
+
+    try:
+        # Generar token (24 horas por defecto)
+        token = await container.subscription.generate_vip_token(
+            generated_by=callback.from_user.id,
+            duration_hours=Config.DEFAULT_TOKEN_DURATION_HOURS
+        )
+
+        # Crear mensaje con el token
+        token_message = (
+            f"🎟️ <b>Token VIP Generado</b>\n\n"
+            f"Token: <code>{token.token}</code>\n\n"
+            f"⏱️ Válido por: {token.duration_hours} horas\n"
+            f"📅 Expira: {token.created_at.strftime('%Y-%m-%d %H:%M')} UTC\n\n"
+            f"👉 Comparte este token con el usuario.\n"
+            f"El usuario debe enviarlo al bot para canjear acceso VIP."
+        )
+
+        await callback.message.answer(
+            text=token_message,
+            parse_mode="HTML"
+        )
+
+        await callback.answer("✅ Token generado")
+
+    except Exception as e:
+        logger.error(f"Error generando token VIP: {e}", exc_info=True)
+        await callback.answer(
+            "❌ Error al generar token. Intenta nuevamente.",
+            show_alert=True
+        )
+
+# Submenú Free
+def free_menu_keyboard(is_configured: bool) -> "InlineKeyboardMarkup":
+    """
+    Keyboard del submenú Free.
+
+    Args:
+        is_configured: Si el canal Free está configurado
+
+    Returns:
+        InlineKeyboardMarkup con opciones Free
+    """
+    buttons = []
+
+    if is_configured:
+        buttons.extend([
+            [{"text": "⏱️ Configurar Tiempo de Espera", "callback_data": "free:set_wait_time"}],
+            [{"text": "🔧 Reconfigurar Canal", "callback_data": "free:setup"}],
+        ])
+    else:
+        buttons.append([{"text": "⚙️ Configurar Canal Free", "callback_data": "free:setup"}])
+
+    buttons.append([{"text": "🔙 Volver", "callback_data": "admin:main"}])
+
+    return create_inline_keyboard(buttons)
+
+@admin_router.callback_query(F.data == "admin:free")
+async def callback_free_menu(callback: CallbackQuery, session: AsyncSession):
+    """
+    Muestra el submenú de gestión Free.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+    """
+    logger.debug(f"📺 Usuario {callback.from_user.id} abrió menú Free")
+
+    container = ServiceContainer(session, callback.bot)
+
+    # Verificar si canal Free está configurado
+    is_configured = await container.channel.is_free_channel_configured()
+
+    if is_configured:
+        free_channel_id = await container.channel.get_free_channel_id()
+        wait_time = await container.config.get_wait_time()
+
+        # Obtener info del canal
+        channel_info = await container.channel.get_channel_info(free_channel_id)
+        channel_name = channel_info.title if channel_info else "Canal Free"
+
+        text = (
+            f"📺 <b>Gestión Canal Free</b>\n\n"
+            f"✅ Canal configurado: <b>{channel_name}</b>\n"
+            f"ID: <code>{free_channel_id}</code>\n\n"
+            f"⏱️ Tiempo de espera: <b>{wait_time} minutos</b>\n\n"
+            f"Selecciona una opción:"
+        )
+    else:
+        text = (
+            "📺 <b>Gestión Canal Free</b>\n\n"
+            "⚠️ Canal Free no configurado\n\n"
+            "Configura el canal para que usuarios puedan solicitar acceso."
+        )
+
+    try:
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=free_menu_keyboard(is_configured),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje Free: {e}")
+
+    await callback.answer()
+
+# Configuración del canal Free
+@admin_router.callback_query(F.data == "free:setup")
+async def callback_free_setup(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Inicia el proceso de configuración del canal Free.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+        state: FSM context
+    """
+    logger.info(f"⚙️ Usuario {callback.from_user.id} iniciando setup Free")
+
+    # Entrar en estado FSM
+    await state.set_state(ChannelSetupStates.waiting_for_free_channel)
+
+    text = (
+        "⚙️ <b>Configurar Canal Free</b>\n\n"
+        "Para configurar el canal Free:\n\n"
+        "1️⃣ Vayas al canal Free\n"
+        "2️⃣ Reenvíes cualquier mensaje del canal a este chat\n"
+        "3️⃣ Yo extraeré el ID automáticamente\n\n"
+        "⚠️ <b>Importante:</b>\n"
+        "- El bot debe ser administrador del canal\n"
+        "- El bot debe tener permiso para invitar usuarios\n\n"
+        "👉 Reenvía un mensaje del canal ahora..."
+    )
+
+    try:
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=create_inline_keyboard([
+                [{"text": "❌ Cancelar", "callback_data": "admin:free"}]
+            ]),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje setup Free: {e}")
+
+    await callback.answer()
+
+# Procesamiento del reenvío para configuración del canal Free
+@admin_router.message(ChannelSetupStates.waiting_for_free_channel)
+async def process_free_channel_forward(
+    message: Message,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Procesa el mensaje reenviado para configurar el canal Free.
+
+    Args:
+        message: Mensaje reenviado del canal
+        session: Sesión de BD
+        state: FSM context
+    """
+    # Validaciones idénticas a VIP
+    if not message.forward_from_chat:
+        await message.answer(
+            "❌ Debes <b>reenviar</b> un mensaje del canal Free.\n\n"
+            "No me envíes el ID manualmente, reenvía un mensaje.",
+            parse_mode="HTML"
+        )
+        return
+
+    forward_chat = message.forward_from_chat
+
+    if forward_chat.type not in ["channel", "supergroup"]:
+        await message.answer(
+            "❌ El mensaje debe ser de un <b>canal</b> o <b>supergrupo</b>.\n\n"
+            "Reenvía un mensaje del canal Free.",
+            parse_mode="HTML"
+        )
+        return
+
+    channel_id = str(forward_chat.id)
+    channel_title = forward_chat.title
+
+    logger.info(f"📺 Configurando canal Free: {channel_id} ({channel_title})")
+
+    container = ServiceContainer(session, message.bot)
+
+    # Intentar configurar el canal
+    success, msg = await container.channel.setup_free_channel(channel_id)
+
+    if success:
+        await message.answer(
+            f"✅ <b>Canal Free Configurado</b>\n\n"
+            f"Canal: <b>{channel_title}</b>\n"
+            f"ID: <code>{channel_id}</code>\n\n"
+            f"Los usuarios ya pueden solicitar acceso.",
+            parse_mode="HTML",
+            reply_markup=free_menu_keyboard(True)
+        )
+
+        await state.clear()
+    else:
+        await message.answer(
+            f"{msg}\n\n"
+            f"Verifica permisos del bot e intenta nuevamente.",
+            parse_mode="HTML"
+        )
+
+# Configuración de tiempo de espera
+@admin_router.callback_query(F.data == "free:set_wait_time")
+async def callback_set_wait_time(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Inicia configuración de tiempo de espera.
+
+    Args:
+        callback: Callback query
+        session: Sesión de BD
+        state: FSM context
+    """
+    logger.info(f"⏱️ Usuario {callback.from_user.id} configurando wait time")
+
+    container = ServiceContainer(session, callback.bot)
+    current_wait_time = await container.config.get_wait_time()
+
+    # Entrar en estado FSM
+    await state.set_state(WaitTimeSetupStates.waiting_for_minutes)
+
+    text = (
+        f"⏱️ <b>Configurar Tiempo de Espera</b>\n\n"
+        f"Tiempo actual: <b>{current_wait_time} minutos</b>\n\n"
+        f"Envía el nuevo tiempo de espera en minutos.\n"
+        f"Ejemplo: <code>5</code>\n\n"
+        f"El tiempo debe ser mayor o igual a 1 minuto."
+    )
+
+    try:
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=create_inline_keyboard([
+                [{"text": "❌ Cancelar", "callback_data": "admin:free"}]
+            ]),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        if "message is not modified" not in str(e):
+            logger.error(f"Error editando mensaje wait time: {e}")
+
+    await callback.answer()
+
+# Procesamiento del tiempo de espera
+@admin_router.message(WaitTimeSetupStates.waiting_for_minutes)
+async def process_wait_time_input(
+    message: Message,
+    session: AsyncSession,
+    state: FSMContext
+):
+    """
+    Procesa el input de tiempo de espera.
+
+    Args:
+        message: Mensaje con los minutos
+        session: Sesión de BD
+        state: FSM context
+    """
+    # Intentar convertir a número
+    try:
+        minutes = int(message.text)
+    except ValueError:
+        await message.answer(
+            "❌ Debes enviar un número válido.\n\n"
+            "Ejemplo: <code>5</code>",
+            parse_mode="HTML"
+        )
+        return
+
+    # Validar rango
+    if minutes < 1:
+        await message.answer(
+            "❌ El tiempo debe ser al menos 1 minuto.\n\n"
+            "Envía un número mayor o igual a 1.",
+            parse_mode="HTML"
+        )
+        return
+
+    container = ServiceContainer(session, message.bot)
+
+    try:
+        # Actualizar configuración
+        await container.config.set_wait_time(minutes)
+
+        await message.answer(
+            f"✅ <b>Tiempo de Espera Actualizado</b>\n\n"
+            f"Nuevo tiempo: <b>{minutes} minutos</b>\n\n"
+            f"Las nuevas solicitudes esperarán {minutes} minutos antes de procesarse.",
+            parse_mode="HTML",
+            reply_markup=free_menu_keyboard(True)
+        )
+
+        # Limpiar estado
+        await state.clear()
+
+    except Exception as e:
+        logger.error(f"Error actualizando wait time: {e}", exc_info=True)
+        await message.answer(
+            "❌ Error al actualizar el tiempo de espera.\n\n"
+            "Intenta nuevamente.",
+            parse_mode="HTML"
+        )
+```
+
 ## 🔧 Desarrollo
 
 Este proyecto está en desarrollo iterativo. Consulta las tareas completadas:
@@ -334,6 +896,7 @@ Este proyecto está en desarrollo iterativo. Consulta las tareas completadas:
 - [x] T10: Middlewares - Implementación de AdminAuthMiddleware y DatabaseMiddleware para autenticación de administradores e inyección automática de sesiones de base de datos
 - [x] T11: FSM States - Implementación de estados FSM para administradores y usuarios para flujos de configuración y canje de tokens
 - [x] T12: Handler /admin (Menú Principal) - Handler del comando /admin que muestra el menú principal de administración con navegación, verificación de estado de configuración y teclado inline
+- [x] T13: Handlers VIP y Free - Submenú VIP (gestión del canal VIP con generación de tokens de invitación), Configuración del canal VIP (configuración del canal VIP por reenvío de mensajes), Generación de tokens de invitación (creación de tokens VIP con duración configurable), Submenú Free (gestión del canal Free con configuración de tiempo de espera), Configuración del canal Free (configuración del canal Free por reenvío de mensajes), Configuración de tiempo de espera (configuración de tiempo de espera para acceso Free)
 - [ ] ONDA 1: MVP Funcional (T1-T17)
 - [ ] ONDA 2: Features Avanzadas (T18-T33)
 - [ ] ONDA 3: Optimización (T34-T44)

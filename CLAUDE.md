@@ -679,8 +679,77 @@ Setup Wait Time (Free):
 
 ---
 
-- [ ] T14: Handlers User (/start, Canje Token, Solicitud Free)
-- [ ] T15-T17: Más handlers y features
+#### T14: Handlers User (/start, Canje Token, Solicitud Free) ✅ COMPLETADO
+**Archivo:** `bot/handlers/user/start.py` (104 líneas) + `bot/handlers/user/vip_flow.py` (173 líneas) + `bot/handlers/user/free_flow.py` (107 líneas)
+**Patrón:** FSM + Callbacks + Message Handlers
+**Responsabilidades:**
+- Punto de entrada para usuarios (/start)
+- Detección de rol (admin/VIP/usuario)
+- Flujo de canje de tokens VIP
+- Flujo de solicitud de acceso Free
 
-**Status:** 🔄 FASE 1.3 AVANZADA (4/3 tareas base + setup completo)
-**Próximo:** T14 - Handlers User (/start, Canje Token, Solicitud Free)
+**Implementación Start:**
+- `cmd_start`: Detecta rol y adapta mensaje
+  * Admin → Redirige a /admin
+  * VIP activo → Muestra días restantes
+  * Usuario normal → Muestra opciones
+
+**Implementación VIP Flow:**
+- `callback_redeem_token`: Inicia FSM
+- `process_token_input`: Procesa token, crea link (1h, 1 uso)
+- `callback_cancel`: Cancela flujo en cualquier momento
+
+**Implementación Free Flow:**
+- `callback_request_free`: Crea solicitud Free
+  * Verifica que no haya solicitud pendiente
+  * Si existe → Muestra tiempo restante
+  * Si no → Crea nueva, muestra tiempo de espera
+
+**Flujos Completos:**
+```
+VIP Token Redeem:
+  User: /start → Canjear Token
+  Bot: waiting_for_token
+  User: Envía token
+  Bot: Valida → Crea link → Envía → state.clear()
+
+Free Request:
+  User: /start → Solicitar Free
+  Bot: Crea solicitud (sin FSM)
+  Background task procesará después
+```
+
+**Validaciones:**
+- ✅ Admin detection (Config.is_admin)
+- ✅ VIP active check (días restantes)
+- ✅ Canal VIP/Free configured
+- ✅ Token validation (redeem_vip_token)
+- ✅ Duplicate free request prevention
+- ✅ Error handling con mensajes claros
+
+**Tests Validación:** ✅ Todos pasaron
+- ✅ Router 'user' configurado
+- ✅ Handler /start implementado
+- ✅ VIP flow completo
+- ✅ Free flow completo
+- ✅ Callback data correctos
+- ✅ FSM States importables
+- ✅ user_router compartido
+
+---
+
+
+  - [x] Handler /start con detección de rol (admin/VIP/usuario)
+  - [x] Flujo VIP: redeem_token → process_token → create_link
+  - [x] Flujo Free: request_free con check de duplicados
+  - [x] FSM waiting_for_token para validación de tokens
+  - [x] Invite links con expiración (1h)
+  - [x] Mensajes descriptivos y amigables
+  - [x] Manejo de solicitudes duplicadas
+  - [x] Tests validación completos
+
+- [ ] T15: Background Tasks (Expulsión VIP, Procesamiento Free)
+- [ ] T16-T17: Features finales y deployment
+
+**Status:** ✅ FASE 1.3 COMPLETA (5/5 tareas handlers)
+**Próximo:** T15 - Background Tasks (Expulsión VIP, Procesamiento Free)
