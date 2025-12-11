@@ -299,10 +299,42 @@ reset_to_defaults() → None
 
 ---
 
-### FASE 1.3: HANDLERS ADMIN BÁSICOS (T10-T12) 🔄 SIGUIENTE
-Handlers para administración del bot.
+### FASE 1.3: HANDLERS ADMIN BÁSICOS (T10-T12) 🔄 EN PROGRESO
 
-- **T10:** Middlewares (AdminAuth, Database Injection)
+#### T10: Middlewares (AdminAuth + Database) ✅ COMPLETADO
+**Archivo:** `bot/middlewares/` (155 líneas + tests)
+**Patrón:** BaseMiddleware + DI
+**Responsabilidades:**
+- AdminAuthMiddleware: Validación de permisos de administrador
+- DatabaseMiddleware: Inyección de sesión de base de datos
+
+**Implementación:**
+```
+bot/middlewares/
+├── admin_auth.py       → AdminAuthMiddleware (87 líneas)
+├── database.py         → DatabaseMiddleware (68 líneas)
+└── __init__.py         → Exports
+```
+
+**AdminAuthMiddleware:**
+- Verifica `Config.is_admin(user.id)` para Message y CallbackQuery
+- Envía mensaje de error si no es admin (HTML para Message, alert para CallbackQuery)
+- No ejecuta handler si no es admin (retorna None)
+- Logging: WARNING para intentos denegados, DEBUG para admins verificados
+
+**DatabaseMiddleware:**
+- Crea AsyncSession usando `get_session()` (context manager)
+- Inyecta sesión en `data["session"]` para que handlers accedan automáticamente
+- Manejo automático de commit/rollback vía SessionContextManager
+- Logging: ERROR si ocurre excepción en handler
+
+**Tests Validación:** ✅ 3 tests funcionales
+- Admin pass test ✅
+- Non-admin blocked test ✅
+- Session injection test ✅
+
+---
+
 - **T11:** Admin Main Menu Handler
 - **T12:** Admin VIP Management Handler
 - *T13-T17: Más handlers y features*
@@ -373,6 +405,14 @@ bot/services/
 └── __init__.py       → Exports de todos los services
 ```
 
+### Middlewares (T10)
+```
+bot/middlewares/
+├── admin_auth.py     → AdminAuthMiddleware (validación de admin)
+├── database.py       → DatabaseMiddleware (inyección de sesión)
+└── __init__.py       → Exports de middlewares
+```
+
 ---
 
 ## 🎯 INTEGRACIÓN CON SERVICIOS
@@ -419,4 +459,19 @@ async def handle_setup_vip(message: Message, state: FSMContext):
 - [x] Documentación técnica
 
 **Status:** ✅ FASE 1.2 COMPLETADA
-**Próximo:** T10 - Middlewares (AdminAuth, Database)
+
+## ✅ CHECKLIST FASE 1.3
+
+- [x] T10: Middlewares (AdminAuth + Database)
+  - [x] AdminAuthMiddleware verifica Config.is_admin()
+  - [x] AdminAuthMiddleware envía mensaje de error a no-admins
+  - [x] AdminAuthMiddleware NO ejecuta handler si no es admin
+  - [x] DatabaseMiddleware inyecta sesión en data["session"]
+  - [x] DatabaseMiddleware usa context manager correctamente
+  - [x] 3 tests funcionales validación
+- [ ] T11: Admin Main Menu Handler
+- [ ] T12: Admin VIP Management Handler
+- [ ] T13-T17: Más handlers y features
+
+**Status:** 🔄 FASE 1.3 EN PROGRESO
+**Próximo:** T11 - Admin Main Menu Handler
