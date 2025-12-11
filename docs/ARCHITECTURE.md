@@ -254,26 +254,134 @@ class DatabaseMiddleware(BaseMiddleware):
 
 **Responsabilidad:** Lógica de negocio reutilizable
 
-**Servicios Planeados:**
+**Servicios Disponibles:**
 
 ```
 services/
-├── subscription.py     # VIP/Free/Token logic
-├── channel.py          # Gestión canales Telegram
+├── container.py        # Contenedor de servicios (DI + Lazy Loading)
+├── subscription.py     # Gestión de suscripciones VIP/Free
+├── channel.py          # Gestión de canales Telegram
 ├── config.py           # Config service
-└── container.py        # Dependency injection
+└── stats.py            # Estadísticas
 ```
 
-**Ejemplo de servicio:**
-```python
-class SubscriptionService:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+#### Service Container (T6)
 
-    async def redeem_token(self, user_id: int, token: str) -> VIPSubscriber:
-        """Canjear token VIP"""
-        # Lógica de negocio
-        pass
+Implementación del patrón Dependency Injection + Lazy Loading para reducir consumo de memoria en Termux:
+
+**Arquitectura:**
+```python
+class ServiceContainer:
+    def __init__(self, session: AsyncSession, bot: Bot):
+        self._session = session
+        self._bot = bot
+
+        # Servicios (cargados lazy)
+        self._subscription_service = None
+        self._channel_service = None
+        self._config_service = None
+        self._stats_service = None
+
+    @property
+    def subscription(self):
+        """Carga lazy el servicio de suscripciones"""
+        if self._subscription_service is None:
+            from bot.services.subscription import SubscriptionService
+            self._subscription_service = SubscriptionService(self._session, self._bot)
+        return self._subscription_service
+
+    # Similar para otros servicios...
+
+    def get_loaded_services(self) -> list[str]:
+        """Retorna lista de servicios ya cargados en memoria"""
+        # Útil para debugging y monitoreo de uso de memoria
+```
+
+**Características:**
+- **Lazy Loading:** servicios se instancian solo cuando se acceden por primera vez
+- **Optimización de Memoria:** reduce el consumo inicial de memoria en Termux
+- **4 servicios disponibles:** subscription, channel, config, stats
+- **Monitoreo:** método `get_loaded_services()` para tracking de uso de memoria
+- **Precarga opcional:** `preload_critical_services()` para servicios críticos
+
+**Uso:**
+```python
+container = ServiceContainer(session, bot)
+
+# Primera vez: carga el servicio (lazy loading)
+token = await container.subscription.generate_token(...)
+
+# Segunda vez: reutiliza instancia ya cargada
+result = await container.subscription.validate_token(...)
+```
+
+#### Subscription Service (T7)
+
+Gestión completa de suscripciones VIP y Free con 14 métodos asíncronos:
+
+**Responsabilidades:**
+- Generación de tokens de invitación VIP
+- Validación y canje de tokens
+- Gestión de suscriptores VIP (crear, extender, expirar)
+- Gestión de solicitudes Free (crear, procesar)
+- Limpieza automática de datos antiguos
+
+**Flujos Implementados:**
+
+**VIP Flow:**
+```
+1. Admin genera token → generate_vip_token()
+2. Usuario canjea token → redeem_vip_token()
+3. Usuario recibe invite link → create_invite_link()
+4. Suscripción expira automáticamente → expire_vip_subscribers() (background)
+```
+
+**Free Flow:**
+```
+1. Usuario solicita acceso → create_free_request()
+2. Espera N minutos
+3. Sistema procesa cola → process_free_queue() (background)
+4. Usuario recibe invite link
+```
+
+**Características principales:**
+- **Tokens VIP:** 16 caracteres alfanuméricos, únicos, expiran después de N horas
+- **Cola Free:** sistema de espera configurable con `wait_time`
+- **Invite links únicos:** enlaces de un solo uso (`member_limit=1`)
+- **Gestión de usuarios:** creación, extensión y expiración automática de suscripciones
+- **Limpieza automática:** elimina datos antiguos para mantener rendimiento
+
+**Ejemplo de uso:**
+```python
+# Generar token VIP
+token = await container.subscription.generate_vip_token(
+    generated_by=admin_user_id,
+    duration_hours=24
+)
+
+# Validar token
+is_valid, message, token_obj = await container.subscription.validate_token("token_string")
+
+# Canjear token VIP
+success, message, subscriber = await container.subscription.redeem_vip_token(
+    token_str="token_string",
+    user_id=user_id
+)
+
+# Crear solicitud Free
+request = await container.subscription.create_free_request(user_id)
+
+# Procesar cola Free
+processed_requests = await container.subscription.process_free_queue(
+    wait_time_minutes=Config.WAIT_TIME_MINUTES
+)
+
+# Crear invite link único
+invite_link = await container.subscription.create_invite_link(
+    channel_id="-1001234567890",
+    user_id=user_id,
+    expire_hours=1
+)
 ```
 
 ### 8. Background Tasks

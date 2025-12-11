@@ -65,6 +65,11 @@ nohup python main.py > bot.log 2>&1 &
 ├── bot/
 │   ├── database/        # Modelos y engine SQLAlchemy
 │   ├── services/        # Lógica de negocio
+│   │   ├── container.py # Contenedor de servicios (DI + Lazy Loading)
+│   │   ├── subscription.py # Gestión de suscripciones VIP/Free
+│   │   ├── channel.py   # Gestión de canales
+│   │   ├── config.py    # Configuración del bot
+│   │   └── stats.py     # Estadísticas
 │   ├── handlers/        # Handlers de comandos/callbacks
 │   ├── middlewares/     # Middlewares (auth, DB)
 │   ├── states/          # Estados FSM
@@ -72,9 +77,41 @@ nohup python main.py > bot.log 2>&1 &
 │   └── background/      # Tareas programadas
 ```
 
+## 🔧 Arquitectura de Servicios
+
+### Service Container (T6)
+Implementación de patrón Dependency Injection + Lazy Loading para reducir consumo de memoria en Termux:
+
+- **4 servicios disponibles:** subscription, channel, config, stats
+- **Carga diferida:** servicios se instancian solo cuando se acceden por primera vez
+- **Monitoreo:** método `get_loaded_services()` para tracking de uso de memoria
+- **Optimización:** reduce memoria inicial en Termux al cargar servicios bajo demanda
+
+### Subscription Service (T7)
+Gestión completa de suscripciones VIP y Free con 14 métodos asíncronos:
+
+- **Tokens VIP:** generación, validación, canje y extensión de suscripciones
+- **Flujo completo:** generar token → validar → canjear → extender
+- **Cola Free:** sistema de espera configurable con `wait_time`
+- **Invite links únicos:** enlaces de un solo uso (`member_limit=1`)
+- **Gestión de usuarios:** creación, extensión y expiración automática de suscripciones
+
+**Ejemplo de uso del Service Container:**
+```python
+container = ServiceContainer(session, bot)
+
+# Primera vez: carga el servicio (lazy loading)
+token = await container.subscription.generate_token(...)
+
+# Segunda vez: reutiliza instancia ya cargada
+result = await container.subscription.validate_token(...)
+```
+
 ## 🔧 Desarrollo
 
 Este proyecto está en desarrollo iterativo. Consulta las tareas completadas:
+- [x] T6: Service Container - Contenedor de servicios con patrón DI + Lazy Loading para reducir consumo de memoria en Termux
+- [x] T7: Subscription Service - Gestión completa de suscripciones VIP (tokens, validación, canjes) y cola de acceso Free
 - [ ] ONDA 1: MVP Funcional (T1-T17)
 - [ ] ONDA 2: Features Avanzadas (T18-T33)
 - [ ] ONDA 3: Optimización (T34-T44)

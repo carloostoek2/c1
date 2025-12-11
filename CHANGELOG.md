@@ -1,0 +1,39 @@
+# Changelog
+
+Todos los cambios notables en este proyecto se documentarán en este archivo.
+
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+y este proyecto sigue [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- T6: Service Container - Contenedor de servicios con patrón Dependency Injection + Lazy Loading para reducir consumo de memoria en Termux
+- T7: Subscription Service - Gestión completa de suscripciones VIP (tokens, validación, canjes) y cola de acceso Free
+
+## [1.0.0] - 2025-12-11
+
+### Added
+- T6: Implementación del Service Container con 4 servicios disponibles: subscription, channel, config, stats
+- T6: Patrón DI + Lazy Loading para optimizar uso de memoria en Termux
+- T6: Método get_loaded_services() para monitoreo de uso de memoria
+- T7: SubscriptionService con 14 métodos asíncronos para gestión de suscripciones
+- T7: Flujos completos: generar token → validar → canjear → extender
+- T7: Sistema de cola Free con wait_time configurable
+- T7: Invite links de un solo uso (member_limit=1)
+- T7: Gestión de tokens VIP: generación, validación, canje y extensión
+- T7: Gestión de suscriptores VIP: creación, extensión y expiración automática
+- T7: Gestión de solicitudes Free: creación y procesamiento automático
+- T7: Limpieza automática de datos antiguos
+
+### Changed
+- Refactorización completa de la arquitectura de servicios para usar el contenedor
+- Optimización de consumo de memoria mediante lazy loading de servicios
+- Mejora en la estructura de gestión de suscripciones VIP y Free
+
+### Fixed
+- Problemas de consumo de memoria en entornos con recursos limitados como Termux
+- Implementación robusta de tokens únicos y de un solo uso
+- Sistema de expiración automática de suscripciones VIP
+
+---
