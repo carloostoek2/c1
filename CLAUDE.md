@@ -968,3 +968,34 @@ bash scripts/run_tests.sh
 
 **Status:** ✅ FASE 1.5 COMPLETADA (T16)
 **Próximo:** T17 - Features Finales y Deployment
+
+═══════════════════════════════════════════════════════════════
+# ONDA 2 - ENHANCEMENTS Y UTILITIES
+═══════════════════════════════════════════════════════════════
+
+Fase de mejoras, utilidades reutilizables, y testing E2E completo.
+
+---
+
+## ✅ CHECKLIST ONDA 2
+
+- [x] T27: Dashboard estado completo
+  - [x] Panel visual con health checks
+  - [x] Estadísticas en tiempo real
+  - [x] Status de background tasks
+  - [x] Acciones rápidas
+  - [x] Refactor con status_emoji y helpers
+
+- [x] T28: Formatters y helpers reutilizables
+  - [x] 19 funciones de formateo
+  - [x] Type hints 100%
+  - [x] Docstrings con ejemplos
+  - [x] 18 tests unitarios (todos pasando)
+  - [x] Formateo ISO, monedas, porcentajes
+  - [x] Tiempo relativo inteligente
+  - [x] Emojis consistentes (🟢🟡🔴)
+  - [x] HTML escaping para Telegram
+
+- [ ] T29: Testing E2E ONDA 2 (PRÓXIMO)
+
+**Status:** ✅ ONDA 2 EN PROGRESO (2/3 tareas completadas)
