@@ -16,14 +16,14 @@ def create_inline_keyboard(
 
     Args:
         buttons: Lista de filas, cada fila es lista de botones
-                 Cada botón es dict con 'text' y 'callback_data'
+                 Cada botón es dict con 'text' y ('callback_data' OR 'url')
 
     Ejemplo:
         keyboard = create_inline_keyboard([
             [{"text": "Botón 1", "callback_data": "btn1"}],
             [
                 {"text": "Botón 2", "callback_data": "btn2"},
-                {"text": "Botón 3", "callback_data": "btn3"}
+                {"text": "Botón 3", "url": "https://example.com"}
             ]
         ])
 
@@ -35,12 +35,22 @@ def create_inline_keyboard(
     for row in buttons:
         keyboard_row = []
         for button in row:
-            keyboard_row.append(
-                InlineKeyboardButton(
+            # Crear botón con callback_data o url
+            if "callback_data" in button:
+                btn = InlineKeyboardButton(
                     text=button["text"],
                     callback_data=button["callback_data"]
                 )
-            )
+            elif "url" in button:
+                btn = InlineKeyboardButton(
+                    text=button["text"],
+                    url=button["url"]
+                )
+            else:
+                raise ValueError(
+                    f"Botón debe tener 'callback_data' o 'url': {button}"
+                )
+            keyboard_row.append(btn)
         inline_keyboard.append(keyboard_row)
 
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard, **kwargs)
