@@ -10,6 +10,11 @@ from bot.gamification.background.streak_expiration_checker import (
     check_expired_streaks,
     notify_streak_lost
 )
+from bot.gamification.background.reaction_hook import (
+    router as reaction_router,
+    on_reaction_event,
+    is_valid_reaction
+)
 
 __all__ = [
     "setup_auto_progression_scheduler",
@@ -17,5 +22,8 @@ __all__ = [
     "notify_level_up",
     "setup_streak_expiration_scheduler",
     "check_expired_streaks",
-    "notify_streak_lost"
+    "notify_streak_lost",
+    "reaction_router",
+    "on_reaction_event",
+    "is_valid_reaction"
 ]
