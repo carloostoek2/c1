@@ -18,6 +18,9 @@ from bot.database import get_session
 from bot.services.container import ServiceContainer
 from config import Config
 
+# Importar jobs de gamificación
+from bot.gamification.background.auto_progression_checker import check_all_users_progression
+
 logger = logging.getLogger(__name__)
 
 # Scheduler global
@@ -256,6 +259,23 @@ def start_background_tasks(bot: Bot):
         max_instances=1
     )
     logger.info("✅ Tarea programada: Limpieza (diaria 3 AM UTC)")
+
+    # Tarea 4: Auto-progression checker (Gamificación)
+    # Frecuencia: Cada 6 horas
+    async def auto_progression_job():
+        """Job wrapper para auto-progression con session management."""
+        async with get_session() as session:
+            await check_all_users_progression(session, bot)
+
+    _scheduler.add_job(
+        auto_progression_job,
+        trigger=IntervalTrigger(hours=6),
+        id="auto_progression_checker",
+        name="Auto-progression checker (Gamificación)",
+        replace_existing=True,
+        max_instances=1
+    )
+    logger.info("✅ Tarea programada: Auto-progression (cada 6 horas)")
 
     # Iniciar scheduler
     _scheduler.start()
