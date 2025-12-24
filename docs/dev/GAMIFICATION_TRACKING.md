@@ -2,7 +2,7 @@
 
 **Inicio:** Diciembre 2024
 **Estado General:** 🟡 FASE 6 EN PROGRESO
-**Progreso Total:** 25/30 tareas (83.3%)
+**Progreso Total:** 26/30 tareas (86.7%)
 
 ---
 
@@ -70,11 +70,11 @@
 
 ### **FASE 6: Features Avanzadas (3 tareas)** 🟡 EN PROGRESO
 - [x] G6.1 - Sistema de plantillas predefinidas ✅
-- [ ] G6.2 - GamificationStatsService
+- [x] G6.2 - GamificationStatsService ✅
 - [ ] G6.3 - Sistema de notificaciones
 
 **Estimado:** 1-2 semanas
-**Progreso:** 1/3 (33.3%)
+**Progreso:** 2/3 (66.7%)
 
 ---
 
@@ -89,10 +89,10 @@
 
 ## 🎯 PRÓXIMA TAREA
 
-**Tarea actual:** G6.2 - GamificationStatsService
+**Tarea actual:** G6.3 - Sistema de notificaciones
 **Prompt generado:** ✅ Listo para ejecutar
 **Bloqueadores:** Ninguno
-**Estado:** G6.1 COMPLETADO ✅ - FASE 6 EN PROGRESO (1/3, 33.3%)
+**Estado:** G6.2 COMPLETADO ✅ - FASE 6 EN PROGRESO (2/3, 66.7%)
 
 ---
 
@@ -475,53 +475,80 @@ _Ninguno por ahora_
 
 ## 📊 MÉTRICAS FASE 6 (EN PROGRESO)
 
-- **Commits realizados:** 1 (G6.1)
+- **Commits realizados:** 2 (G6.1, G6.2)
   - 7b46293: G6.1 Sistema de plantillas predefinidas
+  - 9ec57b6: G6.2 Servicio de estadísticas completo
 
 - **Archivos creados:**
   - bot/gamification/utils/templates.py (230 líneas)
   - bot/gamification/handlers/admin/templates.py (68 líneas)
+  - bot/gamification/services/stats.py (200 líneas)
+  - bot/gamification/handlers/admin/stats.py (51 líneas)
   - tests/gamification/test_templates.py (175 líneas)
+  - tests/gamification/test_stats_service.py (224 líneas)
 
 - **Archivos modificados:**
   - bot/gamification/utils/__init__.py (exports)
   - bot/gamification/handlers/admin/__init__.py (exports)
+  - bot/gamification/services/container.py (property stats)
 
 - **Plantillas implementadas:** 3
   - starter: 3 niveles + misión bienvenida + badge
   - engagement: 2 misiones (diaria + racha) + badge
   - progression: 6 niveles + 6 badges automáticos
 
-- **Funciones implementadas:** 3
+- **Funciones implementadas (Templates):** 3
   - apply_template: Aplica plantilla completa transaccional
   - get_template_info: Obtiene información de plantilla
   - list_templates: Lista todas las plantillas disponibles
 
-- **Handlers implementados:** 2
+- **Métodos implementados (Stats):** 4
+  - get_system_overview: Métricas generales del sistema
+  - get_user_distribution: Distribución de usuarios por nivel
+  - get_mission_stats: Estadísticas de misiones y completitud
+  - get_engagement_stats: Estadísticas de engagement y rachas
+
+- **Handlers implementados:** 3
   - show_templates: Muestra menú de plantillas
   - apply_template_handler: Aplica plantilla seleccionada
+  - show_stats: Dashboard formateado HTML con métricas
 
-- **Tests unitarios:** 8/8 (100% pasando ✅)
-  - test_system_templates_structure
-  - test_get_template_info
-  - test_list_templates
-  - test_apply_starter_template
-  - test_apply_engagement_template
-  - test_apply_progression_template
-  - test_apply_invalid_template
-  - test_template_transaction_rollback
+- **Tests unitarios:** 15/15 (100% pasando ✅)
+  - Templates (8 tests):
+    - test_system_templates_structure
+    - test_get_template_info
+    - test_list_templates
+    - test_apply_starter_template
+    - test_apply_engagement_template
+    - test_apply_progression_template
+    - test_apply_invalid_template
+    - test_template_transaction_rollback
+  - Stats (7 tests):
+    - test_get_system_overview_empty
+    - test_get_system_overview_with_data
+    - test_get_user_distribution
+    - test_get_mission_stats
+    - test_get_engagement_stats_empty
+    - test_get_engagement_stats_with_data
+    - test_stats_service_in_container
 
 - **Características clave:**
   - Type hints: 100%
+  - Queries SQL optimizadas con agregaciones
+  - JOIN correcto para emojis desde Reaction
+  - func.distinct() compatible con SQLite
+  - Formateo HTML para Telegram
   - Aplicación transaccional (rollback automático)
   - 3 plantillas predefinidas completas
   - Resumen HTML post-aplicación
-  - Creación automática de badges por nivel (progression)
+  - Creación automática de badges por nivel
   - Logging completo (INFO, ERROR)
-  - Validación de plantillas inexistentes
+  - Validación completa de entradas
   - Error handling robusto
+  - Integración con GamificationContainer
+  - Lazy loading de servicios
 
-**Estado:** 🟡 FASE 6 EN PROGRESO - 1/3 tareas (33.3%)
+**Estado:** 🟡 FASE 6 EN PROGRESO - 2/3 tareas (66.7%)
 
 ---
 
