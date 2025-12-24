@@ -2,7 +2,7 @@
 
 **Inicio:** Diciembre 2024
 **Estado General:** 🟡 FASE 4 EN PROGRESO
-**Progreso Total:** 18/30 tareas (60.0%)
+**Progreso Total:** 19/30 tareas (63.3%)
 
 ---
 
@@ -49,12 +49,12 @@
 ### **FASE 4: Handlers y FSM (5 tareas)** 🟡 En progreso
 - [x] G4.1 - Estados FSM (Wizards) ✅
 - [x] G4.2 - Handler menú admin gamification ✅
-- [ ] G4.3 - Wizard crear misión
+- [x] G4.3 - Wizard crear misión ✅
 - [ ] G4.4 - Wizard crear recompensa
 - [ ] G4.5 - Handlers usuarios (perfil, misiones, leaderboard)
 
 **Estimado:** 2-3 semanas
-**Progreso:** 2/5 (40%)
+**Progreso:** 3/5 (60%)
 
 ---
 
@@ -89,10 +89,10 @@
 
 ## 🎯 PRÓXIMA TAREA
 
-**Tarea actual:** G4.3 - Wizard crear misión
+**Tarea actual:** G4.4 - Wizard crear recompensa
 **Prompt generado:** ✅ Listo para ejecutar
 **Bloqueadores:** Ninguno
-**Estado:** G4.2 COMPLETADO ✅ - FASE 4 EN PROGRESO (2/5)
+**Estado:** G4.3 COMPLETADO ✅ - FASE 4 EN PROGRESO (3/5)
 
 ---
 
@@ -335,6 +335,46 @@ _Ninguno por ahora_
   - Sistemas completos de gamificación ✨ NUEVO
 
 **Estado:** 🟢 FASE 3 COMPLETADA - 4/4 tareas (100%)
+
+---
+
+## 📊 MÉTRICAS FASE 4 (EN PROGRESO)
+
+- **Commits realizados:** 3 (G4.1, G4.2, G4.3)
+  - 87c2f51: G4.1 Estados FSM para wizards
+  - 9d7d697: G4.2 Handler menú admin gamificación
+  - 8a48c38: G4.3 Wizard crear misión
+
+- **Archivos creados:**
+  - bot/gamification/states/admin.py (119 líneas, 5 StatesGroup)
+  - bot/gamification/handlers/admin/main.py (289 líneas)
+  - bot/gamification/handlers/admin/mission_wizard.py (672 líneas) ✨ NUEVO
+  - tests/gamification/test_states.py (79 tests)
+  - tests/gamification/test_admin_handlers.py (124 tests)
+  - tests/gamification/test_mission_wizard.py (42 tests) ✨ NUEVO
+
+- **Handlers implementados:** 26
+  - Main admin menu: 11 handlers (menús, listados)
+  - Mission wizard: 23 handlers (flujo completo 6 pasos) ✨ NUEVO
+
+- **Tests unitarios:** 245/245 (100% pasando ✅)
+  - 79 tests estados FSM
+  - 124 tests admin handlers
+  - 42 tests mission wizard ✨ NUEVO
+
+- **Características clave:**
+  - Type hints: 100%
+  - FSM con 6 pasos navegables
+  - Validación de inputs completa
+  - Almacenamiento incremental en state
+  - Integración con ConfigurationOrchestrator
+  - Soporte todos tipos de misión (ONE_TIME, DAILY, WEEKLY, STREAK)
+  - Auto level-up (crear nuevo o seleccionar existente)
+  - Creación múltiples recompensas
+  - Resumen antes de confirmar
+  - Cancelación en cualquier punto
+
+**Estado:** 🟡 FASE 4 EN PROGRESO - 3/5 tareas (60%)
 
 ---
 
