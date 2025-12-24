@@ -32,6 +32,7 @@ class GamificationContainer:
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
         self._reward_orchestrator = None
+        self._configuration_orchestrator = None
 
     # ========================================
     # PROPERTIES (LAZY LOADING)
@@ -101,6 +102,14 @@ class GamificationContainer:
             self._reward_orchestrator = RewardOrchestrator(self._session)
         return self._reward_orchestrator
 
+    @property
+    def configuration_orchestrator(self):
+        """Orquestador maestro de configuración."""
+        if self._configuration_orchestrator is None:
+            from bot.gamification.services.orchestrator.configuration import ConfigurationOrchestrator
+            self._configuration_orchestrator = ConfigurationOrchestrator(self._session)
+        return self._configuration_orchestrator
+
     # ========================================
     # UTILIDADES
     # ========================================
@@ -124,6 +133,8 @@ class GamificationContainer:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
             loaded.append('reward_orchestrator')
+        if self._configuration_orchestrator is not None:
+            loaded.append('configuration_orchestrator')
         return loaded
 
     def clear_cache(self):
@@ -136,6 +147,7 @@ class GamificationContainer:
         self._user_gamification_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
+        self._configuration_orchestrator = None
 
 
 # ========================================
