@@ -91,6 +91,25 @@ class RewardWizardStates(StatesGroup):
     confirm = State()
 
 
+class LevelWizardStates(StatesGroup):
+    """
+    Estados para wizard de creación de nivel.
+
+    Flujo:
+    1. Introducir nombre del nivel
+    2. Introducir besitos mínimos
+    3. Introducir orden
+    4. (Opcional) Introducir beneficios
+    5. Confirmar creación
+    """
+
+    enter_level_name = State()
+    enter_min_besitos = State()
+    enter_level_order = State()
+    enter_level_benefits = State() # Opcional, como JSON
+    confirm = State()
+
+
 class BroadcastStates(StatesGroup):
     """
     Estados para broadcasting de mensajes.

@@ -59,8 +59,9 @@ Para empezar rápidamente, se recomienda:
 - Útil para misiones de progresión
 
 #### Paso 5: Recompensas Unlock (Opcional)
-- ¿Esta misión desbloquea otras recompensas?
-- Configura unlock conditions basadas en esta misión
+- ¿Esta misión desbloquea recompensas adicionales?
+- Puedes crear una recompensa nueva desde cero o **seleccionar una recompensa ya existente** de una lista paginada.
+- Es posible añadir múltiples recompensas (tanto nuevas como existentes) a la misión.
 
 #### Paso 6: Confirmación
 - Revisa la configuración completa
@@ -121,14 +122,31 @@ Los usuarios pueden comprar recompensas con sus besitos si:
 
 ## ⬆️ Gestión de Niveles
 
-### Crear Sistema de Niveles
+### Crear Nivel con Wizard
 
-1. Ir a "Niveles" → "Crear Nivel"
-2. Definir:
-   - Nombre (ej: "Iniciado", "Conocedor", "Experto")
-   - Besitos mínimos requeridos
-   - Orden de progresión
-   - Beneficios (opcional)
+1. Ir a "Niveles" → "Crear Nivel".
+2. Seguir los pasos del wizard:
+
+#### Paso 1: Nombre del Nivel
+- Define el nombre que identificará al nivel.
+- Ejemplo: "Novato", "Entusiasta", "Leyenda".
+
+#### Paso 2: Besitos Mínimos
+- Cantidad de besitos que un usuario debe acumular para alcanzar este nivel.
+- Ejemplo: 1000.
+
+#### Paso 3: Orden de Progresión
+- Número que define la secuencia de los niveles (1, 2, 3...).
+- El orden debe ser único y positivo.
+
+#### Paso 4: Beneficios (Opcional)
+- Opcionalmente, puedes añadir un objeto JSON con beneficios.
+- Ejemplo: `{"reaction_multiplier": 1.2}`
+- Puedes saltar este paso si no hay beneficios.
+
+#### Paso 5: Confirmación
+- Revisa el resumen del nivel a crear.
+- Confirma para guardar el nuevo nivel en el sistema.
 
 ### Niveles Automáticos
 

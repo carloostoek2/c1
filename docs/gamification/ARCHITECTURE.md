@@ -83,7 +83,7 @@ ConfigurationOrchestrator (Orquestador Maestro)
 ```
 Admin Handlers
 ├── Menú Principal
-├── Wizards de Configuración (misión, recompensa)
+├── Wizards de Configuración (misión, recompensa, nivel)
 ├── CRUD de Entidades
 ├── Plantillas Predefinidas
 └── Estadísticas del Sistema

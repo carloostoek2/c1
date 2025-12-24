@@ -155,11 +155,11 @@ Obtiene todos los niveles ordenados por besitos mínimos.
 levels = await container.level_service.get_all_levels()
 ```
 
-#### `get_user_level(user_id: int) -> Level`
-Obtiene el nivel actual de un usuario.
+#### `get_level_by_id(level_id: int) -> Optional[Level]`
+Obtiene un nivel por su ID.
 
 ```python
-current_level = await container.level_service.get_user_level(123456789)
+level = await container.level_service.get_level_by_id(1)
 ```
 
 #### `check_and_apply_level_up(user_id: int) -> Tuple[bool, Level, Level]`
@@ -224,6 +224,13 @@ Obtiene misiones activas de un usuario.
 active_missions = await container.mission_service.get_user_active_missions(123456789)
 ```
 
+#### `get_mission_by_id(mission_id: int) -> Optional[Mission]`
+Obtiene una misión por su ID.
+
+```python
+mission = await container.mission_service.get_mission_by_id(1)
+```
+
 #### `claim_reward(user_id: int, mission_id: int) -> Tuple[bool, str, Dict]`
 Reclama la recompensa de una misión completada.
 
@@ -278,6 +285,13 @@ Obtiene todas las recompensas obtenidas por un usuario.
 
 ```python
 user_rewards = await container.reward_service.get_user_rewards(123456789)
+```
+
+#### `get_reward_by_id(reward_id: int) -> Optional[Reward]`
+Obtiene una recompensa por su ID.
+
+```python
+reward = await container.reward_service.get_reward_by_id(1)
 ```
 
 ---

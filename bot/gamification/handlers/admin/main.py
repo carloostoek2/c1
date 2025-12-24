@@ -163,7 +163,7 @@ async def levels_menu(callback: CallbackQuery, gamification: GamificationContain
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="➕ Crear Nivel", callback_data="gamif:levels:create"),
+            InlineKeyboardButton(text="➕ Crear Nivel", callback_data="gamif:wizard:level_prog"),
             InlineKeyboardButton(text="📝 Listar", callback_data="gamif:levels:list")
         ],
         [
