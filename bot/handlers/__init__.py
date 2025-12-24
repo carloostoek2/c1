@@ -10,6 +10,10 @@ from aiogram import Dispatcher
 
 from bot.handlers.admin import admin_router
 from bot.handlers.user import user_router
+from bot.gamification.handlers import (
+    gamification_admin_router,
+    gamification_mission_wizard_router,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +27,13 @@ def register_all_handlers(dispatcher: Dispatcher) -> None:
     """
     logger.info("Registrando handlers...")
 
-    # Registrar routers
+    # Registrar routers principales
     dispatcher.include_router(admin_router)
     dispatcher.include_router(user_router)
+
+    # Registrar routers de gamificación
+    dispatcher.include_router(gamification_admin_router)
+    dispatcher.include_router(gamification_mission_wizard_router)
 
     logger.info("Handlers registrados correctamente")
 

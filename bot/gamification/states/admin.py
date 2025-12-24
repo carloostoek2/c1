@@ -27,6 +27,8 @@ class MissionWizardStates(StatesGroup):
 
     # Paso 1: Tipo
     select_type = State()
+    enter_mission_name = State()
+    enter_mission_description = State()
 
     # Paso 2: Criterios
     enter_streak_days = State()
