@@ -2,7 +2,7 @@
 
 **Inicio:** Diciembre 2024
 **Estado General:** 🟡 FASE 4 EN PROGRESO
-**Progreso Total:** 19/30 tareas (63.3%)
+**Progreso Total:** 20/30 tareas (66.7%)
 
 ---
 
@@ -50,11 +50,11 @@
 - [x] G4.1 - Estados FSM (Wizards) ✅
 - [x] G4.2 - Handler menú admin gamification ✅
 - [x] G4.3 - Wizard crear misión ✅
-- [ ] G4.4 - Wizard crear recompensa
+- [x] G4.4 - Wizard crear recompensa ✅
 - [ ] G4.5 - Handlers usuarios (perfil, misiones, leaderboard)
 
 **Estimado:** 2-3 semanas
-**Progreso:** 3/5 (60%)
+**Progreso:** 4/5 (80%)
 
 ---
 
@@ -89,10 +89,10 @@
 
 ## 🎯 PRÓXIMA TAREA
 
-**Tarea actual:** G4.4 - Wizard crear recompensa
+**Tarea actual:** G4.5 - Handlers usuarios (perfil, misiones, leaderboard)
 **Prompt generado:** ✅ Listo para ejecutar
 **Bloqueadores:** Ninguno
-**Estado:** G4.3 COMPLETADO ✅ - FASE 4 EN PROGRESO (3/5)
+**Estado:** G4.4 COMPLETADO ✅ - FASE 4 EN PROGRESO (4/5)
 
 ---
 
@@ -340,41 +340,49 @@ _Ninguno por ahora_
 
 ## 📊 MÉTRICAS FASE 4 (EN PROGRESO)
 
-- **Commits realizados:** 3 (G4.1, G4.2, G4.3)
+- **Commits realizados:** 4 (G4.1, G4.2, G4.3, G4.4)
   - 87c2f51: G4.1 Estados FSM para wizards
   - 9d7d697: G4.2 Handler menú admin gamificación
   - 8a48c38: G4.3 Wizard crear misión
+  - bdb88a9: G4.4 Wizard crear recompensa ✨ NUEVO
 
 - **Archivos creados:**
-  - bot/gamification/states/admin.py (119 líneas, 5 StatesGroup)
+  - bot/gamification/states/admin.py (123 líneas, 5 StatesGroup)
   - bot/gamification/handlers/admin/main.py (289 líneas)
-  - bot/gamification/handlers/admin/mission_wizard.py (672 líneas) ✨ NUEVO
+  - bot/gamification/handlers/admin/mission_wizard.py (672 líneas)
+  - bot/gamification/handlers/admin/reward_wizard.py (557 líneas) ✨ NUEVO
   - tests/gamification/test_states.py (79 tests)
   - tests/gamification/test_admin_handlers.py (124 tests)
-  - tests/gamification/test_mission_wizard.py (42 tests) ✨ NUEVO
+  - tests/gamification/test_mission_wizard.py (42 tests)
+  - tests/gamification/test_reward_wizard.py (44 tests) ✨ NUEVO
 
-- **Handlers implementados:** 26
+- **Handlers implementados:** 45
   - Main admin menu: 11 handlers (menús, listados)
-  - Mission wizard: 23 handlers (flujo completo 6 pasos) ✨ NUEVO
+  - Mission wizard: 23 handlers (flujo completo 6 pasos)
+  - Reward wizard: 19 handlers (flujo completo 4 pasos) ✨ NUEVO
 
-- **Tests unitarios:** 245/245 (100% pasando ✅)
+- **Tests unitarios:** 289/289 (100% pasando ✅)
   - 79 tests estados FSM
   - 124 tests admin handlers
-  - 42 tests mission wizard ✨ NUEVO
+  - 42 tests mission wizard
+  - 44 tests reward wizard ✨ NUEVO
 
 - **Características clave:**
   - Type hints: 100%
-  - FSM con 6 pasos navegables
-  - Validación de inputs completa
+  - FSM con múltiples pasos navegables (6 para misiones, 4 para recompensas)
+  - Validación de inputs completa (caracteres, números, emojis)
   - Almacenamiento incremental en state
-  - Integración con ConfigurationOrchestrator
+  - Integración con ConfigurationOrchestrator y RewardOrchestrator
   - Soporte todos tipos de misión (ONE_TIME, DAILY, WEEKLY, STREAK)
+  - Soporte todos tipos de recompensa (BADGE, ITEM, PERMISSION, BESITOS) ✨
   - Auto level-up (crear nuevo o seleccionar existente)
+  - Unlock conditions opcionales (misión, nivel, besitos) ✨
+  - Metadata específica por tipo de recompensa ✨
   - Creación múltiples recompensas
   - Resumen antes de confirmar
   - Cancelación en cualquier punto
 
-**Estado:** 🟡 FASE 4 EN PROGRESO - 3/5 tareas (60%)
+**Estado:** 🟡 FASE 4 EN PROGRESO - 4/5 tareas (80%)
 
 ---
 
