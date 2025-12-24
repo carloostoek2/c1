@@ -172,7 +172,7 @@ def upgrade() -> None:
         sa.Column('reward_type', sa.String(50), nullable=False),
         sa.Column('cost_besitos', sa.Integer(), nullable=True),
         sa.Column('unlock_conditions', sa.String(1000), nullable=True),
-        sa.Column('metadata', sa.String(1000), nullable=True),
+        sa.Column('reward_metadata', sa.String(1000), nullable=True),
         sa.Column('active', sa.Boolean(), nullable=False, server_default='1'),
         sa.Column('created_by', sa.BigInteger(), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),

@@ -299,7 +299,7 @@ class Reward(Base):
     unlock_conditions: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True
     )
-    metadata: Mapped[Optional[str]] = mapped_column(
+    reward_metadata: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True
     )
     active: Mapped[bool] = mapped_column(Boolean, default=True)
