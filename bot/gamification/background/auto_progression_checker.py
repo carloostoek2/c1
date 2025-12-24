@@ -37,43 +37,73 @@ async def check_all_users_progression(session: AsyncSession, bot: Bot):
     # Crear container de gamificación
     gamification = GamificationContainer(session, bot)
 
-    # Obtener todos los usuarios
-    stmt = select(UserGamification)
-    result = await session.execute(stmt)
-    all_users = result.scalars().all()
-
     processed = 0
     level_ups = 0
 
-    # Procesar en batch
-    BATCH_SIZE = 100
-    for i in range(0, len(all_users), BATCH_SIZE):
-        batch = all_users[i:i+BATCH_SIZE]
+    # Procesar usuarios en streaming para evitar cargarlos todos en memoria
+    stmt = select(UserGamification)
+    result = await session.stream_scalars(stmt)
 
-        for user_gamif in batch:
+    # Procesar en batches
+    batch = []
+    async for user_gamif in result:
+        batch.append(user_gamif)
+
+        # Procesar batch cuando alcance el tamaño o terminar el iterador
+        if len(batch) >= 100:
+            for batch_user in batch:
+                try:
+                    changed, old_level, new_level = await gamification.level.check_and_apply_level_up(
+                        batch_user.user_id
+                    )
+
+                    if changed:
+                        level_ups += 1
+                        logger.info(
+                            f"Auto level-up: User {batch_user.user_id} "
+                            f"{old_level.name} → {new_level.name}"
+                        )
+
+                        # Notificar usando servicio de notificaciones
+                        await gamification.notifications.notify_level_up(
+                            batch_user.user_id, old_level, new_level
+                        )
+
+                    processed += 1
+
+                except Exception as e:
+                    logger.error(f"Error processing user {batch_user.user_id}: {e}")
+
+            # Commit batch
+            await session.commit()
+            batch = []  # Resetear batch
+
+    # Procesar el último batch si hay usuarios restantes
+    if batch:
+        for batch_user in batch:
             try:
                 changed, old_level, new_level = await gamification.level.check_and_apply_level_up(
-                    user_gamif.user_id
+                    batch_user.user_id
                 )
 
                 if changed:
                     level_ups += 1
                     logger.info(
-                        f"Auto level-up: User {user_gamif.user_id} "
+                        f"Auto level-up: User {batch_user.user_id} "
                         f"{old_level.name} → {new_level.name}"
                     )
 
                     # Notificar usando servicio de notificaciones
                     await gamification.notifications.notify_level_up(
-                        user_gamif.user_id, old_level, new_level
+                        batch_user.user_id, old_level, new_level
                     )
 
                 processed += 1
 
             except Exception as e:
-                logger.error(f"Error processing user {user_gamif.user_id}: {e}")
+                logger.error(f"Error processing user {batch_user.user_id}: {e}")
 
-        # Commit batch
+        # Commit último batch
         await session.commit()
 
     logger.info(

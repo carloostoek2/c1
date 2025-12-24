@@ -102,6 +102,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(['current_level_id'], ['levels.id'], ondelete='SET NULL'),
+        sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('user_id')
     )
 

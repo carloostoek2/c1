@@ -30,7 +30,7 @@ class UserGamification(Base):
     """
     __tablename__ = "user_gamification"
 
-    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
     total_besitos: Mapped[int] = mapped_column(Integer, default=0)
     besitos_earned: Mapped[int] = mapped_column(Integer, default=0)
     besitos_spent: Mapped[int] = mapped_column(Integer, default=0)

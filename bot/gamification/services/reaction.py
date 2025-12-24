@@ -197,10 +197,7 @@ class ReactionService:
         await self.session.refresh(user_reaction)
 
         # 5. Otorgar besitos
-        from bot.gamification.services.besito import BesitoService
-        besito_service = BesitoService(self.session)
-
-        besitos_granted = await besito_service.grant_besitos(
+        besitos_granted = await self.session.container.besito.grant_besitos(
             user_id=user_id,
             amount=reaction.besitos_value,
             transaction_type=TransactionType.REACTION,

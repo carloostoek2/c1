@@ -95,7 +95,7 @@ async def on_reaction_event(
                     completed_missions = await gamification.mission.on_user_reaction(
                         user_id=user_id,
                         emoji=emoji,
-                        reacted_at=datetime.now(UTC)
+                        reacted_at=update.date
                     )
 
                     # Notificar misiones completadas

@@ -200,7 +200,7 @@ async def list_missions(callback: CallbackQuery, gamification: GamificationConta
     text = "📋 <b>Misiones Activas</b>\n\n"
     keyboard_buttons = []
 
-    for mission in missions[:10]:  # Mostrar primeras 10
+    for mission in missions:  # Mostrar todas las misiones
         type_icon = {
             MissionType.ONE_TIME: "🎯",
             MissionType.DAILY: "📅",
@@ -240,7 +240,7 @@ async def list_rewards(callback: CallbackQuery, gamification: GamificationContai
     text = "🎁 <b>Recompensas Disponibles</b>\n\n"
     keyboard_buttons = []
 
-    for reward in rewards[:10]:  # Mostrar primeras 10
+    for reward in rewards:  # Mostrar todas las recompensas
         type_icon = {
             RewardType.BADGE: "🏆",
             RewardType.PERMISSION: "🔑",

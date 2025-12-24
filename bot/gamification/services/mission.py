@@ -581,9 +581,8 @@ class MissionService:
             'unlocked_rewards': []
         }
 
-        # 1. Otorgar besitos (lazy import para evitar circular)
-        from bot.gamification.services.besito import BesitoService
-        besito_service = BesitoService(self.session)
+        # 1. Otorgar besitos
+        besito_service = self.session.container.besito
 
         besitos_granted = await besito_service.grant_besitos(
             user_id=user_id,
@@ -596,10 +595,7 @@ class MissionService:
 
         # 2. Auto level-up
         if mission.auto_level_up_id:
-            from bot.gamification.services.level import LevelService
-            level_service = LevelService(self.session)
-
-            await level_service.set_user_level(
+            await self.session.container.level.set_user_level(
                 user_id,
                 mission.auto_level_up_id
             )
