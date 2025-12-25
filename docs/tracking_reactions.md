@@ -32,10 +32,10 @@
 **Fase 1:** Fundamentos de BD y Servicios - 3/3 (100%) ✅
 **Fase 2:** Extensión de Broadcasting - 2/2 (100%) ✅
 **Fase 3:** Handler de Reacciones de Usuario - 1/1 (100%) ✅
-**Fase 4:** Features Adicionales - 0/2 (0%)
+**Fase 4:** Features Adicionales - 2/2 (100%) ✅
 **Fase 5:** Testing y Refinamiento - 0/3 (0%)
 
-**TOTAL:** 6/11 tareas completadas (55%)
+**TOTAL:** 8/11 tareas completadas (73%)
 
 ---
 
@@ -320,7 +320,7 @@
 
 ### FASE 4: Features Adicionales
 
-#### [ ] T7: Protección de Contenido
+#### [x] T7: Protección de Contenido ✅ COMPLETADO
 **Archivos:** `broadcast.py`, `BroadcastService`
 
 **Subtareas:**
@@ -336,7 +336,7 @@
 
 ---
 
-#### [ ] T8: Estadísticas de Broadcasting
+#### [x] T8: Estadísticas de Broadcasting ✅ COMPLETADO
 **Archivo:** `bot/gamification/services/stats.py` (MODIFICAR)
 
 **Subtareas:**
