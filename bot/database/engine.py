@@ -18,6 +18,12 @@ from config import Config
 from bot.database.base import Base
 from bot.database.models import BotConfig
 
+# Importar modelos de gamificación para registrarlos en metadata
+try:
+    import bot.gamification.database.models  # noqa: F401
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # ===== ENGINE GLOBAL =====
