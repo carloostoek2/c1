@@ -30,12 +30,12 @@
 ## 🎯 PROGRESO GENERAL
 
 **Fase 1:** Fundamentos de BD y Servicios - 3/3 (100%) ✅
-**Fase 2:** Extensión de Broadcasting - 1/2 (50%)
+**Fase 2:** Extensión de Broadcasting - 2/2 (100%) ✅
 **Fase 3:** Handler de Reacciones de Usuario - 0/1 (0%)
 **Fase 4:** Features Adicionales - 0/2 (0%)
 **Fase 5:** Testing y Refinamiento - 0/3 (0%)
 
-**TOTAL:** 4/11 tareas completadas (36%)
+**TOTAL:** 5/11 tareas completadas (45%)
 
 ---
 
@@ -188,27 +188,30 @@
 
 ---
 
-#### [ ] T4: Extender Estados FSM
+#### [x] T4: Extender Estados FSM ✅ COMPLETADO
 **Archivo:** `bot/states/admin.py`
 
 **Subtareas:**
-- [ ] Modificar `BroadcastStates`
-  - [ ] Agregar estado: `configuring_options = State()`
-  - [ ] Reorganizar orden lógico:
+- [x] Modificar `BroadcastStates`
+  - [x] Agregar estado: `configuring_options = State()`
+  - [x] Reorganizar orden lógico:
     1. waiting_for_content
     2. configuring_options (NUEVO)
     3. selecting_reactions (ya existe)
     4. waiting_for_confirmation
 
-- [ ] Actualizar docstring
-  - [ ] Documentar flujo completo de 4 pasos
-  - [ ] Incluir ejemplos de transiciones
+- [x] Actualizar docstring
+  - [x] Documentar flujo completo de 4 pasos
+  - [x] Incluir callbacks de configuración
+  - [x] Documentar opciones de gamificación
 
-- [ ] Tests unitarios
-  - [ ] Test: Verificar que configuring_options existe
-  - [ ] Test: State strings correctos
+- [x] Tests unitarios (6 tests - todos pasando ✅)
+  - [x] Test: Verificar que configuring_options existe
+  - [x] Test: State strings correctos
+  - [x] Test: Cantidad correcta de estados (4)
+  - [x] Test: Backward compatibility con selecting_reactions
 
-**Commit:** `feat(states): Add configuring_options state to BroadcastStates`
+**Commit:** `feat(states): Extend BroadcastStates with configuring_options step`
 
 ---
 
