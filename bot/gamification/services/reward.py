@@ -726,3 +726,24 @@ class RewardService:
                     )
 
         return granted_rewards
+
+    # ========================================
+    # ESTADÍSTICAS
+    # ========================================
+
+    async def get_users_with_reward(self, reward_id: int) -> int:
+        """Obtiene la cantidad de usuarios que tienen una recompensa.
+
+        Args:
+            reward_id: ID de la recompensa
+
+        Returns:
+            Número de usuarios que tienen la recompensa
+        """
+        stmt = select(func.count(UserReward.id)).where(
+            UserReward.reward_id == reward_id
+        )
+        result = await self.session.execute(stmt)
+        count = result.scalar_one()
+
+        return count

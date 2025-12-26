@@ -209,3 +209,31 @@ class MissionConfigStates(StatesGroup):
     waiting_for_streak_days = State()
     waiting_for_daily_count = State()
     waiting_for_weekly_target = State()
+
+
+class RewardConfigStates(StatesGroup):
+    """Estados para configuración CRUD de recompensas.
+
+    Flujo de edición:
+    1. Admin selecciona recompensa existente
+    2. Bot muestra menú de edición
+    3. Admin selecciona campo a editar
+    4. Bot pide nuevo valor
+    5. Actualiza en BD
+    """
+
+    # Edición de campos individuales
+    waiting_for_name = State()
+    waiting_for_description = State()
+    waiting_for_cost = State()
+
+    # Edición de unlock conditions
+    editing_conditions = State()
+    waiting_for_condition_type = State()
+    waiting_for_mission_id = State()
+    waiting_for_level_id = State()
+    waiting_for_min_besitos = State()
+
+    # Edición de metadata (Badge específico)
+    waiting_for_badge_icon = State()
+    waiting_for_badge_rarity = State()
