@@ -121,6 +121,18 @@ async def handle_reaction_button(
                 )
             return
 
+        # Verificar y aplicar level-up automático
+        changed, old_level, new_level = await container.level.check_and_apply_level_up(user_id)
+        if changed:
+            logger.info(
+                f"Auto level-up triggered: User {user_id} "
+                f"{old_level.name if old_level else 'None'} → {new_level.name}"
+            )
+            # Notificar level-up
+            await container.notifications.notify_level_up(
+                user_id, old_level, new_level
+            )
+
         # Formatear respuesta con besitos ganados
         besitos = result["besitos_earned"]
         total = result["total_besitos"]
