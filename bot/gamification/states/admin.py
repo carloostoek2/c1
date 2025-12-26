@@ -170,3 +170,19 @@ class ReactionConfigStates(StatesGroup):
     waiting_for_edit_besitos = State()
     waiting_for_button_emoji = State()
     waiting_for_button_label = State()
+
+
+class LevelConfigStates(StatesGroup):
+    """Estados para configuración CRUD de niveles.
+
+    Flujo de edición:
+    1. Admin selecciona nivel existente
+    2. Bot muestra menú de edición
+    3. Admin selecciona campo a editar
+    4. Bot pide nuevo valor → waiting_for_field_value
+    5. Actualiza en BD
+    """
+
+    # Edición de campos
+    waiting_for_field_value = State()
+    waiting_for_reassign_level = State()  # Para reasignar usuarios al eliminar
