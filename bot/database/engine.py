@@ -161,6 +161,9 @@ async def init_db() -> None:
     # Crear registro inicial de GamificationConfig (singleton)
     await _ensure_gamification_config_exists()
 
+    # Crear niveles base si no existen
+    await _ensure_base_levels_exist()
+
     logger.info("✅ Base de datos inicializada correctamente")
 
 
@@ -223,6 +226,76 @@ async def _ensure_gamification_config_exists() -> None:
                 logger.info("✅ GamificationConfig ya existe")
     except ImportError:
         logger.debug("Módulo de gamificación no disponible, saltando inicialización")
+
+
+async def _ensure_base_levels_exist() -> None:
+    """
+    Crea niveles base del sistema de gamificación si no existen.
+
+    Niveles por defecto:
+    1. Novato (0 besitos)
+    2. Entusiasta (100 besitos)
+    3. Fanático (500 besitos)
+    4. Leyenda (1000 besitos)
+    """
+    try:
+        from bot.gamification.database.models import Level
+        from datetime import datetime, UTC
+        from sqlalchemy import select, func
+
+        async with get_session() as session:
+            # Contar niveles existentes
+            stmt = select(func.count()).select_from(Level)
+            result = await session.execute(stmt)
+            level_count = result.scalar()
+
+            if level_count == 0:
+                # Crear niveles base
+                base_levels = [
+                    {
+                        "name": "Novato",
+                        "min_besitos": 0,
+                        "order": 1,
+                        "benefits": None,
+                        "active": True,
+                        "created_at": datetime.now(UTC)
+                    },
+                    {
+                        "name": "Entusiasta",
+                        "min_besitos": 100,
+                        "order": 2,
+                        "benefits": None,
+                        "active": True,
+                        "created_at": datetime.now(UTC)
+                    },
+                    {
+                        "name": "Fanático",
+                        "min_besitos": 500,
+                        "order": 3,
+                        "benefits": None,
+                        "active": True,
+                        "created_at": datetime.now(UTC)
+                    },
+                    {
+                        "name": "Leyenda",
+                        "min_besitos": 1000,
+                        "order": 4,
+                        "benefits": None,
+                        "active": True,
+                        "created_at": datetime.now(UTC)
+                    }
+                ]
+
+                for level_data in base_levels:
+                    level = Level(**level_data)
+                    session.add(level)
+
+                await session.commit()
+                logger.info(f"✅ Creados {len(base_levels)} niveles base del sistema de gamificación")
+            else:
+                logger.info(f"✅ Ya existen {level_count} niveles en el sistema")
+    except ImportError:
+        logger.debug("Módulo de gamificación no disponible, saltando inicialización de niveles")
 
 
 async def close_db() -> None:
