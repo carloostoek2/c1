@@ -8,7 +8,7 @@ Responsabilidades:
 """
 
 from typing import Optional, Tuple
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
@@ -220,7 +220,7 @@ class DailyGiftService:
             f"{streak_emoji} Racha: {new_streak} día{'s' if new_streak != 1 else ''}"
         )
 
-        if new_streak > claim.longest_streak - new_streak:
+        if new_streak == claim.longest_streak and new_streak > 1:
             message += f"\n🏆 ¡Nuevo récord personal!"
 
         return True, message, details
@@ -332,8 +332,8 @@ class DailyGiftService:
         """
         now_mx = datetime.now(MEXICO_TZ)
         # Próximo regalo es a las 00:00 del día siguiente
-        tomorrow = now_mx.date().replace(day=now_mx.date().day + 1)
-        next_midnight = MEXICO_TZ.localize(datetime.combine(tomorrow, datetime.min.time()))
+        tomorrow_date = now_mx.date() + timedelta(days=1)
+        next_midnight = MEXICO_TZ.localize(datetime.combine(tomorrow_date, datetime.min.time()))
 
         time_diff = next_midnight - now_mx
         hours = int(time_diff.total_seconds() // 3600)
