@@ -18,6 +18,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import ChatInviteLink
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from config import Config
 from bot.database.models import (
@@ -160,11 +161,11 @@ class SubscriptionService:
                 - str: Mensaje de error/éxito
                 - Optional[InvitationToken]: Token si existe, None si no
         """
-        # Buscar token
+        # Buscar token con eager load de relación plan (evita lazy loading en contexto async)
         result = await self.session.execute(
             select(InvitationToken).where(
                 InvitationToken.token == token_str
-            )
+            ).options(selectinload(InvitationToken.plan))
         )
         token = result.scalar_one_or_none()
 
