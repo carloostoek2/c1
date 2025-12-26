@@ -510,3 +510,57 @@ class CustomReaction(Base):
         Index('idx_user_created', 'user_id', 'created_at'),
         Index('idx_broadcast_message', 'broadcast_message_id'),
     )
+
+
+class BesitoTransaction(Base):
+    """Registro de auditoría de transacciones de besitos.
+
+    Registra TODA operación de besitos para trazabilidad completa.
+    Incluye balance_after para detectar inconsistencias.
+
+    Attributes:
+        id: ID único de la transacción
+        user_id: ID del usuario que realizó la transacción
+        amount: Cantidad de besitos (positivo=ganancia, negativo=gasto)
+        transaction_type: Tipo de transacción (TransactionType enum)
+        description: Descripción de la transacción
+        reference_id: ID del origen (UserReaction.id, UserMission.id, etc)
+        balance_after: Balance del usuario después de esta transacción
+        created_at: Timestamp de la transacción (UTC)
+
+    Relaciones:
+        user: Usuario que realizó la transacción (via users table)
+
+    Índices:
+        - (user_id, created_at DESC): Para historial de usuario
+        - (user_id, transaction_type): Para filtros por tipo
+        - (reference_id, transaction_type): Para rastrear origen
+    """
+    __tablename__ = "besito_transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False
+    )
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    transaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=False)
+    reference_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True
+    )
+    balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Índices compuestos para optimización
+    __table_args__ = (
+        Index('idx_user_transactions_history', 'user_id', 'created_at'),
+        Index('idx_user_transaction_type', 'user_id', 'transaction_type'),
+        Index('idx_reference_transaction', 'reference_id', 'transaction_type'),
+    )
