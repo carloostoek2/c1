@@ -383,6 +383,14 @@ class RewardService:
         await self.session.commit()
         await self.session.refresh(user_reward)
 
+        # Eager load la relación reward para evitar lazy loading issues
+        from sqlalchemy.orm import selectinload
+        stmt = select(UserReward).where(UserReward.id == user_reward.id).options(
+            selectinload(UserReward.reward)
+        )
+        result = await self.session.execute(stmt)
+        user_reward = result.scalar_one()
+
         # Si es badge, crear UserBadge
         if reward.reward_type == RewardType.BADGE.value:
             user_badge = UserBadge(
@@ -468,6 +476,14 @@ class RewardService:
         await self.session.commit()
         await self.session.refresh(user_reward)
 
+        # Eager load la relación reward para evitar lazy loading issues
+        from sqlalchemy.orm import selectinload
+        stmt = select(UserReward).where(UserReward.id == user_reward.id).options(
+            selectinload(UserReward.reward)
+        )
+        result = await self.session.execute(stmt)
+        user_reward = result.scalar_one()
+
         # Si es badge, crear UserBadge
         if reward.reward_type == RewardType.BADGE.value:
             user_badge = UserBadge(
@@ -511,7 +527,11 @@ class RewardService:
         Returns:
             Lista de UserReward
         """
-        stmt = select(UserReward).where(UserReward.user_id == user_id)
+        from sqlalchemy.orm import selectinload
+
+        stmt = select(UserReward).where(UserReward.user_id == user_id).options(
+            selectinload(UserReward.reward)  # Eager load la relación reward
+        )
         if reward_type:
             stmt = stmt.join(Reward).where(Reward.reward_type == reward_type.value)
 
