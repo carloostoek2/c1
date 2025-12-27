@@ -38,6 +38,7 @@ class GamificationContainer:
         self._notification_service = None
         self._daily_gift_service = None
         self._unified_reward_service = None
+        self._narrative_condition_service = None
 
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
@@ -142,6 +143,14 @@ class GamificationContainer:
         return self._unified_reward_service
 
     @property
+    def narrative_condition(self):
+        """Servicio de verificación de condiciones narrativas."""
+        if self._narrative_condition_service is None:
+            from bot.gamification.services.narrative_condition import NarrativeConditionService
+            self._narrative_condition_service = NarrativeConditionService(self._session)
+        return self._narrative_condition_service
+
+    @property
     def mission_orchestrator(self):
         """Orquestador de creación de misiones."""
         if self._mission_orchestrator is None:
@@ -194,6 +203,8 @@ class GamificationContainer:
             loaded.append('daily_gift')
         if self._unified_reward_service is not None:
             loaded.append('unified_reward')
+        if self._narrative_condition_service is not None:
+            loaded.append('narrative_condition')
         if self._mission_orchestrator is not None:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
@@ -215,6 +226,7 @@ class GamificationContainer:
         self._notification_service = None
         self._daily_gift_service = None
         self._unified_reward_service = None
+        self._narrative_condition_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
         self._configuration_orchestrator = None

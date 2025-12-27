@@ -278,6 +278,16 @@ class UnifiedRewardService:
                     user_id, reward_config, source, reference_id
                 )
 
+            elif reward_type == RewardType.NARRATIVE_UNLOCK:
+                return await self._grant_narrative_unlock_reward(
+                    user_id, reward_config, source, reference_id
+                )
+
+            elif reward_type == RewardType.VIP_DAYS:
+                return await self._grant_vip_days_reward(
+                    user_id, reward_config, source, reference_id
+                )
+
             else:
                 # Para otros tipos, delegar a RewardService si hay reward_id
                 if "reward_id" in reward_config:
@@ -418,6 +428,123 @@ class UnifiedRewardService:
         }
 
         return True, msg, reward_data
+
+    async def _grant_narrative_unlock_reward(
+        self,
+        user_id: int,
+        config: Dict[str, Any],
+        source: str,
+        reference_id: Optional[int]
+    ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Procesa recompensa tipo NARRATIVE_UNLOCK.
+
+        Desbloquea contenido narrativo para el usuario.
+        """
+        unlock_type = config.get("unlock_type")
+        chapter_slug = config.get("chapter_slug")
+        fragment_key = config.get("fragment_key")
+
+        if unlock_type == "chapter" and not chapter_slug:
+            return False, "Falta chapter_slug para unlock de capítulo", None
+
+        if unlock_type == "fragment" and not fragment_key:
+            return False, "Falta fragment_key para unlock de fragmento", None
+
+        try:
+            from bot.narrative.services.progress import ProgressService
+            progress_service = ProgressService(self.session)
+
+            if unlock_type == "chapter":
+                # Marcar capítulo como disponible para el usuario
+                success = await progress_service.unlock_chapter_for_user(
+                    user_id=user_id,
+                    chapter_slug=chapter_slug
+                )
+                if success:
+                    reward_data = {
+                        "type": "narrative_unlock",
+                        "unlock_type": "chapter",
+                        "chapter_slug": chapter_slug,
+                        "source": source,
+                        "reference_id": reference_id
+                    }
+                    return True, f"¡Desbloqueaste el capítulo '{chapter_slug}'!", reward_data
+                return False, f"No se pudo desbloquear el capítulo '{chapter_slug}'", None
+
+            elif unlock_type == "fragment":
+                # Marcar fragmento como alcanzado
+                success = await progress_service.unlock_fragment_for_user(
+                    user_id=user_id,
+                    fragment_key=fragment_key
+                )
+                if success:
+                    reward_data = {
+                        "type": "narrative_unlock",
+                        "unlock_type": "fragment",
+                        "fragment_key": fragment_key,
+                        "source": source,
+                        "reference_id": reference_id
+                    }
+                    return True, f"¡Desbloqueaste el fragmento '{fragment_key}'!", reward_data
+                return False, f"No se pudo desbloquear el fragmento '{fragment_key}'", None
+
+            return False, f"Tipo de unlock no válido: {unlock_type}", None
+
+        except ImportError:
+            logger.warning("Módulo narrativa no disponible para unlock")
+            return False, "Módulo de narrativa no disponible", None
+        except Exception as e:
+            logger.error(f"Error unlocking narrative: {e}")
+            return False, f"Error al desbloquear narrativa: {str(e)}", None
+
+    async def _grant_vip_days_reward(
+        self,
+        user_id: int,
+        config: Dict[str, Any],
+        source: str,
+        reference_id: Optional[int]
+    ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        """Procesa recompensa tipo VIP_DAYS.
+
+        Otorga días de suscripción VIP al usuario.
+        """
+        days = config.get("days", 0)
+        extend_existing = config.get("extend_existing", True)
+
+        if days <= 0:
+            return False, "Cantidad de días debe ser positiva", None
+
+        try:
+            from bot.services.subscription import SubscriptionService
+            subscription_service = SubscriptionService(self.session, bot=None)
+
+            success, msg, subscriber = await subscription_service.grant_vip_days(
+                user_id=user_id,
+                days=days,
+                source=source,
+                extend_existing=extend_existing
+            )
+
+            if not success:
+                return False, msg, None
+
+            reward_data = {
+                "type": "vip_days",
+                "days": days,
+                "extend_existing": extend_existing,
+                "source": source,
+                "reference_id": reference_id,
+                "expiry_date": subscriber.expiry_date.isoformat() if subscriber else None
+            }
+
+            return True, f"¡Recibiste {days} días VIP!", reward_data
+
+        except ImportError:
+            logger.warning("SubscriptionService no disponible")
+            return False, "Servicio de suscripción no disponible", None
+        except Exception as e:
+            logger.error(f"Error granting VIP days: {e}")
+            return False, f"Error al otorgar VIP: {str(e)}", None
 
     # ========================================
     # HELPERS

@@ -223,6 +223,39 @@ def validate_reward_metadata(
 
         return True, "OK"
 
+    elif reward_type == RewardType.NARRATIVE_UNLOCK:
+        # NARRATIVE_UNLOCK requiere unlock_type y chapter_slug o fragment_key
+        unlock_type = metadata.get('unlock_type')
+        if unlock_type not in ('chapter', 'fragment'):
+            return False, "NARRATIVE_UNLOCK requires unlock_type='chapter' or 'fragment'"
+
+        if unlock_type == 'chapter' and not metadata.get('chapter_slug'):
+            return False, "NARRATIVE_UNLOCK with unlock_type='chapter' requires chapter_slug"
+
+        if unlock_type == 'fragment' and not metadata.get('fragment_key'):
+            return False, "NARRATIVE_UNLOCK with unlock_type='fragment' requires fragment_key"
+
+        return True, "OK"
+
+    elif reward_type == RewardType.VIP_DAYS:
+        # VIP_DAYS requiere days
+        is_valid, error = validate_json_structure(
+            metadata,
+            required_fields=['days'],
+            optional_fields=['extend_existing'],
+            field_types={
+                'days': int,
+                'extend_existing': bool
+            }
+        )
+        if not is_valid:
+            return False, error
+
+        if metadata['days'] <= 0:
+            return False, "days must be > 0"
+
+        return True, "OK"
+
     # ITEM y TITLE pueden tener metadata libre
     return True, "OK"
 
