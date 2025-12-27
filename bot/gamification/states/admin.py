@@ -60,6 +60,18 @@ class MissionWizardStates(StatesGroup):
     select_shop_item = State()  # Seleccionar item específico
     enter_shop_item_quantity = State()  # Cantidad a otorgar
 
+    # Paso 5.2: Condiciones narrativas (Fase 2 - Cross-module)
+    choose_narrative_conditions = State()  # Elegir si agregar condiciones narrativas
+    select_narrative_condition_type = State()  # Tipo: chapter, fragment, decision, archetype
+    select_narrative_chapter = State()  # Seleccionar capítulo
+    enter_narrative_fragment_key = State()  # Introducir fragment key
+    enter_narrative_decision_key = State()  # Introducir decision key
+    select_narrative_archetype = State()  # Seleccionar arquetipo
+
+    # Paso 5.3: VIP como recompensa (Fase 3 - Cross-module)
+    choose_vip_reward = State()  # Elegir si otorgar VIP
+    enter_vip_days = State()  # Cantidad de días VIP
+
     # Paso 6: Confirmación
     confirm = State()
 
@@ -94,6 +106,12 @@ class RewardWizardStates(StatesGroup):
     select_level = State()
     enter_min_besitos = State()
     add_multiple_conditions = State()
+
+    # Paso 3.1: Condiciones narrativas para unlock
+    select_narrative_chapter = State()  # Seleccionar capítulo
+    enter_narrative_fragment_key = State()  # Introducir fragment key
+    enter_narrative_decision_key = State()  # Introducir decision key
+    select_narrative_archetype = State()  # Seleccionar arquetipo
 
     # Paso 4: Confirmación
     confirm = State()

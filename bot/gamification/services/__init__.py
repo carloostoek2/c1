@@ -7,6 +7,7 @@ from bot.gamification.services.container import (
     gamification_container,
 )
 from bot.gamification.services.unified import UnifiedRewardService
+from bot.gamification.services.narrative_condition import NarrativeConditionService
 
 __all__ = [
     "GamificationContainer",
@@ -14,4 +15,5 @@ __all__ = [
     "get_container",
     "gamification_container",
     "UnifiedRewardService",
+    "NarrativeConditionService",
 ]
