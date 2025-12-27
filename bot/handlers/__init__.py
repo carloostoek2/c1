@@ -11,6 +11,7 @@ from aiogram import Dispatcher
 from bot.handlers.admin import admin_router
 from bot.handlers.user import user_router
 from bot.handlers.user.free_join_request import free_join_router
+from bot.handlers.user.narrative import narrative_router
 from bot.gamification.handlers import (
     gamification_admin_router,
     gamification_mission_wizard_router,
@@ -47,6 +48,7 @@ def register_all_handlers(dispatcher: Dispatcher) -> None:
     dispatcher.include_router(admin_router)
     dispatcher.include_router(user_router)
     dispatcher.include_router(free_join_router)
+    dispatcher.include_router(narrative_router)
 
     # Registrar routers de gamificación (admin)
     dispatcher.include_router(gamification_admin_router)
