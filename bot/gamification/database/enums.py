@@ -47,6 +47,8 @@ class RewardType(str, Enum):
     PERMISSION = "permission"
     TITLE = "title"
     BESITOS = "besitos"
+    # Cross-module rewards (Fase 1 - Integración Tienda)
+    SHOP_ITEM = "shop_item"  # Otorga item específico de la tienda
 
     def __str__(self) -> str:
         return self.value
@@ -177,10 +179,6 @@ class TitleMetadata(TypedDict):
     prefix: Optional[str]  # Emoji o text prefix
 
 
-# Union de todos los metadatos posibles
-RewardMetadata = BadgeMetadata | PermissionMetadata | ItemMetadata | TitleMetadata
-
-
 class UnlockCondition(TypedDict):
     """Condición para desbloquear una recompensa (legacy)."""
 
@@ -231,3 +229,26 @@ class BesitosMetadata(TypedDict):
 
     amount: int
     multiplier: Optional[float]  # Multiplicador de besitos (ej: 1.5x)
+
+
+class ShopItemMetadata(TypedDict):
+    """Metadata para recompensas tipo shop_item (integración tienda).
+
+    Permite otorgar items de la tienda como recompensa de misiones.
+    El item debe existir previamente en la tienda.
+    """
+
+    item_id: int  # ID del ShopItem en la tienda
+    item_slug: str  # Slug del item (para validación)
+    quantity: int  # Cantidad a otorgar (default: 1)
+
+
+# Union de todos los metadatos posibles
+RewardMetadata = (
+    BadgeMetadata
+    | PermissionMetadata
+    | ItemMetadata
+    | TitleMetadata
+    | BesitosMetadata
+    | ShopItemMetadata
+)

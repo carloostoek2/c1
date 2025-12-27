@@ -288,6 +288,7 @@ async def skip_auto_level(callback: CallbackQuery, state: FSMContext):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Crear Recompensa", callback_data="wizard:reward:new")],
         [InlineKeyboardButton(text="🔍 Seleccionar Existente", callback_data="wizard:reward:select")],
+        [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
         [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
     ])
 
@@ -377,6 +378,7 @@ async def enter_level_order(message: Message, state: FSMContext):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Crear Recompensa", callback_data="wizard:reward:new")],
         [InlineKeyboardButton(text="🔍 Seleccionar Existente", callback_data="wizard:reward:select")],
+        [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
         [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
     ])
 
@@ -457,6 +459,7 @@ async def select_existing_level(callback: CallbackQuery, state: FSMContext, gami
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Crear Recompensa", callback_data="wizard:reward:new")],
         [InlineKeyboardButton(text="🔍 Seleccionar Existente", callback_data="wizard:reward:select")],
+        [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
         [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
     ])
 
@@ -563,6 +566,7 @@ async def select_existing_reward(callback: CallbackQuery, state: FSMContext, gam
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Crear Otra", callback_data="wizard:reward:new")],
         [InlineKeyboardButton(text="🔍 Seleccionar Otra", callback_data="wizard:reward:select:page:1")],
+        [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
         [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
     ])
 
@@ -622,6 +626,7 @@ async def enter_reward_description(message: Message, state: FSMContext):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Crear Otra", callback_data="wizard:reward:new")],
         [InlineKeyboardButton(text="🔍 Seleccionar Otra", callback_data="wizard:reward:select")],
+        [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
         [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
     ])
 
@@ -668,6 +673,11 @@ async def finish_wizard(callback: CallbackQuery, state: FSMContext):
                 summary += f"\n • {reward['data']['name']} (Nueva)"
             else: # mode == 'select'
                 summary += f"\n • {reward['name']} (Existente)"
+
+    if data.get('shop_items'):
+        summary += "\n\n<b>📦 Items de Tienda a Otorgar:</b>"
+        for item in data['shop_items']:
+            summary += f"\n • {item['item_icon']} {item['item_name']} x{item['quantity']}"
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -718,11 +728,32 @@ async def confirm_mission(callback: CallbackQuery, state: FSMContext, gamificati
         if data.get('rewards'):
             rewards_to_create = [r['data'] for r in data['rewards'] if r['mode'] == 'create']
             reward_ids_to_link = [r['reward_id'] for r in data['rewards'] if r['mode'] == 'select']
-            
+
             if rewards_to_create:
                 config['rewards_to_create'] = rewards_to_create
             if reward_ids_to_link:
                 config['reward_ids_to_link'] = reward_ids_to_link
+
+        # Procesar items de tienda (Cross-module - Fase 1)
+        if data.get('shop_items'):
+            from bot.gamification.database.enums import RewardType
+            shop_rewards = []
+            for shop_item in data['shop_items']:
+                shop_rewards.append({
+                    'name': f"Item: {shop_item['item_name']}",
+                    'description': f"Otorga {shop_item['quantity']}x {shop_item['item_name']}",
+                    'reward_type': RewardType.SHOP_ITEM,
+                    'metadata': {
+                        'item_id': shop_item['item_id'],
+                        'item_slug': shop_item['item_slug'],
+                        'quantity': shop_item['quantity']
+                    }
+                })
+
+            # Agregar a rewards_to_create
+            if 'rewards_to_create' not in config:
+                config['rewards_to_create'] = []
+            config['rewards_to_create'].extend(shop_rewards)
 
         # Crear usando orchestrator
         result = await gamification.configuration_orchestrator.create_complete_mission_system(
@@ -749,6 +780,219 @@ async def confirm_mission(callback: CallbackQuery, state: FSMContext, gamificati
             parse_mode="HTML"
         )
 
+    await callback.answer()
+
+
+# ========================================
+# PASO 5.1: ITEMS DE TIENDA (Cross-module)
+# ========================================
+
+@router.callback_query(MissionWizardStates.choose_rewards, F.data == "wizard:shop:start")
+async def start_shop_item_selection(callback: CallbackQuery, state: FSMContext):
+    """Inicia selección de item de tienda."""
+    from bot.shop.services.shop import ShopService
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    session: AsyncSession = callback.bot.get("session")
+    shop_service = ShopService(session)
+
+    # Obtener categorías
+    categories = await shop_service.get_all_categories()
+
+    if not categories:
+        await callback.answer("⚠️ No hay categorías de tienda configuradas.", show_alert=True)
+        return
+
+    keyboard_rows = []
+    for cat in categories:
+        if cat.is_active:
+            keyboard_rows.append([
+                InlineKeyboardButton(
+                    text=f"{cat.icon} {cat.name}",
+                    callback_data=f"wizard:shop:cat:{cat.id}"
+                )
+            ])
+
+    keyboard_rows.append([
+        InlineKeyboardButton(text="🔙 Volver", callback_data="wizard:shop:back")
+    ])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
+
+    await callback.message.edit_text(
+        "📦 <b>Seleccionar Item de Tienda</b>\n\n"
+        "Elige una categoría:\n\n"
+        "<i>El item seleccionado se otorgará automáticamente al completar la misión.</i>",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.select_shop_category)
+    await callback.answer()
+
+
+@router.callback_query(MissionWizardStates.select_shop_category, F.data.startswith("wizard:shop:cat:"))
+async def select_shop_category(callback: CallbackQuery, state: FSMContext):
+    """Muestra items de la categoría seleccionada."""
+    from bot.shop.services.shop import ShopService
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    category_id = int(callback.data.split(":")[-1])
+
+    session: AsyncSession = callback.bot.get("session")
+    shop_service = ShopService(session)
+
+    # Obtener items de la categoría
+    items = await shop_service.get_items_by_category(category_id)
+    category = await shop_service.get_category(category_id)
+
+    if not items:
+        await callback.answer("⚠️ No hay items en esta categoría.", show_alert=True)
+        return
+
+    keyboard_rows = []
+    for item in items:
+        if item.is_active:
+            keyboard_rows.append([
+                InlineKeyboardButton(
+                    text=f"{item.icon} {item.name}",
+                    callback_data=f"wizard:shop:item:{item.id}"
+                )
+            ])
+
+    keyboard_rows.append([
+        InlineKeyboardButton(text="🔙 Volver", callback_data="wizard:shop:start")
+    ])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
+
+    await callback.message.edit_text(
+        f"📦 <b>Items de {category.name if category else 'Categoría'}</b>\n\n"
+        "Selecciona un item para otorgar como recompensa:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.select_shop_item)
+    await callback.answer()
+
+
+@router.callback_query(MissionWizardStates.select_shop_item, F.data.startswith("wizard:shop:item:"))
+async def select_shop_item(callback: CallbackQuery, state: FSMContext):
+    """Procesa selección de item y pide cantidad."""
+    from bot.shop.services.shop import ShopService
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    item_id = int(callback.data.split(":")[-1])
+
+    session: AsyncSession = callback.bot.get("session")
+    shop_service = ShopService(session)
+
+    item = await shop_service.get_item(item_id)
+    if not item:
+        await callback.answer("❌ Item no encontrado", show_alert=True)
+        return
+
+    # Guardar item seleccionado temporalmente
+    await state.update_data(pending_shop_item={
+        'item_id': item.id,
+        'item_slug': item.slug,
+        'item_name': item.name,
+        'item_icon': item.icon
+    })
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="1️⃣", callback_data="wizard:shop:qty:1"),
+            InlineKeyboardButton(text="2️⃣", callback_data="wizard:shop:qty:2"),
+            InlineKeyboardButton(text="3️⃣", callback_data="wizard:shop:qty:3")
+        ],
+        [
+            InlineKeyboardButton(text="5️⃣", callback_data="wizard:shop:qty:5"),
+            InlineKeyboardButton(text="🔟", callback_data="wizard:shop:qty:10")
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Volver", callback_data="wizard:shop:start")
+        ]
+    ])
+
+    await callback.message.edit_text(
+        f"📦 <b>Item seleccionado:</b> {item.icon} {item.name}\n\n"
+        f"¿Cuántos quieres otorgar como recompensa?",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.enter_shop_item_quantity)
+    await callback.answer()
+
+
+@router.callback_query(MissionWizardStates.enter_shop_item_quantity, F.data.startswith("wizard:shop:qty:"))
+async def confirm_shop_item_quantity(callback: CallbackQuery, state: FSMContext):
+    """Confirma cantidad y agrega item a la lista de recompensas."""
+    quantity = int(callback.data.split(":")[-1])
+
+    data = await state.get_data()
+    pending_item = data.get('pending_shop_item')
+
+    if not pending_item:
+        await callback.answer("❌ Error: item no encontrado", show_alert=True)
+        return
+
+    # Agregar a la lista de shop_items
+    shop_items = data.get('shop_items', [])
+    shop_items.append({
+        'item_id': pending_item['item_id'],
+        'item_slug': pending_item['item_slug'],
+        'item_name': pending_item['item_name'],
+        'item_icon': pending_item['item_icon'],
+        'quantity': quantity
+    })
+
+    # Limpiar pending y guardar
+    await state.update_data(shop_items=shop_items, pending_shop_item=None)
+
+    # Contar todas las recompensas
+    rewards = data.get('rewards', [])
+    total_rewards = len(rewards) + len(shop_items)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Crear Recompensa", callback_data="wizard:reward:new")],
+        [InlineKeyboardButton(text="🔍 Seleccionar Existente", callback_data="wizard:reward:select")],
+        [InlineKeyboardButton(text="📦 Otro Item de Tienda", callback_data="wizard:shop:start")],
+        [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
+    ])
+
+    await callback.message.edit_text(
+        f"✅ Item agregado: {pending_item['item_icon']} {pending_item['item_name']} x{quantity}\n\n"
+        f"Total de recompensas: <b>{total_rewards}</b>\n\n"
+        f"¿Deseas agregar más recompensas?",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.choose_rewards)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "wizard:shop:back")
+async def shop_back_to_rewards(callback: CallbackQuery, state: FSMContext):
+    """Vuelve al menú de recompensas."""
+    data = await state.get_data()
+    rewards = data.get('rewards', [])
+    shop_items = data.get('shop_items', [])
+    total = len(rewards) + len(shop_items)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="➕ Crear Recompensa", callback_data="wizard:reward:new")],
+        [InlineKeyboardButton(text="🔍 Seleccionar Existente", callback_data="wizard:reward:select")],
+        [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
+        [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
+    ])
+
+    await callback.message.edit_text(
+        f"Paso 5/6: ¿Desbloqueará recompensas adicionales?\n\n"
+        f"Total de recompensas: <b>{total}</b>",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.choose_rewards)
     await callback.answer()
 
 
