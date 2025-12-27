@@ -98,6 +98,7 @@ async def build_profile_menu(
             {"text": "🎁 Recompensas", "callback_data": "user:rewards"}
         ],
         [{"text": "🏆 Leaderboard", "callback_data": "user:leaderboard"}],
+        [{"text": "🎒 Mi Mochila", "callback_data": "backpack:main"}],
         [{"text": "🔙 Volver al Menú", "callback_data": "profile:back"}]
     ]
 

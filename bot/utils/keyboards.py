@@ -65,7 +65,8 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
     - Dashboard
     - VIP - Free (gestión de canales)
     - Gamificación
-    - Gestión Narrativa (NUEVO)
+    - Gestión Narrativa
+    - Gestión de Tienda (NUEVO)
     - Configurar Menús
     - Estadísticas - Configuración
 
@@ -80,6 +81,7 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
         ],
         [{"text": "🎮 Gamificación", "callback_data": "admin:gamification"}],
         [{"text": "📖 Gestión Narrativa", "callback_data": "admin:narrative"}],
+        [{"text": "🏪 Gestión de Tienda", "callback_data": "admin:shop"}],
         [{"text": "📋 Configurar Menús", "callback_data": "admin:menu_config"}],
         [
             {"text": "📊 Estadísticas", "callback_data": "admin:stats"},
@@ -231,10 +233,28 @@ async def dynamic_user_menu_keyboard(
     Returns:
         InlineKeyboardMarkup con menú básico
     """
-    return create_inline_keyboard([
-        [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
-        [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
-        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
-        [{"text": "📖 Historia", "callback_data": "narr:start"}],
-        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
-    ])
+    from bot.services.menu_service import MenuService
+
+    menu_service = MenuService(session)
+    keyboard_structure = await menu_service.build_keyboard_for_role(role)
+
+    if not keyboard_structure:
+        # Fallback a menú por defecto si no hay configuración
+        if role == 'vip':
+            keyboard_structure = [
+                [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
+                [{"text": "⏱️ Ver Mi Suscripción", "callback_data": "user:vip_status"}],
+                [{"text": "🎁 Renovar Suscripción", "callback_data": "user:vip_renew"}],
+            ]
+        else:
+            keyboard_structure = [
+                [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
+                [{"text": "⭐ Ver Planes VIP", "callback_data": "user:vip_info"}],
+            ]
+
+    # Agregar botones fijos al final
+    keyboard_structure.append([{"text": "🏪 Tienda", "callback_data": "shop:main"}])
+    keyboard_structure.append([{"text": "📖 Historia", "callback_data": "narr:start"}])
+    keyboard_structure.append([{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}])
+
+    return create_inline_keyboard(keyboard_structure)
