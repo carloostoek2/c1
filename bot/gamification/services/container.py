@@ -39,6 +39,7 @@ class GamificationContainer:
         self._daily_gift_service = None
         self._unified_reward_service = None
         self._narrative_condition_service = None
+        self._config_panel_service = None
 
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
@@ -151,6 +152,14 @@ class GamificationContainer:
         return self._narrative_condition_service
 
     @property
+    def config_panel(self):
+        """Servicio de panel de configuración central (cross-module)."""
+        if self._config_panel_service is None:
+            from bot.gamification.services.config_panel import ConfigurationPanelService
+            self._config_panel_service = ConfigurationPanelService(self._session)
+        return self._config_panel_service
+
+    @property
     def mission_orchestrator(self):
         """Orquestador de creación de misiones."""
         if self._mission_orchestrator is None:
@@ -205,6 +214,8 @@ class GamificationContainer:
             loaded.append('unified_reward')
         if self._narrative_condition_service is not None:
             loaded.append('narrative_condition')
+        if self._config_panel_service is not None:
+            loaded.append('config_panel')
         if self._mission_orchestrator is not None:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
@@ -227,6 +238,7 @@ class GamificationContainer:
         self._daily_gift_service = None
         self._unified_reward_service = None
         self._narrative_condition_service = None
+        self._config_panel_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
         self._configuration_orchestrator = None
