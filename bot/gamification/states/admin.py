@@ -23,7 +23,8 @@ class MissionWizardStates(StatesGroup):
     3. Definir recompensa en besitos
     4. (Opcional) Configurar auto level-up
     5. (Opcional) Configurar recompensas unlock
-    6. Confirmar creación
+    6. (Opcional) Configurar items de tienda como recompensa
+    7. Confirmar creación
     """
 
     # Paso 1: Tipo
@@ -47,11 +48,17 @@ class MissionWizardStates(StatesGroup):
     enter_level_besitos = State()
     enter_level_order = State()
 
-    # Paso 5: Recompensas
+    # Paso 5: Recompensas (badges, etc)
     choose_rewards = State()
     create_new_reward = State()
     enter_reward_name = State()
     enter_reward_description = State()
+
+    # Paso 5.1: Items de tienda como recompensa (Fase 1 - Cross-module)
+    choose_shop_items = State()  # Elegir si agregar items de tienda
+    select_shop_category = State()  # Seleccionar categoría
+    select_shop_item = State()  # Seleccionar item específico
+    enter_shop_item_quantity = State()  # Cantidad a otorgar
 
     # Paso 6: Confirmación
     confirm = State()

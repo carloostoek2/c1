@@ -184,7 +184,7 @@ def validate_reward_metadata(
         is_valid, error = validate_json_structure(
             metadata,
             required_fields=['amount'],
-            optional_fields=[],
+            optional_fields=['multiplier'],
             field_types={'amount': int}
         )
         if not is_valid:
@@ -192,6 +192,34 @@ def validate_reward_metadata(
 
         if metadata['amount'] <= 0:
             return False, "amount must be > 0"
+
+        return True, "OK"
+
+    elif reward_type == RewardType.SHOP_ITEM:
+        # SHOP_ITEM requiere item_id o item_slug
+        has_id = 'item_id' in metadata and metadata['item_id']
+        has_slug = 'item_slug' in metadata and metadata['item_slug']
+
+        if not has_id and not has_slug:
+            return False, "SHOP_ITEM requires item_id or item_slug"
+
+        is_valid, error = validate_json_structure(
+            metadata,
+            required_fields=[],
+            optional_fields=['item_id', 'item_slug', 'quantity'],
+            field_types={
+                'item_id': int,
+                'item_slug': str,
+                'quantity': int
+            }
+        )
+        if not is_valid:
+            return False, error
+
+        # Validar quantity si existe
+        quantity = metadata.get('quantity', 1)
+        if quantity < 1:
+            return False, "quantity must be >= 1"
 
         return True, "OK"
 
