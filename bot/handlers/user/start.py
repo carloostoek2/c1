@@ -9,9 +9,9 @@ Deep Link Format: t.me/botname?start=TOKEN
 import logging
 from datetime import datetime, timezone
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.database.enums import UserRole
@@ -19,6 +19,7 @@ from bot.middlewares import DatabaseMiddleware
 from bot.services.container import ServiceContainer
 from bot.utils.formatters import format_currency
 from bot.utils.keyboards import create_inline_keyboard
+from bot.utils.menu_helpers import build_start_menu, build_profile_menu
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ async def cmd_start(message: Message, session: AsyncSession):
         )
     else:
         # No hay parámetro → Mensaje de bienvenida normal
-        await _send_welcome_message(message, user, container, user_id)
+        await _send_welcome_message(message, user, container, user_id, session)
 
 
 async def _activate_token_from_deeplink(
@@ -245,7 +246,8 @@ async def _send_welcome_message(
     message: Message,
     user,  # User model
     container: ServiceContainer,
-    user_id: int
+    user_id: int,
+    session: AsyncSession
 ):
     """
     Envía mensaje de bienvenida normal.
@@ -255,53 +257,94 @@ async def _send_welcome_message(
         user: Usuario del sistema
         container: Service container
         user_id: ID del usuario
+        session: Sesión de BD
     """
     user_name = message.from_user.first_name or "Usuario"
 
-    # Usuario normal: verificar si es VIP activo
-    is_vip = await container.subscription.is_vip_active(user_id)
-
-    if is_vip:
-        # Usuario ya tiene acceso VIP
-        subscriber = await container.subscription.get_vip_subscriber(user_id)
-
-        # Calcular días restantes
-        if subscriber and hasattr(subscriber, 'expiry_date') and subscriber.expiry_date:
-            # Asegurar que expiry_date tiene timezone
-            expiry = subscriber.expiry_date
-            if expiry.tzinfo is None:
-                # Si es naive, asumimos UTC
-                expiry = expiry.replace(tzinfo=timezone.utc)
-
-            now = datetime.now(timezone.utc)
-            days_remaining = max(0, (expiry - now).days)
-        else:
-            days_remaining = 0
-
-        await message.answer(
-            f"👋 Hola <b>{user_name}</b>!\n\n"
-            f"✅ Tienes acceso VIP activo\n"
-            f"⏱️ Días restantes: <b>{days_remaining}</b>\n\n"
-            f"Disfruta del contenido exclusivo! 🎉",
-            parse_mode="HTML"
-        )
-        return
-
-    # Usuario no es VIP: mostrar opciones
-    keyboard = create_inline_keyboard([
-        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
-    ])
+    # Usar helper para construir el menú
+    welcome_message, keyboard = await build_start_menu(
+        session=session,
+        bot=message.bot,
+        user_id=user_id,
+        user_name=user_name,
+        container=container
+    )
 
     await message.answer(
-        f"👋 Hola <b>{user_name}</b>!\n\n"
-        f"Bienvenido al bot de acceso a canales.\n\n"
-        f"<b>Opciones disponibles:</b>\n\n"
-        f"🎟️ <b>Canjear Token VIP</b>\n"
-        f"Si tienes un token de invitación, canjéalo para acceso VIP.\n\n"
-        f"📺 <b>Acceso al Canal Free</b>\n"
-        f"Para acceder al canal gratuito, ve directamente al canal y solicita unirte. "
-        f"Serás aprobado automáticamente después del tiempo de espera configurado.\n\n"
-        f"👉 Canjea tu token VIP:",
+        welcome_message,
         reply_markup=keyboard,
         parse_mode="HTML"
     )
+
+
+@user_router.callback_query(F.data == "start:profile")
+async def callback_show_profile(callback: CallbackQuery, session: AsyncSession):
+    """
+    Muestra el menú de Juego Kinky (perfil de gamificación).
+
+    Activado desde: Botón "🎮 Juego Kinky" en menú /start
+
+    Args:
+        callback: CallbackQuery del usuario
+        session: Sesión de BD
+    """
+    try:
+        # Usar helper para construir el perfil
+        summary, keyboard = await build_profile_menu(
+            session=session,
+            bot=callback.bot,
+            user_id=callback.from_user.id
+        )
+
+        # Editar mensaje existente
+        await callback.message.edit_text(
+            text=summary,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error mostrando profile: {e}", exc_info=True)
+        await callback.answer(
+            f"❌ Error al cargar perfil: {str(e)}",
+            show_alert=True
+        )
+
+
+@user_router.callback_query(F.data == "profile:back")
+async def callback_back_to_start(callback: CallbackQuery, session: AsyncSession):
+    """
+    Regresa al menú principal de /start desde el perfil.
+
+    Args:
+        callback: CallbackQuery del usuario
+        session: Sesión de BD
+    """
+    try:
+        user_id = callback.from_user.id
+        user_name = callback.from_user.first_name or "Usuario"
+
+        # Usar helper para construir el menú
+        welcome_message, keyboard = await build_start_menu(
+            session=session,
+            bot=callback.bot,
+            user_id=user_id,
+            user_name=user_name
+        )
+
+        # Editar mensaje para volver a start
+        await callback.message.edit_text(
+            text=welcome_message,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error regresando a menú: {e}", exc_info=True)
+        await callback.answer(
+            "❌ Error al regresar al menú",
+            show_alert=True
+        )
+>>>>>>> e07eb2f (feat: FASE N3 - Integración narrativa con orquestadores de gamificación)
