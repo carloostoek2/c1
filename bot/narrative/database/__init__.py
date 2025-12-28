@@ -10,6 +10,20 @@ from bot.narrative.database.models import (
     UserNarrativeProgress,
     UserDecisionHistory,
 )
+from bot.narrative.database.models_immersive import (
+    FragmentVariant,
+    UserFragmentVisit,
+    NarrativeCooldown,
+    FragmentChallenge,
+    UserChallengeAttempt,
+    FragmentTimeWindow,
+    ChapterCompletion,
+    DailyNarrativeLimit,
+)
+from bot.narrative.database.onboarding_models import (
+    UserOnboardingProgress,
+    OnboardingFragment,
+)
 
 __all__ = [
     # Enums
@@ -23,4 +37,16 @@ __all__ = [
     "FragmentRequirement",
     "UserNarrativeProgress",
     "UserDecisionHistory",
+    # Models - Immersive
+    "FragmentVariant",
+    "UserFragmentVisit",
+    "NarrativeCooldown",
+    "FragmentChallenge",
+    "UserChallengeAttempt",
+    "FragmentTimeWindow",
+    "ChapterCompletion",
+    "DailyNarrativeLimit",
+    # Models - Onboarding
+    "UserOnboardingProgress",
+    "OnboardingFragment",
 ]
