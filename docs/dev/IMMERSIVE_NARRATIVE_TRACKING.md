@@ -143,21 +143,37 @@ Sistema de narrativa inmersiva con:
 
 ---
 
-## FASE 5: DIARIO DE VIAJE
+## FASE 5: DIARIO DE VIAJE ✅ COMPLETADA
 
-### Archivos por crear:
-- [ ] `bot/narrative/handlers/user/journal.py`
-  - cmd_journal: Comando /diario o /journal
-  - show_chapter_progress: Vista de progreso por capítulo
-  - show_fragment_list: Lista de fragmentos visitados/bloqueados
-  - show_clues_summary: Resumen de pistas
-  - quick_navigate: Navegación rápida a fragmentos
+### Archivos creados:
+- [x] `bot/narrative/services/journal.py` - JournalService (~450 líneas)
+  - get_chapter_progress(): Progreso por capítulo
+  - get_fragment_status(): Estado del fragmento (visited/available/locked/current)
+  - get_fragments_by_status(): Fragmentos agrupados por estado
+  - get_accessible_fragments(): Para navegación rápida
+  - get_blocked_fragments_with_reasons(): Con razones de bloqueo
+  - get_clues_summary(): Resumen de pistas
+  - get_journey_stats(): Estadísticas completas del viaje
+  - FragmentStatus: Enum de estados
 
-- [ ] `bot/narrative/services/journal.py` - JournalService
-  - get_chapter_progress()
-  - get_fragment_status() - visited/locked/available
-  - get_accessible_fragments()
-  - get_blocked_fragments_with_reasons()
+- [x] `bot/narrative/handlers/user/journal.py` - Handler del diario (~380 líneas)
+  - cmd_journal(): Comando /diario con estadísticas
+  - callback_chapters_list(): Lista de capítulos con progreso
+  - callback_chapter_detail(): Detalle de capítulo con fragmentos
+  - callback_quick_navigation(): Navegación rápida
+  - callback_clues_summary(): Resumen de pistas
+  - callback_goto_from_journal(): Navegación a fragmento
+
+### Archivos modificados:
+- [x] `bot/narrative/services/container.py`
+  - Añadido: journal property para JournalService
+  - Actualizado: get_loaded_services() y clear_cache()
+
+- [x] `bot/narrative/handlers/user/__init__.py`
+  - Exporta journal_router
+
+- [x] `bot/narrative/handlers/__init__.py`
+  - Exporta journal_router
 
 ---
 
@@ -214,4 +230,4 @@ Sistema de narrativa inmersiva con:
 
 ## SIGUIENTE PASO
 
-Fase 5: Crear sistema de Diario de Viaje para navegación visual y progreso.
+Fase 6: Implementar configuración de cooldowns y mecánicas de slowdown.
