@@ -177,18 +177,32 @@ Sistema de narrativa inmersiva con:
 
 ---
 
-## FASE 6: COOLDOWNS Y SLOWDOWN
+## FASE 6: COOLDOWNS Y SLOWDOWN ✅ COMPLETADA
 
-### Archivos por crear/modificar:
-- [ ] `bot/narrative/handlers/user/story.py`
-  - Verificar cooldowns antes de mostrar fragmento
-  - Mostrar tiempo restante si hay cooldown activo
-  - Aplicar cooldown después de fragmentos intensos
+### Archivos creados:
+- [x] `bot/narrative/config.py` - NarrativeConfig (~200 líneas)
+  - DECISION_COOLDOWN_SECONDS: 30
+  - INTENSE_FRAGMENT_COOLDOWN_SECONDS: 300
+  - CHAPTER_COMPLETION_COOLDOWN_SECONDS: 600
+  - CHALLENGE_RETRY_COOLDOWN_SECONDS: 60
+  - DAILY_FRAGMENT_LIMIT: 50
+  - DAILY_DECISION_LIMIT: 30
+  - DAILY_CHALLENGE_ATTEMPTS: 10
+  - TIME_WINDOWS: morning/afternoon/evening/night
+  - COOLDOWN_MESSAGES: Mensajes narrativos por tipo
+  - get_cooldown_message(): Mensaje aleatorio
+  - get_time_window(): Período actual
+  - to_dict(): Exportar configuración
 
-- [ ] `bot/narrative/config.py` (nuevo)
-  - DAILY_FRAGMENT_LIMIT: int = 10
-  - DECISION_COOLDOWN_SECONDS: int = 30
-  - INTENSE_FRAGMENT_COOLDOWN: int = 300
+### Archivos modificados:
+- [x] `bot/narrative/handlers/user/story.py`
+  - Import de NarrativeConfig
+  - callback_process_decision(): Verificar límite diario de decisiones
+  - callback_process_decision(): Mensajes de cooldown narrativos
+  - callback_process_decision(): Usar configuración para duración
+  - show_fragment(): Verificar límite diario de fragmentos
+  - show_fragment(): Mensaje especial al alcanzar límite
+  - show_fragment(): Incrementar contador de fragmentos vistos
 
 ---
 
@@ -230,4 +244,4 @@ Sistema de narrativa inmersiva con:
 
 ## SIGUIENTE PASO
 
-Fase 6: Implementar configuración de cooldowns y mecánicas de slowdown.
+Fase 7: Implementar sistema de desafíos interactivos con FSM.
