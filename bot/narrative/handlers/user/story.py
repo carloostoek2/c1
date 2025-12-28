@@ -574,12 +574,10 @@ async def show_fragment(
 
     # 4. Verificar si el fragmento otorga pista
     fragment = await container.fragment.get_fragment(fragment_key)
-    if fragment and hasattr(fragment, 'metadata') and fragment.metadata:
-        import json
+    if fragment and fragment.metadata:
         try:
-            metadata = json.loads(fragment.metadata) if isinstance(fragment.metadata, str) else fragment.metadata
-            if metadata.get("grants_clue"):
-                clue_slug = metadata.get("grants_clue")
+            if fragment.metadata.get("grants_clue"):
+                clue_slug = fragment.metadata.get("grants_clue")
                 await container.clue.grant_clue_from_fragment(
                     user_id=user_id,
                     clue_slug=clue_slug,
