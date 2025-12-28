@@ -113,16 +113,33 @@ Sistema de narrativa inmersiva con:
 
 ---
 
-## FASE 4: SISTEMA DE VARIANTES
+## FASE 4: SISTEMA DE VARIANTES ✅ COMPLETADA
 
-### Archivos por modificar:
-- [ ] `bot/narrative/services/fragment.py`
-  - Integrar VariantService en get_fragment()
-  - Resolver variante activa antes de retornar contenido
+### Archivos creados:
+- [x] `bot/narrative/handlers/user/story.py` - Handler de historia (~400 líneas)
+  - cmd_start_story(): Comando /historia para iniciar/continuar
+  - callback_select_chapter(): Seleccionar capítulo
+  - callback_process_decision(): Procesar decisiones del usuario
+  - callback_goto_fragment(): Navegación directa a fragmentos
+  - callback_show_journal(): Mostrar diario básico
+  - callback_continue_story(): Continuar desde último punto
+  - show_fragment(): Función principal que integra:
+    - build_full_user_context(): Contexto completo del usuario
+    - VariantService para contenido dinámico
+    - EngagementService para tracking de visitas
+    - CooldownService para verificar tiempos de espera
+    - ClueService para otorgar pistas
+    - DecisionService para mostrar opciones
 
-- [ ] `bot/narrative/handlers/user/story.py`
-  - Mostrar contenido de variante activa
-  - Registrar visita en EngagementService
+### Archivos modificados:
+- [x] `bot/narrative/services/chapter.py`
+  - Añadido: get_chapters_by_type() para filtrar por tipo
+
+- [x] `bot/narrative/handlers/user/__init__.py`
+  - Exporta story_router
+
+- [x] `bot/narrative/handlers/__init__.py`
+  - Exporta story_router
 
 ---
 
@@ -197,4 +214,4 @@ Sistema de narrativa inmersiva con:
 
 ## SIGUIENTE PASO
 
-Crear `bot/narrative/database/models_immersive.py` con los nuevos modelos.
+Fase 5: Crear sistema de Diario de Viaje para navegación visual y progreso.
