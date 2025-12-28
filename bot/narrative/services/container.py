@@ -56,6 +56,7 @@ class NarrativeContainer:
         self._variant_service = None
         self._cooldown_service = None
         self._challenge_service = None
+        self._journal_service = None
 
     # ========================================
     # PROPERTIES (LAZY LOADING)
@@ -176,6 +177,14 @@ class NarrativeContainer:
             self._challenge_service = ChallengeService(self._session)
         return self._challenge_service
 
+    @property
+    def journal(self):
+        """Servicio del diario de viaje."""
+        if self._journal_service is None:
+            from bot.narrative.services.journal import JournalService
+            self._journal_service = JournalService(self._session)
+        return self._journal_service
+
     # ========================================
     # UTILIDADES
     # ========================================
@@ -216,6 +225,8 @@ class NarrativeContainer:
             loaded.append('cooldown')
         if self._challenge_service is not None:
             loaded.append('challenge')
+        if self._journal_service is not None:
+            loaded.append('journal')
         return loaded
 
     def clear_cache(self):
@@ -235,6 +246,7 @@ class NarrativeContainer:
         self._variant_service = None
         self._cooldown_service = None
         self._challenge_service = None
+        self._journal_service = None
 
 
 # ========================================
