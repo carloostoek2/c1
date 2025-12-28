@@ -229,6 +229,39 @@ async def cmd_start_story(message: Message, session: AsyncSession):
         )
 
 
+@story_router.callback_query(F.data == "narr:start")
+async def callback_start_story(callback: CallbackQuery, session: AsyncSession):
+    """
+    Callback para iniciar o continuar la historia desde botón del menú.
+    Igual que cmd_start_story pero edita el mensaje en lugar de enviar uno nuevo.
+    """
+    await callback.answer()
+    user_id = callback.from_user.id
+    container = NarrativeContainer(session)
+
+    # Obtener progreso del usuario
+    progress = await container.progress.get_or_create_progress(user_id)
+
+    if progress.current_fragment_key:
+        # Tiene progreso - mostrar fragmento actual
+        await show_fragment(
+            message=callback.message,
+            session=session,
+            fragment_key=progress.current_fragment_key,
+            user_id=user_id,
+            is_new_message=False
+        )
+    else:
+        # No tiene progreso - mostrar bienvenida y opciones
+        await callback.message.edit_text(
+            "📖 <b>Bienvenido a la Historia</b>\n\n"
+            "Aún no has comenzado tu viaje narrativo.\n"
+            "Selecciona un capítulo para empezar:",
+            parse_mode="HTML",
+            reply_markup=await _build_chapter_selection_keyboard(container)
+        )
+
+
 @story_router.callback_query(F.data.startswith("story:chapter:"))
 async def callback_select_chapter(callback: CallbackQuery, session: AsyncSession):
     """
