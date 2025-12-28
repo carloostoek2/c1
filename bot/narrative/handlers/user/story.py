@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.narrative.services.container import NarrativeContainer
 from bot.narrative.database.enums import CooldownType
+from bot.narrative.config import NarrativeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -276,11 +277,24 @@ async def callback_process_decision(callback: CallbackQuery, session: AsyncSessi
     user_id = callback.from_user.id
     container = NarrativeContainer(session)
 
+    # Verificar límite diario de decisiones
+    can_continue, used, max_limit = await container.engagement.check_daily_limit(
+        user_id, "decisions"
+    )
+    if not can_continue:
+        await callback.answer(
+            f"📊 Has alcanzado tu límite diario de decisiones ({max_limit}). "
+            "Vuelve mañana para continuar.",
+            show_alert=True
+        )
+        return
+
     # Verificar cooldown de decisiones
     can_decide, remaining = await container.cooldown.can_take_decision(user_id)
     if not can_decide:
+        cooldown_msg = NarrativeConfig.get_cooldown_message("decision")
         await callback.answer(
-            f"⏳ Espera {remaining} segundos antes de decidir",
+            f"⏳ {cooldown_msg}\n({remaining} segundos)",
             show_alert=True
         )
         return
@@ -295,10 +309,15 @@ async def callback_process_decision(callback: CallbackQuery, session: AsyncSessi
         await callback.answer(message_text, show_alert=True)
         return
 
-    # Establecer cooldown de decisión (30 segundos)
+    # Incrementar contador diario de decisiones
+    await container.engagement.increment_decisions_made(user_id)
+
+    # Establecer cooldown de decisión usando configuración
+    cooldown_msg = NarrativeConfig.get_cooldown_message("decision")
     await container.cooldown.set_decision_cooldown(
         user_id=user_id,
-        duration_seconds=30
+        duration_seconds=NarrativeConfig.DECISION_COOLDOWN_SECONDS,
+        message=cooldown_msg
     )
 
     # Mostrar siguiente fragmento
@@ -477,6 +496,27 @@ async def show_fragment(
     """
     container = NarrativeContainer(session)
 
+    # 0. Verificar límite diario de fragmentos
+    can_continue, used, max_limit = await container.engagement.check_daily_limit(
+        user_id, "fragments"
+    )
+    if not can_continue:
+        limit_message = (
+            f"📊 <b>Límite Diario Alcanzado</b>\n\n"
+            f"Has explorado {max_limit} fragmentos hoy.\n"
+            f"Vuelve mañana para continuar tu viaje.\n\n"
+            f"<i>A veces pausar es parte de la historia...</i>"
+        )
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📔 Ver Diario", callback_data="journal:main")],
+            [InlineKeyboardButton(text="🎒 Ver Mochila", callback_data="backpack:main")]
+        ])
+        if is_new_message:
+            await message.answer(limit_message, parse_mode="HTML", reply_markup=keyboard)
+        else:
+            await message.edit_text(limit_message, parse_mode="HTML", reply_markup=keyboard)
+        return
+
     # 1. Construir contexto del usuario
     user_context = await build_full_user_context(container, user_id, fragment_key)
 
@@ -494,9 +534,10 @@ async def show_fragment(
             await message.edit_text(error_message)
         return
 
-    # 3. Registrar visita
+    # 3. Registrar visita e incrementar contador diario
     is_first_visit = user_context.get("visit_count", 0) == 0
     await container.engagement.record_visit(user_id, fragment_key)
+    await container.engagement.increment_fragments_viewed(user_id)
 
     # 4. Verificar si el fragmento otorga pista
     fragment = await container.fragment.get_fragment(fragment_key)
