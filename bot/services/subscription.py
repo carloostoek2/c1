@@ -744,7 +744,9 @@ class SubscriptionService:
 
                 # 2. Enviar onboarding welcome (reemplaza notificación simple)
                 try:
+                    # Import local para evitar circular import
                     from bot.handlers.user.narrative.onboarding import send_onboarding_welcome
+
                     await send_onboarding_welcome(
                         bot=self.bot,
                         user_id=request.user_id,
