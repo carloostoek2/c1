@@ -222,6 +222,30 @@ async def process_json_file(
         # Parsear JSON
         json_content = json.loads(file_bytes.read().decode("utf-8"))
 
+        # Detectar si es un array simple de fragmentos y convertir
+        if isinstance(json_content, list):
+            # El usuario subió [fragment1, fragment2] en lugar de {"type": "fragments", "chapter_slug": "...", "fragments": [...]}
+            await processing_msg.edit_text(
+                "❌ <b>Formato JSON Incorrecto</b>\n\n"
+                "Detectamos que el archivo contiene un array simple de fragmentos.\n\n"
+                "<b>El JSON debe tener esta estructura:</b>\n\n"
+                "<pre>{\n"
+                '  "type": "fragments",\n'
+                '  "chapter_slug": "nombre-del-capitulo",\n'
+                '  "fragments": [...]\n'
+                "}</pre>\n\n"
+                "O para capítulo completo:\n\n"
+                "<pre>{\n"
+                '  "type": "chapter",\n'
+                '  "chapter": {...},\n'
+                '  "fragments": [...]\n'
+                "}</pre>",
+                reply_markup=error_keyboard(),
+                parse_mode="HTML"
+            )
+            await state.clear()
+            return
+
         # Validar contenido
         import_service = JsonImportService(session, message.bot)
         validation = await import_service.validate_json(json_content)
