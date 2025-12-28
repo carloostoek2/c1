@@ -1,7 +1,7 @@
 # TRACKING: Sistema Narrativo Inmersivo
 
 **Fecha inicio:** 2025-12-28
-**Estado:** EN PROGRESO
+**Estado:** ✅ COMPLETADO
 
 ---
 
@@ -206,17 +206,32 @@ Sistema de narrativa inmersiva con:
 
 ---
 
-## FASE 7: DESAFIOS INTERACTIVOS
+## FASE 7: DESAFIOS INTERACTIVOS ✅ COMPLETADA
 
-### Archivos por crear:
-- [ ] `bot/narrative/handlers/user/challenge.py`
-  - show_challenge: Mostrar desafío
-  - handle_text_input: Procesar respuesta de texto
-  - handle_timeout: Manejar timeout
-  - show_result: Mostrar resultado (éxito/fallo)
+### Archivos creados:
+- [x] `bot/narrative/states/challenge.py` - Estados FSM
+  - ChallengeStates: waiting_for_answer, showing_hint, showing_result
 
-- [ ] `bot/narrative/states/challenge.py`
-  - ChallengeStates: FSM para flujo de desafíos
+- [x] `bot/narrative/states/__init__.py`
+  - Exporta ChallengeStates
+
+- [x] `bot/narrative/handlers/user/challenge.py` - Handler de desafíos (~350 líneas)
+  - callback_start_challenge(): Iniciar desafío con validaciones
+  - process_challenge_answer(): Procesar respuesta de texto (FSM)
+  - callback_get_hint(): Mostrar pista progresiva
+  - callback_retry_challenge(): Reintentar desafío
+  - callback_skip_challenge(): Saltar desafío (si permitido)
+  - callback_cancel_challenge(): Cancelar y volver
+  - format_challenge_message(): Formatear pregunta con stats
+  - build_challenge_keyboard(): Teclado con opciones
+  - build_result_keyboard(): Teclado de resultado
+
+### Archivos modificados:
+- [x] `bot/narrative/handlers/user/__init__.py`
+  - Exporta challenge_router
+
+- [x] `bot/narrative/handlers/__init__.py`
+  - Exporta challenge_router
 
 ---
 
@@ -244,4 +259,10 @@ Sistema de narrativa inmersiva con:
 
 ## SIGUIENTE PASO
 
-Fase 7: Implementar sistema de desafíos interactivos con FSM.
+✅ SISTEMA COMPLETO - Todas las fases implementadas.
+
+Próximos pasos opcionales:
+- Crear contenido narrativo (capítulos, fragmentos, pistas)
+- Configurar desafíos y variantes
+- Testing E2E del flujo completo
+- Integración con main.py para registrar routers
