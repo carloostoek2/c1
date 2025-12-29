@@ -1,0 +1,448 @@
+"""
+Mensajes de Lucien - El Mayordomo del Diván.
+
+Archivo centralizado con todos los mensajes del bot en voz de Lucien.
+Permite consistencia de voz y facilidad de edición sin tocar lógica.
+
+REGLAS DE ESTILO:
+1. Lucien siempre usa "usted", nunca tutea
+2. Tono formal pero no robótico
+3. Puntos suspensivos para pausas dramáticas (máximo 3 puntos)
+4. Sarcasmo sutil, nunca agresivo
+5. Referencias a Diana en tercera persona con reverencia
+6. Evaluación constante del usuario (implícita o explícita)
+7. Nunca usa emojis en el texto (pueden ir en botones)
+8. Párrafos cortos, máximo 3-4 líneas por bloque
+
+PLACEHOLDERS DISPONIBLES:
+- {user_name}: Nombre del usuario
+- {amount}: Cantidad de Favores
+- {total}: Total acumulado
+- {level_name}: Nombre del nivel
+- {days}: Número de días
+- {item_name}: Nombre del item
+- {mission_name}: Nombre de la misión
+- {progress}: Progreso actual
+- {target}: Meta a alcanzar
+"""
+
+
+class LucienMessages:
+    """Constantes de mensajes organizadas por categoría."""
+
+    # ================================================================
+    # 1. ONBOARDING
+    # ================================================================
+
+    WELCOME_FIRST = (
+        "Buenas noches. O días. El tiempo es relativo cuando se trata de Diana.\n\n"
+        "Soy Lucien. Administro el acceso al universo de la Señorita Kinky. "
+        "No soy su amigo. No soy su enemigo. Soy... el filtro.\n\n"
+        "Diana no recibe a cualquiera. Mi trabajo es determinar si usted "
+        "merece su atención. Comencemos."
+    )
+
+    WELCOME_RETURNING = (
+        "Vaya. {days_away} días sin aparecer.\n\n"
+        "Creí que nos había abandonado. Diana preguntó por usted... una vez. "
+        "No se emocione, fue un comentario casual.\n\n"
+        "¿Retomamos donde lo dejamos?"
+    )
+
+    WELCOME_VIP = (
+        "Bienvenido de vuelta al Diván.\n\n"
+        "Diana ha reservado su lugar. Los privilegios de su membresía "
+        "permanecen intactos. Proceda."
+    )
+
+    FIRST_ACTION_COMPLETE = (
+        "Primera acción registrada.\n\n"
+        "Interesante. Algunos tardan días en dar el primer paso. "
+        "Usted no ha perdido el tiempo. Diana aprecia la iniciativa... "
+        "cuando está bien dirigida."
+    )
+
+    # ================================================================
+    # 2. FAVORES
+    # ================================================================
+
+    FAVOR_EARNED = (
+        "Diana le ha otorgado {amount}.\n\n"
+        "No los malgaste."
+    )
+
+    FAVOR_EARNED_MILESTONE = (
+        "Ha acumulado {total} Favores.\n\n"
+        "Un número que empieza a ser... notable. Diana revisa estos registros "
+        "periódicamente. Solo digo."
+    )
+
+    FAVOR_SPENT = (
+        "Transacción completada. Sus Favores han sido deducidos.\n\n"
+        "Confío en que la inversión valga la pena."
+    )
+
+    FAVOR_INSUFFICIENT = (
+        "Sus Favores son insuficientes para esto.\n\n"
+        "Diana no otorga crédito. Acumule más Favores y regrese."
+    )
+
+    FAVOR_BALANCE = (
+        "Su balance actual: {total} Favores.\n\n"
+        "Cada uno representa un momento en que Diana consideró que usted "
+        "merecía reconocimiento. Úselos con criterio."
+    )
+
+    # ================================================================
+    # 3. NIVELES
+    # ================================================================
+
+    LEVEL_UP_GENERIC = (
+        "Ha ascendido. Ahora es {level_name}.\n\n"
+        "Las puertas que antes estaban cerradas... ya no lo están."
+    )
+
+    LEVEL_UP_2 = (  # Observado
+        "He comenzado a notar su presencia.\n\n"
+        "Antes era uno más entre la multitud. Ahora es... Observado. "
+        "No es un halago. Es una advertencia. Mis ojos están sobre usted."
+    )
+
+    LEVEL_UP_3 = (  # Evaluado
+        "Ha superado las pruebas iniciales.\n\n"
+        "Muchos fallan en esta etapa. Usted no. Eso le convierte en Evaluado. "
+        "Diana aún no sabe su nombre, pero yo sí lo he anotado."
+    )
+
+    LEVEL_UP_4 = (  # Reconocido
+        "Interesante. Diana ha mencionado su nombre. "
+        "No pregunte qué dijo exactamente - eso sería una indiscreción por mi parte.\n\n"
+        "Pero sepa que ahora es... Reconocido. Eso conlleva privilegios. Y expectativas."
+    )
+
+    LEVEL_UP_5 = (  # Admitido
+        "Formalmente, tiene derecho a estar aquí.\n\n"
+        "Ya no es un visitante tolerado. Es Admitido. La diferencia es sutil "
+        "para algunos. Para Diana y para mí, es significativa."
+    )
+
+    LEVEL_UP_6 = (  # Confidente
+        "Esto es... inesperado.\n\n"
+        "Ha alcanzado un nivel que pocos logran. Como Confidente, tendrá acceso "
+        "a información que no comparto con cualquiera. Diana confía en mi criterio. "
+        "No me haga arrepentirme."
+    )
+
+    LEVEL_UP_7 = (  # Guardián de Secretos
+        "Debo admitir que no anticipé esto.\n\n"
+        "Guardián de Secretos. El círculo más íntimo de Diana. Ha demostrado "
+        "una dedicación que rara vez veo. Bienvenido al nivel donde las máscaras caen.\n\n"
+        "Los secretos que guarde aquí... quedan entre nosotros."
+    )
+
+    LEVEL_CHECK = (
+        "Su posición actual: {level_name}.\n\n"
+        "Ha acumulado {total} Favores. El siguiente nivel requiere {next_required}. "
+        "La distancia es {remaining}."
+    )
+
+    # ================================================================
+    # 4. ERRORES
+    # ================================================================
+
+    ERROR_GENERIC = (
+        "Algo ha salido mal.\n\n"
+        "Incluso los sistemas más elegantes tienen sus momentos. "
+        "Intente nuevamente en un momento."
+    )
+
+    ERROR_NOT_FOUND = (
+        "Eso que busca... no existe. O no debería existir para usted.\n\n"
+        "Algunas cosas están reservadas para niveles superiores. Otras simplemente "
+        "no existen. No siempre le diré cuál es el caso."
+    )
+
+    ERROR_PERMISSION = (
+        "No tiene autorización para esto.\n\n"
+        "Diana ha establecido límites claros. Mi trabajo es hacerlos cumplir. "
+        "Ascienda de nivel o acepte las restricciones actuales."
+    )
+
+    ERROR_TIMEOUT = (
+        "El tiempo ha expirado.\n\n"
+        "La paciencia es una virtud, pero la mía tiene límites. "
+        "Cuando esté listo para continuar, comience de nuevo."
+    )
+
+    ERROR_INVALID_INPUT = (
+        "Eso no tiene sentido.\n\n"
+        "Revise lo que ha enviado e intente con algo... coherente."
+    )
+
+    # ================================================================
+    # 5. CONFIRMACIONES
+    # ================================================================
+
+    CONFIRM_ACTION = (
+        "Hecho.\n\n"
+        "La acción ha sido registrada. Diana sabrá de esto."
+    )
+
+    CONFIRM_PURCHASE = (
+        "Adquisición completada.\n\n"
+        "El artículo ha sido añadido a su inventario. Úselo con sabiduría... "
+        "o no. Las consecuencias son suyas."
+    )
+
+    CONFIRM_MISSION_COMPLETE = (
+        "Misión cumplida.\n\n"
+        "Ha demostrado capacidad. Sus Favores han sido acreditados. "
+        "Hay más tareas esperando, si está a la altura."
+    )
+
+    # ================================================================
+    # 6. GABINETE (TIENDA)
+    # ================================================================
+
+    CABINET_WELCOME = (
+        "Bienvenido a mi Gabinete. Aquí guardo ciertos... artículos que Diana "
+        "ha autorizado para intercambio.\n\n"
+        "Los Favores que ha acumulado pueden convertirse en algo más tangible. "
+        "Examine con cuidado. No todo lo que brilla merece su inversión."
+    )
+
+    CABINET_CATEGORY_EPHEMERAL = (
+        "Efímeros. Consumibles de un solo uso.\n\n"
+        "Potentes pero temporales. Como ciertos placeres. "
+        "Úselos en el momento adecuado o desperdiciará su valor."
+    )
+
+    CABINET_CATEGORY_DISTINCTIVE = (
+        "Distintivos. Marcas visibles de su estatus.\n\n"
+        "Otros notarán lo que porta. Diana también. "
+        "Elija lo que desea proyectar."
+    )
+
+    CABINET_CATEGORY_KEYS = (
+        "Llaves. Accesos a lugares restringidos.\n\n"
+        "Algunas puertas solo se abren con la llave correcta. "
+        "Lo que hay detrás... bueno, eso depende de la puerta."
+    )
+
+    CABINET_CATEGORY_RELICS = (
+        "Reliquias. Piezas únicas del universo de Diana.\n\n"
+        "Raras. Coleccionables. Algunas tienen historia. "
+        "Otras la crearán con usted."
+    )
+
+    CABINET_ITEM_PURCHASED = (
+        "{item_name} es suyo ahora.\n\n"
+        "Revise su inventario cuando desee utilizarlo. "
+        "Y recuerde: todo tiene consecuencias."
+    )
+
+    CABINET_EMPTY = (
+        "El Gabinete está vacío en este momento.\n\n"
+        "Incluso yo necesito reabastecer ocasionalmente. "
+        "Regrese pronto."
+    )
+
+    # ================================================================
+    # 7. MISIONES
+    # ================================================================
+
+    MISSION_NEW_DAILY = (
+        "Hay una tarea pendiente para hoy.\n\n"
+        "Diana valora la consistencia. Completar misiones diarias es una forma "
+        "de demostrar que puede mantener compromisos."
+    )
+
+    MISSION_NEW_WEEKLY = (
+        "Una misión especial ha sido asignada.\n\n"
+        "Tiene una semana. Es más ambiciosa que las tareas diarias, "
+        "pero la recompensa está a la altura."
+    )
+
+    MISSION_COMPLETE = (
+        "Misión completada: {mission_name}.\n\n"
+        "Ha ganado {amount} Favores. Diana ha sido informada de su progreso."
+    )
+
+    MISSION_FAILED = (
+        "El tiempo para {mission_name} ha expirado.\n\n"
+        "Las oportunidades no esperan indefinidamente. "
+        "Habrá otras misiones. Quizás esté más preparado entonces."
+    )
+
+    MISSION_PROGRESS = (
+        "Progreso en {mission_name}: {progress}/{target}.\n\n"
+        "Continúe así."
+    )
+
+    # ================================================================
+    # 8. ARQUETIPOS
+    # ================================================================
+
+    ARCHETYPE_EXPLORER = (
+        "He observado su patrón. Explora cada rincón. Hace clic en todo. "
+        "Quiere ver qué hay detrás de cada puerta.\n\n"
+        "Diana aprecia la curiosidad. Pero tenga cuidado... "
+        "algunas puertas están cerradas por buenas razones."
+    )
+
+    ARCHETYPE_DIRECT = (
+        "Usted va al grano. Sin rodeos. Sin juegos.\n\n"
+        "Eso es refrescante en un mundo de indirectas. Diana nota a quienes "
+        "saben lo que quieren. La pregunta es: ¿sabe realmente lo que quiere?"
+    )
+
+    ARCHETYPE_ROMANTIC = (
+        "Percibo algo en usted. Busca conexión, no solo contenido. "
+        "Le importa la historia, no solo el resultado.\n\n"
+        "Diana tiene un lugar especial para los románticos. "
+        "No lo digo como cumplido ni como advertencia. Es solo... un hecho."
+    )
+
+    ARCHETYPE_ANALYTICAL = (
+        "Usted estudia. Calcula. Optimiza.\n\n"
+        "Cada Favor contado, cada misión evaluada por su eficiencia. "
+        "Es admirable, en cierto modo. Pero no todo aquí puede medirse con números."
+    )
+
+    ARCHETYPE_PERSISTENT = (
+        "La persistencia. Algunos la llaman terquedad. Yo la llamo dedicación.\n\n"
+        "Ha intentado cosas que otros abandonan al primer fracaso. "
+        "Diana respeta eso. Yo también, aunque no siempre lo demuestre."
+    )
+
+    ARCHETYPE_PATIENT = (
+        "He observado algo en usted. Toma su tiempo. Procesa. "
+        "No reacciona por impulso.\n\n"
+        "Eso es raro. Diana nota a quienes no se apresuran por agradar. "
+        "Usted no busca aprobación inmediata. Eso tiene valor."
+    )
+
+    # ================================================================
+    # 9. RETENCIÓN
+    # ================================================================
+
+    INACTIVE_3_DAYS = (
+        "Tres días.\n\n"
+        "El tiempo suficiente para perder el ritmo. Diana no espera presencia "
+        "constante, pero sí consistencia. ¿Todo en orden?"
+    )
+
+    INACTIVE_7_DAYS = (
+        "Una semana. El tiempo suficiente para que algunos olviden "
+        "por qué vinieron aquí.\n\n"
+        "¿Es usted de esos? ¿O hay algo que lo retiene?"
+    )
+
+    INACTIVE_14_DAYS = (
+        "Dos semanas de silencio.\n\n"
+        "Empezaba a pensar que nos había abandonado definitivamente. "
+        "Diana mencionó que quizás debería cerrar su expediente. "
+        "Le sugerí esperar un poco más. No me haga arrepentirme."
+    )
+
+    STREAK_BROKEN = (
+        "Su racha de {days} días ha terminado.\n\n"
+        "La consistencia requiere esfuerzo diario. Es comprensible que falle "
+        "ocasionalmente. Lo que importa es si vuelve a intentarlo."
+    )
+
+    STREAK_MILESTONE_7 = (
+        "Siete días consecutivos.\n\n"
+        "Una semana completa de dedicación. Diana ha sido notificada. "
+        "Ha ganado {amount} Favores adicionales por esta hazaña."
+    )
+
+    STREAK_MILESTONE_30 = (
+        "Treinta días. Un mes entero sin fallar.\n\n"
+        "Debo admitir que estoy... impresionado. Muy pocos llegan aquí. "
+        "Diana tiene algo especial reservado para quienes demuestran "
+        "este nivel de compromiso. Ha ganado {amount} Favores."
+    )
+
+    # ================================================================
+    # 10. CONVERSIÓN
+    # ================================================================
+
+    CONVERSION_TEASER = (
+        "Hay contenido que no puede ver desde aquí.\n\n"
+        "El Diván de Diana guarda experiencias que solo algunos conocen. "
+        "Pero eso es tema para otra conversación."
+    )
+
+    CONVERSION_INVITATION = (
+        "Ha demostrado ser más que un visitante casual.\n\n"
+        "Diana me ha autorizado a extenderle una invitación formal al Diván. "
+        "El acceso completo a su universo. Sin restricciones. Sin filtros.\n\n"
+        "La decisión es suya."
+    )
+
+    CONVERSION_KEY_OFFER = (
+        "Existe una Llave del Diván en mi Gabinete.\n\n"
+        "Con ella, las puertas que hoy están cerradas se abrirán. "
+        "El precio está en Favores. La pregunta es si está listo para lo que hay dentro."
+    )
+
+    CONVERSION_PREMIUM_INTRO = (
+        "Más allá del Diván existe algo más... exclusivo.\n\n"
+        "Contenido Premium. Acceso directo. Privilegios que ni siquiera "
+        "los miembros VIP conocen. Pero esa conversación es para otro momento."
+    )
+
+    CONVERSION_MAP_INTRO = (
+        "El Mapa del Deseo.\n\n"
+        "Un recorrido personalizado por los territorios de Diana. "
+        "No es para todos. Solo para quienes buscan algo más profundo que el acceso. "
+        "Si le interesa, hay formas de obtenerlo."
+    )
+
+    # ================================================================
+    # MÉTODOS DE UTILIDAD
+    # ================================================================
+
+    @classmethod
+    def format(cls, message_key: str, **kwargs) -> str:
+        """
+        Obtiene y formatea un mensaje con placeholders.
+
+        Args:
+            message_key: Nombre del atributo de mensaje (ej: "WELCOME_FIRST")
+            **kwargs: Valores para los placeholders
+
+        Returns:
+            Mensaje formateado
+
+        Example:
+            >>> LucienMessages.format("FAVOR_EARNED", amount="5 Favores")
+            "Diana le ha otorgado 5 Favores.\\n\\nNo los malgaste."
+        """
+        message = getattr(cls, message_key, None)
+        if message is None:
+            return cls.ERROR_GENERIC
+
+        try:
+            return message.format(**kwargs)
+        except KeyError:
+            # Si faltan placeholders, retornar mensaje sin formatear
+            return message
+
+    @classmethod
+    def get(cls, message_key: str) -> str:
+        """
+        Obtiene un mensaje sin formatear.
+
+        Args:
+            message_key: Nombre del atributo de mensaje
+
+        Returns:
+            Mensaje o ERROR_GENERIC si no existe
+        """
+        return getattr(cls, message_key, cls.ERROR_GENERIC)
+
+
+# Alias para acceso más corto
+Lucien = LucienMessages
