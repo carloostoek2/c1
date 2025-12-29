@@ -235,4 +235,60 @@ _Ninguno por ahora_
 
 ---
 
-**Última actualización:** 2024-12-27
+## 🎭 FASE 0 - FUNDAMENTOS NARRATIVOS
+
+### Estado: 🟡 En Progreso
+
+### F0.1 Sistema de Economía "Favores" ✅
+- [x] Modelo de BD actualizado: "besitos" → "favores" (soporte decimal)
+- [x] Tabla de configuración con valores de ganancia
+- [x] Migración de datos existentes
+- [x] Tests de cálculo de favores
+
+### F0.2 Mensajes de Lucien ✅
+- [x] Archivo `bot/utils/lucien_messages.py` creado
+- [x] 50+ mensajes definidos con placeholders
+- [x] Todos los mensajes usan "usted" formal
+- [x] Sin emojis en texto (solo en botones)
+- [x] Categorías: Onboarding, Favores, Niveles, Errores, Gabinete, Misiones, Arquetipos, Retención, Conversión
+
+### F0.3 Sistema de Arquetipos Expandido ✅
+- [x] Enum `ArchetypeType` con 6 arquetipos: EXPLORER, DIRECT, ROMANTIC, ANALYTICAL, PERSISTENT, PATIENT
+- [x] Modelo de usuario con campos de arquetipo
+- [x] Arquetipos legacy (IMPULSIVE, CONTEMPLATIVE, SILENT) mantenidos por compatibilidad
+
+### F0.4 Gabinete (Tienda) ✅
+- [x] Ver sección "MÓDULO TIENDA (SHOP) - COMPLETADO"
+
+### F0.5 Estructura de Contenido Narrativo ✅ **COMPLETADO HOY**
+- [x] Enums `SpeakerType` y `MediaType` agregados a narrativa
+- [x] Script `scripts/seed_chapters_1_3.py` creado
+- [x] **Capítulo 1: Bienvenida** (5 fragmentos)
+  - 1.1 Bienvenida de Diana (entry point)
+  - 1.2 Lucien y el Primer Desafío
+  - 1.3A Respuesta Impulsiva (rama arquetipo)
+  - 1.3B Respuesta Contemplativa (rama arquetipo)
+  - 1.4 La Primera Pista (ending)
+- [x] **Capítulo 2: Observación** (4 fragmentos)
+  - 2.1 El Regreso Observado
+  - 2.2 Desafío de Observación
+  - 2.3 Progreso de Observación
+  - 2.4 Reconocimiento de Diana
+- [x] **Capítulo 3: Perfil de Deseo** (4 fragmentos)
+  - 3.1 La Prueba Final
+  - 3.2 La Evaluación Mutua
+  - 3.3 Evaluación de Diana
+  - 3.4 La Invitación - Llave del Diván (conversion point)
+- [x] Decisiones con efectos de arquetipo configuradas
+- [x] Requisitos de progresión por capítulo (CHAPTER_COMPLETE)
+- [x] Metadata de rewards (pistas, items, niveles)
+- [x] Seed ejecutado y validado en BD
+
+**Componentes Creados F0.5:**
+- `bot/narrative/database/enums.py` → SpeakerType, MediaType
+- `bot/narrative/services/fragment.py` → extra_metadata param
+- `scripts/seed_chapters_1_3.py` → 13 fragmentos narrativos
+
+---
+
+**Última actualización:** 2024-12-29

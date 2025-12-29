@@ -8,6 +8,8 @@ from bot.narrative.database.enums import (
     VariantConditionType,
     ChallengeType,
     CooldownType,
+    SpeakerType,
+    MediaType,
 )
 from bot.narrative.database.models import (
     NarrativeChapter,
@@ -40,6 +42,8 @@ __all__ = [
     "VariantConditionType",
     "ChallengeType",
     "CooldownType",
+    "SpeakerType",
+    "MediaType",
     # Models - Core
     "NarrativeChapter",
     "NarrativeFragment",

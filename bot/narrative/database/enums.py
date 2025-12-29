@@ -66,6 +66,33 @@ class CooldownType(str, Enum):
     CHALLENGE = "challenge"   # Cooldown para reintentar desafío
 
 
+class SpeakerType(str, Enum):
+    """Hablante en un fragmento narrativo."""
+
+    DIANA = "diana"       # Diana - protagonista misteriosa
+    LUCIEN = "lucien"     # Lucien - mayordomo británico
+    NARRATOR = "narrator" # Narrador omnisciente
+
+    @property
+    def display_name(self) -> str:
+        """Nombre para mostrar al usuario."""
+        names = {
+            "diana": "Diana",
+            "lucien": "Lucien",
+            "narrator": "Narrador",
+        }
+        return names.get(self.value, self.value)
+
+
+class MediaType(str, Enum):
+    """Tipo de media asociado a un fragmento."""
+
+    TEXT = "text"     # Solo texto
+    IMAGE = "image"   # Imagen adjunta
+    AUDIO = "audio"   # Audio adjunto
+    VIDEO = "video"   # Video adjunto
+
+
 class ArchetypeType(str, Enum):
     """Arquetipos de usuario detectados por comportamiento.
 
