@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import select
-from bot.database.engine import get_session
+from bot.database.engine import get_session, init_db, close_db
 from bot.gamification.database.models import Level
 
 # Definición de los niveles del Protocolo de Acceso
@@ -162,9 +162,15 @@ async def main():
     print("\n🏛️  El Mayordomo del Diván - Protocolo de Acceso")
     print("=" * 50)
 
-    await seed_protocol_levels(force_update=args.force_update)
+    # Inicializar base de datos
+    await init_db()
 
-    print("\n✅ Proceso completado.")
+    try:
+        await seed_protocol_levels(force_update=args.force_update)
+        print("\n✅ Proceso completado.")
+    finally:
+        # Cerrar conexión
+        await close_db()
 
 
 if __name__ == "__main__":
