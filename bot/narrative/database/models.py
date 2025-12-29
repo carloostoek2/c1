@@ -210,11 +210,13 @@ class UserNarrativeProgress(Base):
         String(50), nullable=True
     )
 
-    # Arquetipo detectado
+    # Arquetipo detectado (sistema expandido de 6 arquetipos)
     detected_archetype: Mapped[ArchetypeType] = mapped_column(
         default=ArchetypeType.UNKNOWN
     )
     archetype_confidence: Mapped[float] = mapped_column(default=0.0)  # 0.0 - 1.0
+    archetype_detected_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    archetype_signals: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Estadísticas
     total_decisions: Mapped[int] = mapped_column(default=0)

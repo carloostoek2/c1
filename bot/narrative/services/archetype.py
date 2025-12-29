@@ -1,10 +1,14 @@
 """
 Servicio de detección de arquetipos de usuario.
 
-Analiza patrones de respuesta del usuario para determinar su arquetipo
-(IMPULSIVE, CONTEMPLATIVE, SILENT) y adaptar la narrativa.
+Sistema de detección dual:
+- Legacy: IMPULSIVE, CONTEMPLATIVE, SILENT (basado en tiempo de respuesta)
+- Expandido: EXPLORER, DIRECT, ROMANTIC, ANALYTICAL, PERSISTENT, PATIENT
+
+El sistema expandido se activa gradualmente para usuarios nuevos.
 """
 import logging
+from datetime import datetime, UTC
 from typing import Optional, Tuple, List
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +17,11 @@ from bot.narrative.database import (
     UserNarrativeProgress,
     UserDecisionHistory,
     ArchetypeType,
+)
+from bot.narrative.services.archetype_detector import (
+    ArchetypeDetector,
+    ArchetypeSignals,
+    get_archetype_description,
 )
 
 logger = logging.getLogger(__name__)
@@ -375,6 +384,133 @@ class ArchetypeService:
 
         for row in rows:
             archetype_value = row.detected_archetype.value
-            distribution[archetype_value] = row.count
+            if archetype_value in distribution:
+                distribution[archetype_value] = row.count
+
+        return distribution
+
+    # ================================================================
+    # SISTEMA EXPANDIDO DE ARQUETIPOS
+    # ================================================================
+
+    async def detect_expanded_archetype(
+        self,
+        user_id: int,
+        force: bool = False
+    ) -> Tuple[Optional[ArchetypeType], float, dict]:
+        """
+        Detecta arquetipo usando el sistema expandido de 6 arquetipos.
+
+        Args:
+            user_id: ID del usuario
+            force: Forzar re-evaluación
+
+        Returns:
+            Tupla (arquetipo, confianza, señales_dict)
+        """
+        detector = ArchetypeDetector(self._session)
+        archetype, confidence, signals = await detector.detect(user_id, force=force)
+
+        # Guardar señales en progreso
+        if archetype and archetype.is_expanded:
+            await self._save_expanded_archetype(
+                user_id=user_id,
+                archetype=archetype,
+                confidence=confidence,
+                signals=signals
+            )
+
+        return archetype, confidence, signals.to_dict() if signals else {}
+
+    async def _save_expanded_archetype(
+        self,
+        user_id: int,
+        archetype: ArchetypeType,
+        confidence: float,
+        signals: ArchetypeSignals
+    ) -> None:
+        """Guarda arquetipo expandido en progreso del usuario."""
+        stmt = select(UserNarrativeProgress).where(
+            UserNarrativeProgress.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        progress = result.scalar_one_or_none()
+
+        if progress:
+            progress.detected_archetype = archetype
+            progress.archetype_confidence = confidence
+            progress.archetype_detected_at = datetime.now(UTC)
+            progress.archetype_signals = signals.to_dict()
+            await self._session.commit()
+
+            logger.info(
+                f"Arquetipo expandido guardado: user={user_id}, "
+                f"archetype={archetype.value}, confidence={confidence:.2f}"
+            )
+
+    async def get_archetype_with_description(
+        self,
+        user_id: int
+    ) -> Tuple[ArchetypeType, float, str]:
+        """
+        Obtiene arquetipo con su descripción narrativa.
+
+        Returns:
+            Tupla (arquetipo, confianza, descripción)
+        """
+        archetype, confidence = await self.get_archetype(user_id)
+
+        if archetype.is_expanded:
+            description = get_archetype_description(archetype)
+        else:
+            # Descripción para arquetipos legacy
+            legacy_descriptions = {
+                ArchetypeType.IMPULSIVE: "Impulsivo - Reacciona rápido, sin pensarlo mucho.",
+                ArchetypeType.CONTEMPLATIVE: "Contemplativo - Toma su tiempo para decidir.",
+                ArchetypeType.SILENT: "Silencioso - Observa sin interactuar.",
+                ArchetypeType.UNKNOWN: "Aún no determinado.",
+            }
+            description = legacy_descriptions.get(archetype, "")
+
+        return archetype, confidence, description
+
+    async def get_full_archetype_distribution(self) -> dict:
+        """
+        Obtiene distribución completa incluyendo arquetipos expandidos.
+
+        Returns:
+            Dict con conteo por arquetipo (legacy + expandidos)
+        """
+        stmt = (
+            select(
+                UserNarrativeProgress.detected_archetype,
+                func.count(UserNarrativeProgress.id).label('count')
+            )
+            .group_by(UserNarrativeProgress.detected_archetype)
+        )
+
+        result = await self._session.execute(stmt)
+        rows = result.all()
+
+        # Incluir todos los arquetipos
+        distribution = {
+            # Legacy
+            'unknown': 0,
+            'impulsive': 0,
+            'contemplative': 0,
+            'silent': 0,
+            # Expandidos
+            'explorer': 0,
+            'direct': 0,
+            'romantic': 0,
+            'analytical': 0,
+            'persistent': 0,
+            'patient': 0,
+        }
+
+        for row in rows:
+            archetype_value = row.detected_archetype.value
+            if archetype_value in distribution:
+                distribution[archetype_value] = row.count
 
         return distribution
