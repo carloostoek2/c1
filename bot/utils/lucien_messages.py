@@ -31,16 +31,97 @@ class LucienMessages:
     """Constantes de mensajes organizadas por categoría."""
 
     # ================================================================
-    # 1. ONBOARDING
+    # 1. ONBOARDING - FLUJOS DE /start
     # ================================================================
 
-    WELCOME_FIRST = (
+    # --- Flujo A: Usuario completamente nuevo (Mensaje 1) ---
+    START_NEW_USER_1 = (
         "Buenas noches. O días. El tiempo es relativo cuando se trata de Diana.\n\n"
         "Soy Lucien. Administro el acceso al universo de la Señorita Kinky. "
         "No soy su amigo. No soy su enemigo. Soy... el filtro.\n\n"
         "Diana no recibe a cualquiera. Mi trabajo es determinar si usted "
-        "merece su atención. Comencemos."
+        "merece su atención."
     )
+
+    # --- Flujo A: Usuario nuevo (Mensaje 2 - después de delay) ---
+    START_NEW_USER_2 = (
+        "Antes de continuar, debo registrar su presencia.\n\n"
+        "A partir de ahora, cada acción suya será observada. Evaluada. Recordada.\n\n"
+        "No lo digo para intimidar. Lo digo para que comprenda: en el universo "
+        "de Diana, nada pasa desapercibido."
+    )
+
+    # --- Respuesta a "¿Quién es Diana?" ---
+    START_WHO_IS_DIANA = (
+        "Diana es... complicada de definir con palabras.\n\n"
+        "Es la Señorita Kinky. Creadora de experiencias que otros no se atreven "
+        "a imaginar. Misteriosa por elección, reveladora por capricho.\n\n"
+        "No muestra su rostro. Lo que muestra es más interesante.\n\n"
+        "Pero no vine a explicarla. Vine a determinar si usted merece "
+        "descubrirla por sí mismo."
+    )
+
+    # --- Mensaje de registro completado (después de onboarding inicial) ---
+    START_REGISTERED = (
+        "Muy bien. Ha sido registrado como Visitante en el Diván.\n\n"
+        "Su nivel actual: <b>{level_name}</b>\n"
+        "Sus Favores: <b>{favors}</b>\n\n"
+        "Los Favores son reconocimientos que Diana otorga a quienes demuestran mérito. "
+        "Acumúlelos. Le servirán.\n\n"
+        "¿Por dónde desea comenzar?"
+    )
+
+    # --- Flujo B: Usuario que regresa (< 7 días) ---
+    START_RETURNING_SHORT = (
+        "Ha vuelto. Bien.\n\n"
+        "Diana no mencionó su ausencia, pero yo la noté. {days_away} días.\n\n"
+        "Nivel actual: <b>{level_name}</b>\n"
+        "Favores acumulados: <b>{favors}</b>\n\n"
+        "¿En qué puedo asistirle?"
+    )
+
+    # --- Flujo C: Usuario que regresa (7-14 días) ---
+    START_RETURNING_MEDIUM = (
+        "Una semana. Quizás más.\n\n"
+        "El tiempo suficiente para que algunos olviden por qué vinieron. "
+        "¿Es usted de esos?\n\n"
+        "Diana continuó. El contenido se acumuló. Las oportunidades pasaron.\n\n"
+        "Pero aquí está de nuevo. Eso cuenta para algo."
+    )
+
+    START_RETURNING_MEDIUM_STATUS = (
+        "Nivel actual: <b>{level_name}</b>\n"
+        "Favores: <b>{favors}</b>\n"
+        "{streak_status}\n\n"
+        "¿Retomamos donde lo dejó?"
+    )
+
+    # --- Flujo D: Usuario que regresa (14+ días) ---
+    START_RETURNING_LONG = (
+        "Vaya. Creí que habíamos perdido a otro.\n\n"
+        "{days_away} días es mucho tiempo en el universo de Diana. "
+        "Las cosas cambian. El contenido fluye. Los demás avanzan.\n\n"
+        "Pero su registro permanece. Sus Favores esperan. Su historia no se borró."
+    )
+
+    START_RETURNING_LONG_2 = (
+        "Quizás sea momento de recordar por qué vino en primer lugar.\n\n"
+        "Diana guardó algo durante su ausencia. No para usted específicamente, pero... "
+        "está disponible."
+    )
+
+    # --- Flujo E: Usuario VIP ---
+    START_VIP = (
+        "Bienvenido de nuevo al Diván, {archetype_title}.\n\n"
+        "Diana ha estado... activa. Hay nuevo contenido esperando su atención.\n\n"
+        "Nivel: <b>{level_name}</b>\n"
+        "Favores: <b>{favors}</b>\n"
+        "Días en el Diván: <b>{vip_days}</b>\n\n"
+        "¿Cómo puedo servirle hoy?"
+    )
+
+    # --- Aliases para compatibilidad ---
+    WELCOME_FIRST = START_NEW_USER_1
 
     WELCOME_RETURNING = (
         "Vaya. {days_away} días sin aparecer.\n\n"

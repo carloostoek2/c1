@@ -291,4 +291,45 @@ _Ninguno por ahora_
 
 ---
 
+## 🎭 FASE 1 - LA VOZ DE LUCIEN
+
+### Estado: 🟡 En Progreso
+
+### F1.1 Reescribir Comando /start ✅ **COMPLETADO**
+- [x] Campo `last_activity` agregado al modelo User
+- [x] Campo `is_new_user` para detectar usuarios nuevos
+- [x] Migración 015_add_user_activity_tracking.py creada
+- [x] Nuevos mensajes de Lucien para onboarding agregados
+- [x] **Flujo A: Usuario nuevo** (2 mensajes + delay dramático)
+  - Presentación de Lucien
+  - Advertencia de observación
+  - Botones: "Entendido, continuar" / "¿Quién es Diana?"
+  - Respuesta a "¿Quién es Diana?"
+  - Registro completado con status inicial
+- [x] **Flujo B: Usuario que regresa (< 7 días)**
+  - Bienvenida corta con días de ausencia
+  - Menú principal
+- [x] **Flujo C: Usuario que regresa (7-14 días)**
+  - Drama sobre la ausencia
+  - Status con racha
+  - Menú principal
+- [x] **Flujo D: Usuario que regresa (> 14 días)**
+  - Drama intenso
+  - Oferta de contenido nuevo
+  - Botones: "Ver qué hay de nuevo" / "Menú principal"
+- [x] **Flujo E: Usuario VIP**
+  - Bienvenida con arquetipo
+  - Status VIP (días en el Diván)
+  - Menú VIP con "Contenido Nuevo"
+- [x] Deep link para tokens VIP funcional
+- [x] Menú de Lucien sin emojis en texto (solo en botones)
+
+**Componentes Modificados F1.1:**
+- `bot/database/models.py` → User.last_activity, User.is_new_user
+- `bot/utils/lucien_messages.py` → 10 nuevos mensajes de onboarding
+- `bot/handlers/user/start.py` → Reescritura completa con 5 flujos
+- `alembic/versions/015_add_user_activity_tracking.py` → Nueva migración
+
+---
+
 **Última actualización:** 2024-12-29
