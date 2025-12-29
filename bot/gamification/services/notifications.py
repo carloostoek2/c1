@@ -14,6 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
 from bot.gamification.database.models import Mission, Reward, Level, GamificationConfig
+from bot.gamification.utils.formatters import (
+    format_currency,
+    CURRENCY_NAME_PLURAL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +26,13 @@ NOTIFICATION_TEMPLATES = {
     'level_up': (
         "🎉 <b>¡Subiste de nivel!</b>\n\n"
         "{old_level} → <b>{new_level}</b>\n\n"
-        "Mínimo de besitos: {min_besitos}"
+        f"Mínimo de {CURRENCY_NAME_PLURAL.lower()}: {{min_besitos}}"
     ),
 
     'mission_completed': (
         "✅ <b>Misión Completada</b>\n\n"
         "<b>{mission_name}</b>\n"
-        "Recompensa: {besitos} besitos\n\n"
+        "Recompensa: {reward_text}\n\n"
         "Usa /profile para reclamarla"
     ),
 
@@ -129,7 +133,7 @@ class NotificationService:
         """
         message = NOTIFICATION_TEMPLATES['mission_completed'].format(
             mission_name=mission.name,
-            besitos=mission.besitos_reward
+            reward_text=format_currency(mission.besitos_reward)
         )
         await self._send_notification(user_id, message)
 

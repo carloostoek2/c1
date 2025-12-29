@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.shop.services.container import ShopContainer
 from bot.shop.database.enums import ItemType, ItemRarity
+from bot.gamification.utils.formatters import format_currency, CURRENCY_EMOJI
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ def _build_category_keyboard(
 
     for item in page_items:
         rarity_emoji = ItemRarity(item.rarity).emoji if item.rarity else ""
-        text = f"{item.icon} {item.name} - {item.price_besitos} 💋"
+        text = f"{item.icon} {item.name} - {item.price_besitos} {CURRENCY_EMOJI}"
         buttons.append([
             InlineKeyboardButton(
                 text=text,
@@ -126,7 +127,7 @@ async def cmd_shop(message: Message, session: AsyncSession):
 
     text = (
         "🏪 <b>Tienda de Artefactos</b>\n\n"
-        f"💋 Tu saldo: <b>{user_besitos}</b> besitos\n\n"
+        f"✨ Tu saldo: <b>{format_currency(user_besitos)}</b>\n\n"
         f"📦 {summary['total_items']} productos disponibles\n"
         f"📁 {summary['total_categories']} categorías\n\n"
         "Selecciona una categoría para explorar:"
@@ -155,7 +156,7 @@ async def callback_shop_main(callback: CallbackQuery, session: AsyncSession):
 
     text = (
         "🏪 <b>Tienda de Artefactos</b>\n\n"
-        f"💋 Tu saldo: <b>{user_besitos}</b> besitos\n\n"
+        f"✨ Tu saldo: <b>{format_currency(user_besitos)}</b>\n\n"
         f"📦 {summary['total_items']} productos disponibles\n"
         f"📁 {summary['total_categories']} categorías\n\n"
         "Selecciona una categoría para explorar:"
@@ -243,7 +244,7 @@ async def callback_shop_featured(callback: CallbackQuery, session: AsyncSession)
 
     buttons = []
     for item in items:
-        text_item = f"{item.icon} {item.name} - {item.price_besitos} 💋"
+        text_item = f"{item.icon} {item.name} - {item.price_besitos} {CURRENCY_EMOJI}"
         buttons.append([
             InlineKeyboardButton(
                 text=text_item,
@@ -298,8 +299,8 @@ async def callback_shop_item_detail(callback: CallbackQuery, session: AsyncSessi
         text += f"\n{item.long_description}\n"
 
     text += (
-        f"\n💋 <b>Precio:</b> {item.price_besitos} besitos\n"
-        f"💰 <b>Tu saldo:</b> {user_besitos} besitos\n"
+        f"\n✨ <b>Precio:</b> {format_currency(item.price_besitos)}\n"
+        f"💰 <b>Tu saldo:</b> {format_currency(user_besitos)}\n"
     )
 
     if item.stock is not None:
@@ -337,7 +338,7 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
         text = (
             f"🎉 <b>¡Compra exitosa!</b>\n\n"
             f"{item.icon} {item.name} ha sido agregado a tu mochila.\n\n"
-            f"💋 Pagaste: {purchase.price_paid} besitos"
+            f"✨ Pagaste: {format_currency(purchase.price_paid)}"
         )
         buttons = [
             [InlineKeyboardButton(text="🎒 Ver Mochila", callback_data="backpack:main")],

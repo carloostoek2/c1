@@ -14,6 +14,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
 from bot.gamification.database.enums import MissionStatus
+from bot.gamification.utils.formatters import format_currency
 
 router = Router()
 
@@ -60,7 +61,7 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
             for um in in_progress:
                 mission = um.mission
                 text += f"• {mission.name}\n"
-                text += f"  Recompensa: {mission.besitos_reward} besitos\n"
+                text += f"  Recompensa: {format_currency(mission.besitos_reward)}\n"
                 keyboard_buttons.append([
                     InlineKeyboardButton(
                         text=f"📊 {mission.name}",
@@ -74,7 +75,7 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
             text += "✅ <b>Completadas (Reclamar):</b>\n"
             for um in completed:
                 mission = um.mission
-                text += f"• {mission.name} - {mission.besitos_reward} besitos\n"
+                text += f"• {mission.name} - {format_currency(mission.besitos_reward)}\n"
                 keyboard_buttons.append([
                     InlineKeyboardButton(
                         text=f"🎁 Reclamar: {mission.name}",
@@ -87,7 +88,7 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
         if available:
             text += "🆕 <b>Disponibles:</b>\n"
             for mission in available[:5]:  # Máximo 5
-                text += f"• {mission.name} - {mission.besitos_reward} besitos\n"
+                text += f"• {mission.name} - {format_currency(mission.besitos_reward)}\n"
 
         if not (in_progress or completed or available):
             text += "No hay misiones disponibles en este momento."
@@ -182,7 +183,7 @@ async def view_mission_progress(callback: CallbackQuery, gamification: Gamificat
             required_count = criteria.get('count', 0)
             text += f"📊 Progreso: {current_count}/{required_count} reacciones\n"
 
-        text += f"\n🎁 Recompensa: {mission.besitos_reward} besitos"
+        text += f"\n🎁 Recompensa: {format_currency(mission.besitos_reward)}"
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🔙 Misiones", callback_data="user:missions")]

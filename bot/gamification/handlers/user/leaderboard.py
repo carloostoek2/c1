@@ -2,7 +2,7 @@
 Handler para visualización de leaderboard/rankings.
 
 Funcionalidades:
-- Ver top 10 usuarios por besitos
+- Ver top 10 usuarios por Favores
 - Ver posición del usuario actual
 - Rankings con medallas para los primeros lugares
 """
@@ -12,6 +12,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
+from bot.gamification.utils.formatters import format_currency, CURRENCY_NAME_PLURAL
 
 router = Router()
 
@@ -25,10 +26,10 @@ async def show_leaderboard(callback: CallbackQuery, gamification: GamificationCo
     Muestra el leaderboard con el top 10 de usuarios.
 
     Incluye:
-    - Top 10 usuarios por besitos
+    - Top 10 usuarios por Favores
     - Medallas para los primeros 3 lugares
     - Posición del usuario actual
-    - Besitos de cada usuario
+    - Favores de cada usuario
 
     Args:
         callback: Callback query del usuario
@@ -53,19 +54,19 @@ async def show_leaderboard(callback: CallbackQuery, gamification: GamificationCo
 
                 # Formatear nombre de usuario (si existe)
                 user_id_display = user_data.get('user_id', 'Unknown')
-                besitos = user_data.get('total_besitos', 0)
+                favores = user_data.get('total_besitos', 0)
 
                 text += f"{medal} <b>Usuario {user_id_display}</b>\n"
-                text += f"    💰 {besitos:,} besitos\n"
+                text += f"    ✨ {format_currency(favores)}\n"
 
             # Posición del usuario actual
             if position_info:
-                besitos_rank = position_info.get('besitos_rank', 'N/A')
-                user_besitos = position_info.get('total_besitos', 0)
+                favores_rank = position_info.get('besitos_rank', 'N/A')
+                user_favores = position_info.get('total_besitos', 0)
 
                 text += f"\n<b>━━━━━━━━━━━━━━━━━</b>\n"
                 text += f"<b>Tu Posición:</b>\n"
-                text += f"#{besitos_rank} • {user_besitos:,} besitos"
+                text += f"#{favores_rank} • {format_currency(user_favores)}"
         else:
             text += "No hay datos de leaderboard disponibles."
 
