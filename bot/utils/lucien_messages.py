@@ -120,6 +120,56 @@ class LucienMessages:
         "¿Cómo puedo servirle hoy?"
     )
 
+    # --- Mensajes de contexto dinámico para menú ---
+    MENU_CONTEXT_MISSION_PENDING = (
+        "Hay un encargo pendiente. Diana espera."
+    )
+
+    MENU_CONTEXT_LEVEL_UP = (
+        "Su nuevo estatus trae nuevas posibilidades."
+    )
+
+    MENU_CONTEXT_FAVORS_ACCUMULATED = (
+        "Sus Favores se acumulan. El Gabinete tiene ofertas."
+    )
+
+    MENU_CONTEXT_STREAK_ACTIVE = (
+        "Su constancia no pasa desapercibida."
+    )
+
+    MENU_CONTEXT_DEFAULT = (
+        "¿En qué puedo asistirle?"
+    )
+
+    MENU_VIP_INTRO = (
+        "El Diván está a su disposición."
+    )
+
+    MENU_FREE_INTRO = (
+        "¿Qué desea explorar?"
+    )
+
+    # --- Perfil del usuario ---
+    PROFILE_HEADER = (
+        "Su expediente en el Diván:"
+    )
+
+    PROFILE_COMMENT_LEVEL_1_2 = (
+        "Aún está siendo evaluado. Cada acción cuenta."
+    )
+
+    PROFILE_COMMENT_LEVEL_3_4 = (
+        "Ha demostrado... potencial. Veremos si lo mantiene."
+    )
+
+    PROFILE_COMMENT_LEVEL_5_6 = (
+        "Diana lo tiene en cuenta. Eso es más de lo que la mayoría logra."
+    )
+
+    PROFILE_COMMENT_LEVEL_7 = (
+        "Pocos llegan aquí. Usted es uno de ellos. Actúe en consecuencia."
+    )
+
     # --- Aliases para compatibilidad ---
     WELCOME_FIRST = START_NEW_USER_1
 

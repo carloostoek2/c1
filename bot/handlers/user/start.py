@@ -60,15 +60,24 @@ def lucien_continue_keyboard() -> dict:
 
 def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
     """Keyboard del menú principal de Lucien."""
-    buttons = [
-        [{"text": "La Historia", "callback_data": "menu:historia"}],
-        [{"text": "Mi Perfil", "callback_data": "start:profile"}],
-        [{"text": "El Gabinete", "callback_data": "menu:gabinete"}],
-        [{"text": "Mis Encargos", "callback_data": "menu:encargos"}],
-    ]
-
     if is_vip:
-        buttons.append([{"text": "Contenido Nuevo", "callback_data": "menu:nuevo"}])
+        buttons = [
+            [{"text": "Continuar Historia", "callback_data": "story:continue"}],
+            [{"text": "Mi Perfil", "callback_data": "profile:view"}],
+            [{"text": "El Gabinete", "callback_data": "cabinet:browse"}],
+            [{"text": "Mis Encargos", "callback_data": "missions:list"}],
+            [{"text": "Mis Favores", "callback_data": "favors:balance"}],
+            [{"text": "Lo Nuevo", "callback_data": "content:new"}],
+            [{"text": "Mapa del Deseo", "callback_data": "map:view"}],
+        ]
+    else:
+        buttons = [
+            [{"text": "La Historia", "callback_data": "story:start"}],
+            [{"text": "Mi Perfil", "callback_data": "profile:view"}],
+            [{"text": "El Gabinete", "callback_data": "cabinet:browse"}],
+            [{"text": "Mis Encargos", "callback_data": "missions:list"}],
+            [{"text": "Mis Favores", "callback_data": "favors:balance"}],
+        ]
 
     return create_inline_keyboard(buttons)
 
@@ -76,8 +85,16 @@ def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
 def lucien_returning_long_keyboard() -> dict:
     """Keyboard para usuario ausente > 14 días."""
     return create_inline_keyboard([
-        [{"text": "Ver qué hay de nuevo", "callback_data": "menu:nuevo"}],
+        [{"text": "Ver qué hay de nuevo", "callback_data": "content:new"}],
         [{"text": "Ir al menú principal", "callback_data": "start:menu"}]
+    ])
+
+
+def lucien_profile_keyboard() -> dict:
+    """Keyboard para la vista de perfil."""
+    return create_inline_keyboard([
+        [{"text": "Ver todos mis distintivos", "callback_data": "profile:badges"}],
+        [{"text": "Volver al menú", "callback_data": "start:menu"}]
     ])
 
 
@@ -85,12 +102,94 @@ def lucien_returning_long_keyboard() -> dict:
 # HELPERS
 # =============================================================================
 
+async def _get_context_message(session: AsyncSession, user_id: int, bot) -> str:
+    """
+    Obtiene el mensaje de contexto dinámico según el estado del usuario.
+
+    Prioridad:
+    1. Tiene misión diaria sin completar
+    2. Subió de nivel recientemente
+    3. Tiene favores acumulados (>20)
+    4. Racha activa 7+ días
+    5. Default
+
+    Returns:
+        Mensaje de contexto de Lucien
+    """
+    try:
+        from bot.gamification.services.container import GamificationContainer
+        gamification = GamificationContainer(session, bot)
+
+        # Verificar misión pendiente
+        try:
+            pending_missions = await gamification.mission.get_pending_missions(user_id)
+            if pending_missions:
+                return Lucien.MENU_CONTEXT_MISSION_PENDING
+        except Exception:
+            pass
+
+        # Verificar favores acumulados (>20)
+        try:
+            balance = await gamification.besitos.get_balance(user_id)
+            if balance and balance > 20:
+                return Lucien.MENU_CONTEXT_FAVORS_ACCUMULATED
+        except Exception:
+            pass
+
+        # Verificar racha activa 7+ días
+        try:
+            streak = await gamification.daily_gift.get_streak_info(user_id)
+            if streak and streak.get("current_streak", 0) >= 7:
+                return Lucien.MENU_CONTEXT_STREAK_ACTIVE
+        except Exception:
+            pass
+
+    except Exception as e:
+        logger.warning(f"⚠️ Error obteniendo contexto: {e}")
+
+    return Lucien.MENU_CONTEXT_DEFAULT
+
+
+def _create_progress_bar(current: int, maximum: int, length: int = 10) -> str:
+    """
+    Crea una barra de progreso visual.
+
+    Args:
+        current: Valor actual
+        maximum: Valor máximo
+        length: Longitud de la barra (default 10)
+
+    Returns:
+        String con barra de progreso (ej: "▓▓▓▓▓▒▒▒▒▒")
+    """
+    if maximum <= 0:
+        return "▒" * length
+
+    filled = int((current / maximum) * length)
+    filled = min(filled, length)
+    empty = length - filled
+
+    return "▓" * filled + "▒" * empty
+
+
+def _get_profile_comment(level_number: int) -> str:
+    """Obtiene el comentario de Lucien según el nivel."""
+    if level_number <= 2:
+        return Lucien.PROFILE_COMMENT_LEVEL_1_2
+    elif level_number <= 4:
+        return Lucien.PROFILE_COMMENT_LEVEL_3_4
+    elif level_number <= 6:
+        return Lucien.PROFILE_COMMENT_LEVEL_5_6
+    else:
+        return Lucien.PROFILE_COMMENT_LEVEL_7
+
+
 async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
     """
     Obtiene el contexto completo del usuario para determinar el flujo.
 
     Returns:
-        Dict con: user, is_new, is_vip, days_away, level_name, favors, vip_days, archetype
+        Dict con datos completos del usuario para menú y perfil
     """
     container = ServiceContainer(session, bot)
 
@@ -105,10 +204,20 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
             "is_vip": False,
             "days_away": 0,
             "level_name": "Visitante",
+            "level_number": 1,
+            "level_progress": 0,
+            "level_next_req": 100,
             "favors": 0,
             "vip_days": 0,
             "archetype": None,
-            "streak_status": ""
+            "archetype_name": None,
+            "streak_status": "",
+            "current_streak": 0,
+            "best_streak": 0,
+            "total_days": 0,
+            "chapters_done": 0,
+            "chapters_total": 6,
+            "badges": [],
         }
 
     # Verificar VIP
@@ -117,11 +226,26 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
     # Calcular días de ausencia
     days_away = user.days_since_last_activity
 
+    # Calcular días totales en el sistema
+    total_days = 0
+    if user.created_at:
+        created = user.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        total_days = (datetime.now(timezone.utc) - created).days
+
     # Obtener datos de gamificación
     level_name = "Visitante"
+    level_number = 1
+    level_progress = 0
+    level_next_req = 100
     favors = 0
     archetype = None
+    archetype_name = None
     streak_status = ""
+    current_streak = 0
+    best_streak = 0
+    badges = []
 
     try:
         from bot.gamification.services.container import GamificationContainer
@@ -129,22 +253,45 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
 
         # Obtener nivel
         user_gam = await gamification.user_gamification.get_or_create_profile(user_id)
-        if user_gam and user_gam.current_level:
-            level_name = user_gam.current_level.name
+        if user_gam:
+            if user_gam.current_level:
+                level_name = user_gam.current_level.name
+                level_number = user_gam.current_level.level_number
+                level_next_req = user_gam.current_level.min_besitos_required or 100
+
+            # Obtener progreso hacia siguiente nivel
+            level_progress = user_gam.total_besitos or 0
+
+            # Obtener arquetipo
+            archetype = user_gam.archetype if user_gam else None
+            if archetype:
+                archetype_val = archetype.value if hasattr(archetype, 'value') else archetype
+                archetype_names = {
+                    "explorer": "Explorador",
+                    "direct": "Directo",
+                    "romantic": "Romántico",
+                    "analytical": "Analítico",
+                    "persistent": "Persistente",
+                    "patient": "Paciente",
+                    "impulsive": "Impulsivo",
+                    "contemplative": "Contemplativo",
+                    "silent": "Silencioso",
+                }
+                archetype_name = archetype_names.get(archetype_val)
 
         # Obtener favores (besitos)
         besitos_balance = await gamification.besitos.get_balance(user_id)
         favors = besitos_balance or 0
 
-        # Obtener arquetipo
-        archetype = user_gam.archetype if user_gam else None
-
         # Obtener estado de racha
         streak = await gamification.daily_gift.get_streak_info(user_id)
-        if streak and streak.get("current_streak", 0) > 0:
-            streak_status = f"Racha activa: {streak['current_streak']} días"
-        else:
-            streak_status = "Sin racha activa"
+        if streak:
+            current_streak = streak.get("current_streak", 0)
+            best_streak = streak.get("best_streak", 0)
+            if current_streak > 0:
+                streak_status = f"Racha activa: {current_streak} días"
+            else:
+                streak_status = "Sin racha activa"
 
     except Exception as e:
         logger.warning(f"⚠️ Error obteniendo datos de gamificación: {e}")
@@ -159,16 +306,30 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
                 join = join.replace(tzinfo=timezone.utc)
             vip_days = (datetime.now(timezone.utc) - join).days
 
+    # Obtener capítulos completados (placeholder)
+    chapters_done = 0
+    chapters_total = 6
+
     return {
         "user": user,
         "is_new": is_new,
         "is_vip": is_vip,
         "days_away": days_away,
         "level_name": level_name,
+        "level_number": level_number,
+        "level_progress": level_progress,
+        "level_next_req": level_next_req,
         "favors": favors,
         "vip_days": vip_days,
         "archetype": archetype,
-        "streak_status": streak_status
+        "archetype_name": archetype_name,
+        "streak_status": streak_status,
+        "current_streak": current_streak,
+        "best_streak": best_streak,
+        "total_days": total_days,
+        "chapters_done": chapters_done,
+        "chapters_total": chapters_total,
+        "badges": badges,
     }
 
 
@@ -469,21 +630,81 @@ async def callback_show_menu(callback: CallbackQuery, session: AsyncSession):
     await callback.answer()
 
 
-@user_router.callback_query(F.data == "start:profile")
+@user_router.callback_query(F.data.in_({"start:profile", "profile:view"}))
 async def callback_show_profile(callback: CallbackQuery, session: AsyncSession):
-    """Muestra el perfil del usuario."""
-    from bot.utils.menu_helpers import build_profile_menu
-
+    """Muestra el perfil del usuario con la voz de Lucien."""
     try:
-        summary, keyboard = await build_profile_menu(
-            session=session,
-            bot=callback.bot,
-            user_id=callback.from_user.id
+        context = await _get_user_context(session, callback.from_user.id, callback.bot)
+
+        # Construir barra de progreso
+        progress_bar = _create_progress_bar(
+            context["level_progress"],
+            context["level_next_req"]
         )
 
+        # Construir sección de arquetipo
+        archetype_section = ""
+        if context["archetype_name"]:
+            archetype_descriptions = {
+                "Explorador": "Busca cada detalle, quiere ver todo.",
+                "Directo": "Va al grano, sin rodeos.",
+                "Romántico": "Busca conexión, no solo contenido.",
+                "Analítico": "Estudia, calcula, optimiza.",
+                "Persistente": "No se rinde ante el primer fracaso.",
+                "Paciente": "Toma su tiempo, procesa profundamente.",
+                "Impulsivo": "Actúa primero, reflexiona después.",
+                "Contemplativo": "Observa antes de actuar.",
+                "Silencioso": "Prefiere observar en las sombras.",
+            }
+            desc = archetype_descriptions.get(context["archetype_name"], "")
+            archetype_section = f'\nClasificación: <b>{context["archetype_name"]}</b>\n"{desc}"\n'
+
+        # Construir sección de distinciones
+        badges_section = ""
+        if context["badges"]:
+            badges_display = context["badges"][:6]
+            badges_section = " ".join(badges_display)
+            if len(context["badges"]) > 6:
+                badges_section += f'\n+ {len(context["badges"]) - 6} más'
+        else:
+            badges_section = "Ninguna distinción aún."
+
+        # Comentario de Lucien
+        lucien_comment = _get_profile_comment(context["level_number"])
+
+        # Construir mensaje completo
+        text = f"""{Lucien.PROFILE_HEADER}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+PROTOCOLO DE ACCESO
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nivel: <b>{context["level_number"]} - {context["level_name"]}</b>
+Progreso: {progress_bar} {context["level_progress"]}/{context["level_next_req"]}
+Favores: <b>{context["favors"]}</b>
+{archetype_section}
+━━━━━━━━━━━━━━━━━━━━━━━━
+ACTIVIDAD
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+Días en el universo: <b>{context["total_days"]}</b>
+Racha actual: <b>{context["current_streak"]}</b> días
+Mejor racha: <b>{context["best_streak"]}</b> días
+Capítulos completados: <b>{context["chapters_done"]}/{context["chapters_total"]}</b>
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+DISTINCIONES
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+{badges_section}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+<i>{lucien_comment}</i>"""
+
         await callback.message.edit_text(
-            text=summary,
-            reply_markup=keyboard,
+            text=text,
+            reply_markup=lucien_profile_keyboard(),
             parse_mode="HTML"
         )
         await callback.answer()
@@ -637,3 +858,169 @@ async def _activate_token_from_deeplink(
             "Contacte al administrador.",
             parse_mode="HTML"
         )
+
+
+# =============================================================================
+# CALLBACKS DEL MENÚ PRINCIPAL
+# =============================================================================
+
+@user_router.callback_query(F.data.in_({"story:start", "story:continue"}))
+async def callback_story(callback: CallbackQuery, session: AsyncSession):
+    """Handler para iniciar/continuar la historia."""
+    context = await _get_user_context(session, callback.from_user.id, callback.bot)
+
+    if callback.data == "story:continue" and context["is_vip"]:
+        text = (
+            "La historia continúa en el Diván.\n\n"
+            "Diana ha preparado nuevos capítulos para usted. "
+            "Los secretos que aún no conoce están a punto de revelarse."
+        )
+    else:
+        text = (
+            "La Historia del Diván.\n\n"
+            "Cada capítulo revela más sobre Diana y su universo. "
+            "Pero los capítulos más profundos... esos requieren algo más que curiosidad."
+        )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "cabinet:browse")
+async def callback_cabinet(callback: CallbackQuery, session: AsyncSession):
+    """Handler para el Gabinete (tienda)."""
+    text = (
+        "Bienvenido a mi Gabinete.\n\n"
+        "Aquí guardo ciertos... artículos que Diana ha autorizado para intercambio.\n\n"
+        "Los Favores que ha acumulado pueden convertirse en algo más tangible. "
+        "Examine con cuidado. No todo lo que brilla merece su inversión."
+    )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Ver artículos", "callback_data": "shop:browse"}],
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "missions:list")
+async def callback_missions(callback: CallbackQuery, session: AsyncSession):
+    """Handler para Mis Encargos (misiones)."""
+    text = (
+        "Sus Encargos.\n\n"
+        "Diana asigna tareas a quienes considera dignos de su atención. "
+        "Completarlas demuestra compromiso. Los Favores son su recompensa."
+    )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Ver encargos activos", "callback_data": "user:missions"}],
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "favors:balance")
+async def callback_favors(callback: CallbackQuery, session: AsyncSession):
+    """Handler para ver balance de Favores."""
+    context = await _get_user_context(session, callback.from_user.id, callback.bot)
+
+    text = (
+        f"Sus Favores: <b>{context['favors']}</b>\n\n"
+        "Cada Favor representa un momento en que Diana consideró que usted "
+        "merecía reconocimiento.\n\n"
+        "Úselos con criterio. El Gabinete ofrece formas de invertirlos."
+    )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Ir al Gabinete", "callback_data": "cabinet:browse"}],
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "content:new")
+async def callback_new_content(callback: CallbackQuery, session: AsyncSession):
+    """Handler para contenido nuevo."""
+    context = await _get_user_context(session, callback.from_user.id, callback.bot)
+
+    if context["is_vip"]:
+        text = (
+            "Lo Nuevo en el Diván.\n\n"
+            "Diana ha estado activa. Hay contenido fresco esperando su atención.\n\n"
+            "Los privilegios de su membresía le dan acceso a todo lo nuevo."
+        )
+    else:
+        text = (
+            "Lo Nuevo.\n\n"
+            "El universo de Diana sigue expandiéndose. "
+            "Pero parte de ese contenido... está reservado para el Diván.\n\n"
+            "Si desea acceso completo, hay formas de obtenerlo."
+        )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "map:view")
+async def callback_map(callback: CallbackQuery, session: AsyncSession):
+    """Handler para el Mapa del Deseo (solo VIP)."""
+    text = (
+        "El Mapa del Deseo.\n\n"
+        "Un recorrido personalizado por los territorios de Diana. "
+        "No es para todos. Solo para quienes buscan algo más profundo que el acceso.\n\n"
+        "Pronto, más detalles sobre cómo navegar este mapa."
+    )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "profile:badges")
+async def callback_badges(callback: CallbackQuery, session: AsyncSession):
+    """Handler para ver todas las distinciones."""
+    text = (
+        "Sus Distinciones.\n\n"
+        "Cada distintivo representa un logro en el universo de Diana.\n\n"
+        "Por ahora, su colección está vacía. "
+        "Pero con el tiempo y la dedicación, eso puede cambiar."
+    )
+
+    await callback.message.edit_text(
+        text=text,
+        reply_markup=create_inline_keyboard([
+            [{"text": "Volver al perfil", "callback_data": "profile:view"}],
+            [{"text": "Volver al menú", "callback_data": "start:menu"}]
+        ]),
+        parse_mode="HTML"
+    )
+    await callback.answer()

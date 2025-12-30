@@ -330,6 +330,40 @@ _Ninguno por ahora_
 - `bot/handlers/user/start.py` → Reescritura completa con 5 flujos
 - `alembic/versions/015_add_user_activity_tracking.py` → Nueva migración
 
+### F1.2 Reescribir Menú Principal ✅ **COMPLETADO**
+- [x] Menú diferenciado Free/VIP
+- [x] Callbacks actualizados:
+  - `story:start` / `story:continue`
+  - `profile:view`
+  - `cabinet:browse`
+  - `missions:list`
+  - `favors:balance`
+  - `content:new` (VIP)
+  - `map:view` (VIP)
+- [x] Mensajes de contexto dinámicos según estado:
+  - Misión diaria pendiente
+  - Favores acumulados (>20)
+  - Racha activa 7+ días
+  - Default
+
+### F1.3 Reescribir Vista de Perfil ✅ **COMPLETADO**
+- [x] Vista de perfil con secciones:
+  - PROTOCOLO DE ACCESO (nivel, progreso, favores)
+  - Clasificación de arquetipo con descripción
+  - ACTIVIDAD (días, racha, capítulos)
+  - DISTINCIONES (badges)
+- [x] Barra de progreso visual: `▓▓▓▓▓▒▒▒▒▒`
+- [x] Comentarios de Lucien según nivel:
+  - 1-2: "Aún está siendo evaluado..."
+  - 3-4: "Ha demostrado... potencial..."
+  - 5-6: "Diana lo tiene en cuenta..."
+  - 7: "Pocos llegan aquí..."
+- [x] Botones: "Ver todos mis distintivos" / "Volver al menú"
+
+**Componentes Modificados F1.2/F1.3:**
+- `bot/handlers/user/start.py` → Callbacks de menú + vista de perfil
+- `bot/utils/lucien_messages.py` → Mensajes de contexto y perfil
+
 ---
 
 **Última actualización:** 2024-12-29
