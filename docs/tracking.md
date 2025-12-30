@@ -401,6 +401,53 @@ _Ninguno por ahora_
 - `bot/gamification/handlers/user/missions.py` → Reescritura completa (388 líneas)
 - `bot/utils/lucien_messages.py` → +25 mensajes Gabinete y Encargos
 
+### F1.6 Reescribir Sistema de Favores ✅ **COMPLETADO**
+- [x] Nuevo handler `bot/handlers/user/favors.py`:
+  - Comando `/favores` para ver balance completo
+  - Callback `start:favors` para botón "Mis Favores"
+  - Estadísticas de actividad (hoy/semana/mes)
+  - Próximos hitos de nivel
+  - Historial de transacciones (últimas 10)
+  - Información de cómo ganar Favores
+- [x] Comentarios según cantidad de Favores (7 rangos):
+  - 0-5: "Apenas comenzando..."
+  - 6-15: "Un inicio modesto..."
+  - 16-35: "Progreso visible..."
+  - 36-70: "Acumulación respetable..."
+  - 71-120: "Una cuenta considerable..."
+  - 121-200: "Impresionante moderación..."
+  - 200+: "Acumula sin gastar..."
+- [x] Notificaciones de ganancia:
+  - Pequeña (0.1-0.5): "+X Favor. Diana lo nota."
+  - Media (1-3): Con total nuevo
+  - Alta (5+): "Significativo. Diana informada."
+  - Hito: Con percentil de posición
+- [x] Router registrado en `bot/handlers/__init__.py`
+
+### F1.7 Mensajes de Error Unificados ✅ **COMPLETADO**
+- [x] Catálogo centralizado en `bot/utils/lucien_messages.py`
+- [x] Errores de sistema:
+  - ERROR_GENERIC (mejorado)
+  - ERROR_TIMEOUT (mejorado)
+  - ERROR_MAINTENANCE (nuevo)
+- [x] Errores de permisos:
+  - ERROR_VIP_REQUIRED (nuevo)
+  - ERROR_LEVEL_REQUIRED (nuevo, con placeholders nivel)
+  - ERROR_NOT_OWNED (nuevo)
+- [x] Errores de input:
+  - ERROR_INVALID_INPUT (mejorado)
+  - ERROR_OPTION_UNAVAILABLE (nuevo)
+  - ERROR_ALREADY_DONE (nuevo)
+- [x] Errores de límites:
+  - ERROR_DAILY_LIMIT (nuevo)
+  - ERROR_COOLDOWN (nuevo, con placeholder tiempo)
+
+**Componentes F1.6/F1.7:**
+- `bot/handlers/user/favors.py` → Nuevo (390 líneas)
+- `bot/utils/lucien_messages.py` → +90 líneas (mensajes Favores + Errores)
+- `bot/handlers/__init__.py` → Registro de favors_router
+- `bot/handlers/user/__init__.py` → Export de favors_router
+
 ---
 
 **Última actualización:** 2024-12-29
