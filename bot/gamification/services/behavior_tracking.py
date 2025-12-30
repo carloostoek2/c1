@@ -20,32 +20,13 @@ from bot.gamification.database.models import (
     UserBehaviorSignals,
     BehaviorInteraction
 )
+from bot.gamification.utils.emotional_words import (
+    EMOTIONAL_WORDS,
+    has_emotional_content,
+    is_diana_question,
+)
 
 logger = logging.getLogger(__name__)
-
-
-# Palabras emocionales para detección de ROMANTIC
-EMOTIONAL_WORDS = {
-    # Español
-    "amor", "corazón", "alma", "sentir", "emoción", "pasión",
-    "deseo", "anhelo", "cariño", "ternura", "intimidad", "conexión",
-    "sueño", "fantasía", "encanto", "fascinación", "adorar", "querer",
-    "abrazar", "besar", "susurrar", "acariciar", "soñar", "anhelar",
-    "extrañar", "necesitar", "vulnerable", "profundo", "intenso",
-    # Palabras relacionadas con Diana/relación
-    "diana", "especial", "única", "bella", "hermosa", "perfecta",
-}
-
-# Palabras que indican preguntas sobre Diana
-DIANA_QUESTION_PATTERNS = [
-    r"\b(diana|ella)\b.*\?",
-    r"\bquién es\b",
-    r"\bcómo es\b.*\bpersona\b",
-    r"\bqué le gusta\b",
-    r"\bcuántos años\b",
-    r"\bdónde vive\b",
-    r"\bvida\b.*\bpersonal\b",
-]
 
 
 class BehaviorTrackingService:
@@ -323,11 +304,7 @@ class BehaviorTrackingService:
         Returns:
             True si parece ser una pregunta sobre Diana
         """
-        text_lower = text.lower()
-        for pattern in DIANA_QUESTION_PATTERNS:
-            if re.search(pattern, text_lower):
-                return True
-        return False
+        return is_diana_question(text)
 
     # ========================================
     # ANÁLISIS DE TEXTO
@@ -363,12 +340,9 @@ class BehaviorTrackingService:
         """
         words = text.split()
         word_count = len(words)
-        text_lower = text.lower()
 
-        # Detectar palabras emocionales
-        has_emotional = any(
-            word in text_lower for word in EMOTIONAL_WORDS
-        )
+        # Detectar palabras emocionales usando módulo centralizado
+        has_emotional, _ = has_emotional_content(text)
 
         # Detectar preguntas
         has_questions = "?" in text

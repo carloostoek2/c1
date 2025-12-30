@@ -43,6 +43,7 @@ class GamificationContainer:
         self._economy_config_service = None
         self._behavior_tracking_service = None
         self._archetype_detection_service = None
+        self._archetype_notification_service = None
 
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
@@ -187,6 +188,21 @@ class GamificationContainer:
         return self._archetype_detection_service
 
     @property
+    def archetype_notification(self):
+        """Servicio de notificación de arquetipos detectados."""
+        if self._archetype_notification_service is None:
+            if self._bot is None:
+                raise RuntimeError(
+                    "ArchetypeNotificationService requires a Bot instance. "
+                    "Initialize GamificationContainer with bot parameter."
+                )
+            from bot.gamification.services.archetype_notification import ArchetypeNotificationService
+            self._archetype_notification_service = ArchetypeNotificationService(
+                self._session, self._bot
+            )
+        return self._archetype_notification_service
+
+    @property
     def mission_orchestrator(self):
         """Orquestador de creación de misiones."""
         if self._mission_orchestrator is None:
@@ -249,6 +265,8 @@ class GamificationContainer:
             loaded.append('behavior_tracking')
         if self._archetype_detection_service is not None:
             loaded.append('archetype_detection')
+        if self._archetype_notification_service is not None:
+            loaded.append('archetype_notification')
         if self._mission_orchestrator is not None:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
@@ -275,6 +293,7 @@ class GamificationContainer:
         self._economy_config_service = None
         self._behavior_tracking_service = None
         self._archetype_detection_service = None
+        self._archetype_notification_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
         self._configuration_orchestrator = None

@@ -6,6 +6,7 @@ from bot.middlewares.database import DatabaseMiddleware
 from bot.middlewares.typing_indicator import TypingIndicatorMiddleware
 from bot.middlewares.auto_reaction import AutoReactionMiddleware
 from bot.middlewares.rate_limit import RateLimitMiddleware, rate_limiter
+from bot.middlewares.behavior_tracking import BehaviorTrackingMiddleware
 
 __all__ = [
     "AdminAuthMiddleware",
@@ -14,4 +15,5 @@ __all__ = [
     "AutoReactionMiddleware",
     "RateLimitMiddleware",
     "rate_limiter",
+    "BehaviorTrackingMiddleware",
 ]

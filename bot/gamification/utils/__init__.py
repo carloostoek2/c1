@@ -36,6 +36,15 @@ from .formatters import (
     get_favor_reward,
 )
 
+from .emotional_words import (
+    EMOTIONAL_WORDS,
+    EMOTIONAL_PHRASES,
+    DIANA_QUESTION_PATTERNS,
+    has_emotional_content,
+    is_diana_question,
+    get_emotional_intensity,
+)
+
 __all__ = [
     # Validators
     "validate_json_structure",
@@ -65,4 +74,11 @@ __all__ = [
     "FAVOR_REWARDS",
     "BESITO_REWARDS",
     "get_favor_reward",
+    # Emotional words
+    "EMOTIONAL_WORDS",
+    "EMOTIONAL_PHRASES",
+    "DIANA_QUESTION_PATTERNS",
+    "has_emotional_content",
+    "is_diana_question",
+    "get_emotional_intensity",
 ]

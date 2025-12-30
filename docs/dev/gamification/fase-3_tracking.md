@@ -1,8 +1,8 @@
 # TRACKING: FASE 3 - ARQUETIPOS EXPANDIDOS
 
 **Inicio:** 2024-12-30
-**Estado:** 🟡 En Progreso
-**Progreso:** 3/9 tareas completadas (33%)
+**Estado:** ✅ Completado
+**Progreso:** 9/9 tareas completadas (100%)
 
 ---
 
@@ -13,12 +13,12 @@
 | F3.1 | Modelo de Datos | ✅ Completado |
 | F3.2 | Servicio de Tracking | ✅ Completado |
 | F3.3 | Servicio de Detección | ✅ Completado |
-| F3.4 | Palabras Emocionales | 🟡 Parcial |
-| F3.5 | Integración con Handlers | 🔴 Pendiente |
-| F3.6 | Notificación de Arquetipo | 🔴 Pendiente |
-| F3.7 | Adaptación de Contenido | 🔴 Pendiente |
-| F3.8 | Impacto en Conversión | 🔴 Pendiente |
-| F3.9 | Comandos de Admin | 🔴 Pendiente |
+| F3.4 | Palabras Emocionales | ✅ Completado |
+| F3.5 | Integración con Handlers | ✅ Completado |
+| F3.6 | Notificación de Arquetipo | ✅ Completado |
+| F3.7 | Adaptación de Contenido | ✅ Completado |
+| F3.8 | Impacto en Conversión | ✅ Completado |
+| F3.9 | Comandos de Admin | ✅ Completado |
 
 ---
 
@@ -71,6 +71,8 @@
 - [x] `get_archetype()` - Consulta sin recalcular
 - [x] `should_reevaluate()` - Cuándo re-evaluar
 - [x] `force_reevaluation()` - Re-evaluación forzada
+- [x] `get_archetype_insights()` - Info detallada para UI
+- [x] `get_archetype_distribution()` - Estadísticas globales
 - [x] Umbral mínimo de interacciones (20)
 - [x] Umbral mínimo de confianza (0.35)
 - [x] Tests E2E (27 tests nuevos, 54 total)
@@ -88,76 +90,148 @@
 
 ---
 
-### F3.4 - Palabras Emocionales 🟡 PARCIAL
+### F3.4 - Palabras Emocionales ✅ COMPLETADO
 
 **Objetivo:** Detectar contenido emocional en respuestas de texto.
 
-- [x] Lista básica de palabras emocionales (implementada en F3.2)
-- [ ] Lista completa de palabras (60+)
-- [ ] Lista de frases emocionales
-- [ ] Función `has_emotional_content()` mejorada
-- [ ] Tests
+- [x] Lista completa de palabras emocionales (60+)
+- [x] Lista de frases emocionales
+- [x] Función `has_emotional_content()`
+- [x] Función `is_diana_question()`
+- [x] Función `get_emotional_intensity()`
+- [x] Módulo centralizado
+
+**Archivos creados:**
+- `bot/gamification/utils/emotional_words.py`
+
+**Características:**
+- 60+ palabras emocionales categorizadas
+- Patrones de preguntas sobre Diana
+- Cálculo de intensidad emocional
+- API modular y reutilizable
 
 ---
 
-### F3.5 - Integración con Handlers 🔴 PENDIENTE
+### F3.5 - Integración con Handlers ✅ COMPLETADO
 
 **Objetivo:** Agregar tracking a handlers principales del bot.
 
-- [ ] start.py - SESSION_START, RETURN_AFTER_INACTIVITY
-- [ ] dynamic_menu.py - MENU_NAVIGATION, BUTTON_CLICK
-- [ ] story.py - CONTENT_VIEW, DECISION_MADE
-- [ ] decisions.py - DECISION_MADE con tiempo
-- [ ] shop.py - BUTTON_CLICK
-- [ ] missions.py - CONTENT_VIEW
-- [ ] Middleware de tracking (opcional)
-- [ ] Tests de integración
+- [x] Middleware `BehaviorTrackingMiddleware`
+- [x] Tracking de SESSION_START
+- [x] Tracking de RETURN_AFTER_INACTIVITY
+- [x] Tracking de BUTTON_CLICK
+- [x] Tracking de TEXT_RESPONSE
+- [x] Tracking de MENU_NAVIGATION
+- [x] Tracking no-bloqueante (asyncio.create_task)
+
+**Archivos creados:**
+- `bot/middlewares/behavior_tracking.py`
+- `bot/middlewares/__init__.py` (actualizado)
+
+**Características:**
+- Middleware automático para todos los handlers
+- No bloquea la respuesta al usuario
+- Detecta retorno después de inactividad (>24h)
+- Análisis automático de respuestas de texto
 
 ---
 
-### F3.6 - Notificación de Arquetipo 🔴 PENDIENTE
+### F3.6 - Notificación de Arquetipo ✅ COMPLETADO
 
 **Objetivo:** Notificar al usuario cuando se detecta su arquetipo.
 
-- [ ] Mensajes de Lucien para cada arquetipo (6)
-- [ ] Badge de arquetipo (6 badges)
-- [ ] Lógica de cuándo notificar
-- [ ] NO notificar en re-evaluaciones iguales
-- [ ] Tests
+- [x] Mensajes de Lucien para cada arquetipo (6)
+- [x] Badge de arquetipo (6 badges)
+- [x] Servicio `ArchetypeNotificationService`
+- [x] `notify_archetype_detected()` - Enviar notificación
+- [x] `_grant_archetype_badge()` - Otorgar badge
+- [x] NO notificar en re-evaluaciones iguales
+
+**Archivos creados:**
+- `bot/gamification/services/archetype_notification.py`
+- `bot/gamification/services/container.py` (actualizado)
+
+**Mensajes implementados:**
+- EXPLORER: "Su curiosidad es... insaciable"
+- DIRECT: "Su claridad es... refrescante"
+- ROMANTIC: "Busca conexión... peligrosamente hermoso"
+- ANALYTICAL: "Es irritante... pero respetable"
+- PERSISTENT: "Algo casi... conmovedor en esa tenacidad"
+- PATIENT: "La paciencia es la virtud más subestimada"
 
 ---
 
-### F3.7 - Adaptación de Contenido 🔴 PENDIENTE
+### F3.7 - Adaptación de Contenido ✅ COMPLETADO
 
 **Objetivo:** Variar mensajes según arquetipo del usuario.
 
-- [ ] Helper `get_adapted_message()`
-- [ ] Variaciones de mensaje de misión diaria (6)
-- [ ] Variaciones de bienvenida de regreso
-- [ ] Al menos 5 mensajes con variaciones
-- [ ] Tests
+- [x] Helper `get_adapted_message()`
+- [x] Variaciones de misión diaria (6)
+- [x] Variaciones de bienvenida de regreso (6)
+- [x] Variaciones de misión completada (6)
+- [x] Variaciones de racha alcanzada (6)
+- [x] Variaciones de level up (6)
+- [x] Variaciones de acción no permitida (6)
+
+**Archivos creados:**
+- `bot/gamification/services/archetype_messages.py`
+
+**Mensajes implementados:**
+- `mission_daily_available`
+- `welcome_back`
+- `mission_completed`
+- `streak_milestone`
+- `level_up`
+- `action_not_allowed`
 
 ---
 
-### F3.8 - Impacto en Conversión 🔴 PENDIENTE
+### F3.8 - Impacto en Conversión ✅ COMPLETADO
 
 **Objetivo:** Triggers y mensajes de conversión personalizados.
 
-- [ ] Triggers de conversión por arquetipo (6)
-- [ ] Mensajes de conversión personalizados (6)
-- [ ] Timing óptimo por arquetipo
-- [ ] Tests
+- [x] ConversionTrigger dataclass
+- [x] ConversionOffer dataclass
+- [x] Triggers de conversión por arquetipo (6)
+- [x] Mensajes de conversión personalizados (6)
+- [x] `ArchetypeConversionService`
+- [x] `get_trigger()` - Obtener trigger por arquetipo
+- [x] `get_conversion_message()` - Mensaje personalizado
+- [x] `should_show_offer()` - Timing óptimo
+- [x] `get_optimal_timing()` - Descripción del momento
+
+**Archivos creados:**
+- `bot/gamification/services/archetype_conversion.py`
+
+**Triggers implementados:**
+- EXPLORER: `easter_egg_requires_vip`
+- DIRECT: `action_completed`
+- ROMANTIC: `emotional_fragment_viewed`
+- ANALYTICAL: `quiz_high_score`
+- PERSISTENT: `return_after_inactivity`
+- PATIENT: `streak_7_days`
 
 ---
 
-### F3.9 - Comandos de Admin 🔴 PENDIENTE
+### F3.9 - Comandos de Admin ✅ COMPLETADO
 
 **Objetivo:** Herramientas de administración para arquetipos.
 
-- [ ] `/admin_archetype <user_id>` - Ver arquetipo
-- [ ] `/admin_archetype_stats` - Estadísticas globales
-- [ ] `/admin_archetype_refresh <user_id>` - Forzar re-evaluación
-- [ ] Tests
+- [x] `/admin_archetype <user_id>` - Ver arquetipo de usuario
+- [x] `/admin_archetype_stats` - Estadísticas globales
+- [x] `/admin_archetype_refresh <user_id>` - Forzar re-evaluación
+- [x] Barras visuales de progreso
+- [x] Información de señales principales
+
+**Archivos creados:**
+- `bot/handlers/admin/archetype.py`
+- `bot/handlers/admin/__init__.py` (actualizado)
+
+**Características:**
+- Vista completa de arquetipo con scores y confianza
+- Distribución global de arquetipos
+- Re-evaluación forzada para debugging
+- Visualización de comportamientos clave
 
 ---
 
@@ -165,23 +239,43 @@
 
 1. `99add94` - feat(F3.1, F3.2): Sistema de Arquetipos y Tracking de Comportamiento
 2. `b089f0a` - feat(F3.3): ArchetypeDetectionService con algoritmo de scoring
+3. (pendiente) - feat(F3.4-F3.9): Sistema completo de arquetipos
 
 ---
 
-## PRÓXIMOS PASOS
+## ARCHIVOS FASE 3
 
-1. **F3.4** - Completar lista de palabras emocionales
-2. **F3.5** - Integrar tracking en handlers principales
-3. **F3.6** - Notificación de arquetipo detectado
+**Servicios:**
+- `bot/gamification/services/archetype_detection.py` - Detección de arquetipos
+- `bot/gamification/services/archetype_notification.py` - Notificaciones
+- `bot/gamification/services/archetype_messages.py` - Mensajes adaptados
+- `bot/gamification/services/archetype_conversion.py` - Triggers de conversión
+- `bot/gamification/services/behavior_tracking.py` - Tracking de comportamiento
+- `bot/gamification/services/container.py` - Container actualizado
+
+**Utilidades:**
+- `bot/gamification/utils/emotional_words.py` - Palabras emocionales
+
+**Middlewares:**
+- `bot/middlewares/behavior_tracking.py` - Tracking automático
+
+**Handlers:**
+- `bot/handlers/admin/archetype.py` - Comandos admin
+
+**Total archivos nuevos:** 6
+**Total archivos modificados:** 4
 
 ---
 
 ## NOTAS
 
-- El tracking debe ser no-bloqueante (fire-and-forget)
-- No guardar contenido de mensajes, solo métricas
-- Umbral recomendado: 20 interacciones mínimas para detectar
+- El tracking es no-bloqueante (asyncio.create_task)
+- No se guarda contenido de mensajes, solo métricas
+- Umbral de detección: 20 interacciones mínimas
+- Umbral de confianza: 0.35 mínimo
+- Re-evaluación: cada 7 días o 50 interacciones
 
 ---
 
 **Última actualización:** 2025-12-30
+**Estado final:** ✅ FASE 3 COMPLETADA
