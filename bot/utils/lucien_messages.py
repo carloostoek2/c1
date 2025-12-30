@@ -336,40 +336,58 @@ class LucienMessages:
     # ================================================================
 
     CABINET_WELCOME = (
-        "Bienvenido a mi Gabinete. Aquí guardo ciertos... artículos que Diana "
-        "ha autorizado para intercambio.\n\n"
-        "Los Favores que ha acumulado pueden convertirse en algo más tangible. "
-        "Examine con cuidado. No todo lo que brilla merece su inversión."
+        "Bienvenido a mi Gabinete.\n\n"
+        "Aquí guardo artículos que Diana ha autorizado para intercambio. "
+        "Sus Favores pueden convertirse en algo... tangible.\n\n"
+        "Sus Favores disponibles: <b>{favors}</b>\n\n"
+        "Examine las categorías. No todo merece su inversión."
     )
 
     CABINET_CATEGORY_EPHEMERAL = (
-        "Efímeros. Consumibles de un solo uso.\n\n"
-        "Potentes pero temporales. Como ciertos placeres. "
-        "Úselos en el momento adecuado o desperdiciará su valor."
+        "Efímeros. Placeres de un solo uso. Intensos pero fugaces.\n\n"
+        "Sus Favores: <b>{favors}</b>"
     )
 
     CABINET_CATEGORY_DISTINCTIVE = (
-        "Distintivos. Marcas visibles de su estatus.\n\n"
-        "Otros notarán lo que porta. Diana también. "
-        "Elija lo que desea proyectar."
+        "Distintivos. Marcas de posición.\n\n"
+        "Otros notarán lo que porta. Diana también.\n\n"
+        "Sus Favores: <b>{favors}</b>"
     )
 
     CABINET_CATEGORY_KEYS = (
-        "Llaves. Accesos a lugares restringidos.\n\n"
-        "Algunas puertas solo se abren con la llave correcta. "
-        "Lo que hay detrás... bueno, eso depende de la puerta."
+        "Llaves. Acceso a lo oculto.\n\n"
+        "Algunas puertas solo se abren con la llave correcta.\n\n"
+        "Sus Favores: <b>{favors}</b>"
     )
 
     CABINET_CATEGORY_RELICS = (
-        "Reliquias. Piezas únicas del universo de Diana.\n\n"
-        "Raras. Coleccionables. Algunas tienen historia. "
-        "Otras la crearán con usted."
+        "Reliquias. Lo más valioso.\n\n"
+        "Piezas únicas del universo de Diana. Raras. Coleccionables.\n\n"
+        "Sus Favores: <b>{favors}</b>"
     )
 
-    CABINET_ITEM_PURCHASED = (
-        "{item_name} es suyo ahora.\n\n"
-        "Revise su inventario cuando desee utilizarlo. "
-        "Y recuerde: todo tiene consecuencias."
+    CABINET_CONFIRM_PURCHASE = (
+        "¿Desea adquirir '<b>{item_name}</b>'?\n\n"
+        "Costo: <b>{price}</b> Favor(es)\n"
+        "Sus Favores actuales: <b>{total}</b>\n"
+        "Favores restantes: <b>{remaining}</b>\n\n"
+        "{description}"
+    )
+
+    CABINET_PURCHASE_SUCCESS = (
+        "Transacción completada.\n\n"
+        "'<b>{item_name}</b>' ha sido añadido a su inventario.\n\n"
+        "Diana ha sido notificada de su adquisición. No es que le importe "
+        "especialmente, pero... lo sabe.\n\n"
+        "Favores restantes: <b>{new_total}</b>"
+    )
+
+    CABINET_INSUFFICIENT_FUNDS = (
+        "Sus Favores son insuficientes.\n\n"
+        "Necesita: <b>{price}</b>\n"
+        "Tiene: <b>{total}</b>\n"
+        "Le faltan: <b>{missing}</b>\n\n"
+        "Diana no otorga crédito. Acumule más Favores y regrese."
     )
 
     CABINET_EMPTY = (
@@ -378,9 +396,29 @@ class LucienMessages:
         "Regrese pronto."
     )
 
+    CABINET_ITEM_PURCHASED = (
+        "{item_name} es suyo ahora.\n\n"
+        "Revise su inventario cuando desee utilizarlo. "
+        "Y recuerde: todo tiene consecuencias."
+    )
+
     # ================================================================
-    # 7. MISIONES
+    # 7. ENCARGOS (MISIONES)
     # ================================================================
+
+    MISSIONS_HEADER = (
+        "Sus encargos actuales.\n\n"
+        "Diana asigna tareas. Yo las superviso. Usted las ejecuta. Así funciona esto."
+    )
+
+    MISSIONS_DAILY_HEADER = "PROTOCOLO DIARIO"
+    MISSIONS_WEEKLY_HEADER = "ENCARGO SEMANAL"
+    MISSIONS_SPECIAL_HEADER = "EVALUACIONES ESPECIALES"
+
+    MISSIONS_DAILY_COMPLETE = (
+        "Protocolo del día: Completado\n"
+        "Próximo encargo disponible en: {time_until_reset}"
+    )
 
     MISSION_NEW_DAILY = (
         "Hay una tarea pendiente para hoy.\n\n"
@@ -395,8 +433,27 @@ class LucienMessages:
     )
 
     MISSION_COMPLETE = (
-        "Misión completada: {mission_name}.\n\n"
-        "Ha ganado {amount} Favores. Diana ha sido informada de su progreso."
+        "Encargo completado.\n\n"
+        "'<b>{mission_name}</b>'\n\n"
+        "+<b>{amount}</b> Favor(es) añadidos a su cuenta.\n\n"
+        "Diana ha sido informada de su cumplimiento. {comment}\n\n"
+        "Favores totales: <b>{new_total}</b>"
+    )
+
+    MISSION_COMPLETE_DAILY_FIRST = (
+        "El primer paso del día. Los siguientes determinarán su constancia."
+    )
+
+    MISSION_COMPLETE_DAILY_STREAK = (
+        "Otro día, otro cumplimiento. Su regularidad es... notable."
+    )
+
+    MISSION_COMPLETE_WEEKLY = (
+        "Una semana de compromiso demostrado. Eso tiene peso."
+    )
+
+    MISSION_COMPLETE_SPECIAL = (
+        "Esta no era una tarea común. Diana lo notará."
     )
 
     MISSION_FAILED = (
@@ -408,6 +465,12 @@ class LucienMessages:
     MISSION_PROGRESS = (
         "Progreso en {mission_name}: {progress}/{target}.\n\n"
         "Continúe así."
+    )
+
+    MISSIONS_EMPTY = (
+        "No hay encargos activos en este momento.\n\n"
+        "Diana aún no ha decidido qué tarea asignarle. "
+        "Regrese más tarde."
     )
 
     # ================================================================

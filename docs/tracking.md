@@ -364,6 +364,43 @@ _Ninguno por ahora_
 - `bot/handlers/user/start.py` → Callbacks de menú + vista de perfil
 - `bot/utils/lucien_messages.py` → Mensajes de contexto y perfil
 
+### F1.4 Reescribir Gabinete (Tienda) ✅ **COMPLETADO**
+- [x] Vista principal con categorías de Lucien:
+  - Efímeros (consumibles)
+  - Distintivos (cosméticos)
+  - Llaves (artefactos narrativos)
+  - Reliquias (contenido digital)
+- [x] Vista de categoría con lista de items
+- [x] Detalle de item con descripción de Lucien
+- [x] Flujo de compra con confirmación:
+  - Paso 1: Confirmación de compra
+  - Paso 2A: Compra exitosa
+  - Paso 2B: Favores insuficientes
+- [x] Mensajes actualizados:
+  - CABINET_WELCOME, CABINET_CATEGORY_*, CABINET_CONFIRM_PURCHASE
+  - CABINET_PURCHASE_SUCCESS, CABINET_INSUFFICIENT_FUNDS
+
+### F1.5 Reescribir Misiones (Encargos) ✅ **COMPLETADO**
+- [x] Vista principal con secciones:
+  - PROTOCOLO DIARIO (misiones diarias)
+  - ENCARGO SEMANAL (misiones semanales)
+  - EVALUACIONES ESPECIALES (narrativas)
+- [x] Formato de progreso: `▸ Nombre\n  Descripción\n  Progreso: X/Y`
+- [x] Tiempo restante formateado (Xh Xm)
+- [x] Reclamar recompensa con comentario de Lucien:
+  - Diaria primera vez: "El primer paso del día..."
+  - Diaria racha: "Otro día, otro cumplimiento..."
+  - Semanal: "Una semana de compromiso..."
+  - Especial: "Esta no era una tarea común..."
+- [x] Mensajes actualizados:
+  - MISSIONS_HEADER, MISSIONS_*_HEADER
+  - MISSION_COMPLETE con placeholder {comment}
+
+**Componentes Modificados F1.4/F1.5:**
+- `bot/shop/handlers/user/shop.py` → Reescritura completa (390 líneas)
+- `bot/gamification/handlers/user/missions.py` → Reescritura completa (388 líneas)
+- `bot/utils/lucien_messages.py` → +25 mensajes Gabinete y Encargos
+
 ---
 
 **Última actualización:** 2024-12-29
