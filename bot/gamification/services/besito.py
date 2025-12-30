@@ -114,6 +114,40 @@ class BesitoService:
                 exc_info=True
             )
 
+        # ========================================
+        # F2.4: Verificar level-up automático
+        # ========================================
+        try:
+            from bot.gamification.services.level import LevelService
+            level_service = LevelService(self.session)
+            level_changed, old_level, new_level = await level_service.check_and_apply_level_up(user_id)
+
+            if level_changed:
+                logger.info(
+                    f"⬆️ Level up! User {user_id}: {old_level.name if old_level else 'None'} → {new_level.name}"
+                )
+
+                # Intentar notificar usando el container global
+                try:
+                    from bot.gamification.services.container import get_container
+                    container = get_container()
+                    await container.notifications.notify_level_up(
+                        user_id, new_level
+                    )
+                    logger.info(f"✅ Level-up notification sent for user {user_id}")
+
+                except RuntimeError as e:
+                    # Container no inicializado (ej: en tests)
+                    logger.warning(f"❌ Container not available for level-up notification: {e}")
+                except Exception as e:
+                    logger.error(f"❌ Could not send level-up notification: {e}", exc_info=True)
+
+        except Exception as e:
+            logger.error(
+                f"Error checking/applying level-up for user {user_id}: {e}",
+                exc_info=True
+            )
+
         return amount
 
     async def deduct_besitos(

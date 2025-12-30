@@ -179,7 +179,7 @@ class ReactionService:
         emoji: str,
         channel_id: int,
         message_id: int
-    ) -> Tuple[bool, str, int]:
+    ) -> Tuple[bool, str, float]:
         """Registra reacción de usuario y otorga besitos.
 
         Args:
@@ -194,18 +194,21 @@ class ReactionService:
         # 1. Validar que reacción existe y está activa
         reaction = await self.get_reaction_by_emoji(emoji)
         if not reaction or not reaction.active:
-            return False, f"Reacción {emoji} no configurada o inactiva", 0
+            return False, f"Reacción {emoji} no configurada o inactiva", 0.0
 
         # 2. Validar anti-spam: no reaccionar dos veces al mismo mensaje
         if await self._has_reacted_to_message(user_id, message_id):
-            return False, "Ya reaccionaste a este mensaje", 0
+            return False, "Ya reaccionaste a este mensaje", 0.0
 
-        # 3. Validar límite diario
-        can_react, besitos_today = await self._check_daily_limit(user_id)
+        # 3. Validar límite diario (F2.5: ahora usa economy_config)
+        can_react, reactions_today = await self._check_daily_limit(user_id)
         if not can_react:
-            return False, f"Límite diario alcanzado ({besitos_today} besitos)", 0
+            return False, f"Límite diario alcanzado ({reactions_today} reacciones)", 0.0
 
-        # 4. Crear registro de reacción
+        # 4. F2.6: Detectar si es primera reacción del día
+        is_first_today = await self._is_first_reaction_today(user_id)
+
+        # 5. Crear registro de reacción
         user_reaction = UserReaction(
             user_id=user_id,
             reaction_id=reaction.id,
@@ -217,24 +220,37 @@ class ReactionService:
         await self.session.commit()
         await self.session.refresh(user_reaction)
 
-        # 5. Otorgar besitos
+        # 6. Calcular Favores (F2.6: bonus primera reacción)
+        economy_service = self.session.container.economy_config
+        base_amount = await economy_service.get_reaction_base()
+        total_amount = base_amount
+
+        description = f"Reacción {emoji} en canal"
+
+        if is_first_today:
+            bonus = await economy_service.get_first_reaction_day()
+            total_amount += bonus
+            description = f"Reacción {emoji} en canal + Bonus primera del día"
+
+        # 7. Otorgar besitos
         besitos_granted = await self.session.container.besito.grant_besitos(
             user_id=user_id,
-            amount=reaction.besitos_value,
+            amount=total_amount,
             transaction_type=TransactionType.REACTION,
-            description=f"Reacción {emoji} en canal",
+            description=description,
             reference_id=user_reaction.id
         )
 
-        # 6. Actualizar racha
+        # 8. Actualizar racha
         streak = await self._update_user_streak(user_id)
 
         logger.info(
             f"User {user_id} reacted with {emoji}: "
-            f"+{besitos_granted} besitos, streak: {streak.current_streak}"
+            f"+{besitos_granted} Favores{' (FIRST TODAY!)' if is_first_today else ''}, "
+            f"streak: {streak.current_streak}"
         )
 
-        return True, f"+{besitos_granted} besitos (racha: {streak.current_streak})", besitos_granted
+        return True, f"+{besitos_granted} Favores (racha: {streak.current_streak})", besitos_granted
 
     # ========================================
     # VALIDACIONES
@@ -263,36 +279,54 @@ class ReactionService:
         return count > 0
 
     async def _check_daily_limit(self, user_id: int) -> Tuple[bool, int]:
-        """Verifica límite diario de besitos.
+        """Verifica límite diario de reacciones (F2.5: usa economy_config).
 
         Args:
             user_id: ID del usuario
 
         Returns:
-            (can_react, besitos_earned_today)
+            (can_react, reactions_count_today)
         """
-        from bot.gamification.config import GamificationConfig
+        # F2.5: Obtener límite desde configuración de economía
+        economy_service = self.session.container.economy_config
+        max_daily_reactions = await economy_service.get_reactions_daily_limit()
 
-        max_daily = GamificationConfig.MAX_BESITOS_PER_DAY
-        if max_daily is None or max_daily <= 0:
+        if max_daily_reactions is None or max_daily_reactions <= 0:
             return True, 0  # Sin límite
 
-        # Contar besitos de hoy desde reacciones
+        # Contar reacciones de hoy
         today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        stmt = select(func.coalesce(func.sum(Reaction.besitos_value), 0)).select_from(
-            UserReaction
-        ).join(
-            Reaction
-        ).where(
+        stmt = select(func.count()).select_from(UserReaction).where(
             UserReaction.user_id == user_id,
             UserReaction.reacted_at >= today_start
         )
         result = await self.session.execute(stmt)
-        besitos_today = result.scalar() or 0
+        reactions_today = result.scalar() or 0
 
-        can_react = besitos_today < max_daily
-        return can_react, besitos_today
+        can_react = reactions_today < max_daily_reactions
+        return can_react, reactions_today
+
+    async def _is_first_reaction_today(self, user_id: int) -> bool:
+        """Detecta si esta es la primera reacción del día (F2.6).
+
+        Args:
+            user_id: ID del usuario
+
+        Returns:
+            True si es la primera reacción del día
+        """
+        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+
+        stmt = select(func.count()).select_from(UserReaction).where(
+            UserReaction.user_id == user_id,
+            UserReaction.reacted_at >= today_start
+        )
+        result = await self.session.execute(stmt)
+        count = result.scalar() or 0
+
+        # Si count es 0, es la primera reacción del día
+        return count == 0
 
     # ========================================
     # RACHAS
@@ -308,6 +342,7 @@ class ReactionService:
         4. Si saltó días → current_streak = 1
         5. Si current_streak > longest_streak → actualizar récord
         6. Actualizar last_reaction_date
+        7. **NUEVO:** Otorgar bonus al alcanzar hitos (7, 30 días)
 
         Args:
             user_id: ID del usuario
@@ -320,6 +355,8 @@ class ReactionService:
 
         today = datetime.now(UTC).date()
         last_date = streak.last_reaction_date.date() if streak.last_reaction_date else None
+
+        old_streak = streak.current_streak  # Guardar para detectar hitos
 
         if last_date is None:
             # Primera reacción
@@ -341,6 +378,17 @@ class ReactionService:
         streak.last_reaction_date = datetime.now(UTC)
         await self.session.commit()
         await self.session.refresh(streak)
+
+        # ========================================
+        # F2.3: Otorgar bonus por hitos de racha
+        # ========================================
+        if old_streak < 7 and streak.current_streak >= 7:
+            # Alcanzó 7 días
+            await self._grant_streak_bonus(user_id, 7, streak.id)
+
+        if old_streak < 30 and streak.current_streak >= 30:
+            # Alcanzó 30 días
+            await self._grant_streak_bonus(user_id, 30, streak.id)
 
         return streak
 
@@ -378,6 +426,46 @@ class ReactionService:
         stmt = select(UserStreak).where(UserStreak.user_id == user_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def _grant_streak_bonus(
+        self,
+        user_id: int,
+        streak_days: int,
+        streak_id: int
+    ) -> None:
+        """Otorga bonus de Favores por alcanzar hito de racha.
+
+        Args:
+            user_id: ID del usuario
+            streak_days: Cantidad de días de racha alcanzados (7 o 30)
+            streak_id: ID del UserStreak para referencia
+        """
+        from bot.gamification.services.besito import BesitoService
+
+        # Obtener valor del bonus desde configuración
+        economy_service = self.session.container.economy_config
+        if streak_days == 7:
+            amount = await economy_service.get_streak_7_days()
+        elif streak_days == 30:
+            amount = await economy_service.get_streak_30_days()
+        else:
+            logger.warning(f"Invalid streak_days: {streak_days}")
+            return
+
+        # Otorgar besitos
+        besito_service = BesitoService(self.session)
+        await besito_service.grant_besitos(
+            user_id=user_id,
+            amount=amount,
+            transaction_type=TransactionType.STREAK_BONUS,
+            description=f"Bonus por racha de {streak_days} días consecutivos",
+            reference_id=streak_id
+        )
+
+        logger.info(
+            f"🔥 Streak milestone! User {user_id} reached {streak_days} days "
+            f"and earned {amount} Favores"
+        )
 
     # ========================================
     # ESTADÍSTICAS
