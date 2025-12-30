@@ -260,7 +260,7 @@ _Ninguno por ahora_
 ### F0.4 Gabinete (Tienda) ✅
 - [x] Ver sección "MÓDULO TIENDA (SHOP) - COMPLETADO"
 
-### F0.5 Estructura de Contenido Narrativo ✅ **COMPLETADO HOY**
+### F0.5 Estructura de Contenido Narrativo ✅ **COMPLETADO**
 - [x] Enums `SpeakerType` y `MediaType` agregados a narrativa
 - [x] Script `scripts/seed_chapters_1_3.py` creado
 - [x] **Capítulo 1: Bienvenida** (5 fragmentos)
@@ -540,4 +540,76 @@ _Ninguno por ahora_
 
 ---
 
-**Última actualización:** 2024-12-29
+---
+
+## 🎭 FASE 3 - ARQUETIPOS EXPANDIDOS
+
+### Estado: ✅ COMPLETADO
+
+**Fecha de implementación:** 2024-12-30
+
+### F3.1 Modelo de Datos ✅
+- [x] Enum `ArchetypeType` con 6 arquetipos:
+  - EXPLORER: "Insaciablemente curioso"
+  - DIRECT: "Refrescantemente directo"
+  - ROMANTIC: "Peligrosamente sentimental"
+  - ANALYTICAL: "Irritantemente preciso"
+  - PERSISTENT: "Admirablemente terco"
+  - PATIENT: "Inquietantemente paciente"
+- [x] Enum `InteractionType` con 14 tipos de interacción
+- [x] Campos de arquetipo en modelo User:
+  - archetype (nullable)
+  - archetype_confidence (0.0-1.0)
+  - archetype_scores (JSON)
+  - archetype_detected_at (timestamp)
+  - archetype_version (para re-evaluación)
+- [x] Propiedades helper: has_archetype, archetype_display, archetype_description
+- [x] Modelo `UserBehaviorSignals` con 24 métricas:
+  - 5 métricas de exploración (EXPLORER)
+  - 5 métricas de velocidad/directness (DIRECT)
+  - 4 métricas emocionales (ROMANTIC)
+  - 3 métricas de análisis (ANALYTICAL)
+  - 3 métricas de persistencia (PERSISTENT)
+  - 4 métricas de paciencia (PATIENT)
+- [x] Modelo `BehaviorInteraction` para log de interacciones
+
+### F3.2 BehaviorTrackingService ✅
+- [x] `track_interaction()` - Registra interacciones con metadata
+- [x] `update_metrics()` - Recalcula métricas derivadas
+- [x] `get_behavior_signals()` - Obtiene señales de comportamiento
+- [x] `get_interaction_count()` - Cuenta interacciones por tipo
+- [x] `get_recent_interactions()` - Últimas N interacciones
+- [x] `sync_streak_metrics()` - Sincroniza rachas desde F2.3
+- [x] `cleanup_old_interactions()` - Limpieza de datos antiguos
+- [x] `analyze_text_response()` - Análisis de texto (emociones, preguntas, estructura)
+- [x] Detección de palabras emocionales para ROMANTIC
+- [x] Detección de preguntas sobre Diana
+- [x] Integración con GamificationContainer
+
+### Componentes Creados F3:
+- `bot/database/enums.py` → ArchetypeType, InteractionType
+- `bot/database/models.py` → Campos archetype en User
+- `bot/gamification/database/models.py` → UserBehaviorSignals, BehaviorInteraction
+- `bot/gamification/services/behavior_tracking.py` → BehaviorTrackingService (550+ líneas)
+- `bot/gamification/services/container.py` → Integración de behavior_tracking
+- `alembic/versions/018_add_archetype_behavior_tracking.py` → Migración
+- `tests/test_f3_archetype_behavior.py` → 27 tests E2E (100% pasando)
+
+### Flujo de Tracking:
+```
+1. Usuario interactúa (click, texto, contenido, etc.)
+2. Handler llama track_interaction() con tipo y metadata
+3. BehaviorTrackingService registra interacción
+4. Métricas se actualizan incrementalmente
+5. Periódicamente se recalculan métricas completas
+6. Clasificador de arquetipos usa métricas (F3.3 próximo)
+```
+
+### Próximos Pasos (F3.3+):
+- [ ] F3.3 - ArchetypeClassifierService (algoritmo de clasificación)
+- [ ] F3.4 - Integración con mensajes de Lucien
+- [ ] F3.5 - Variaciones narrativas por arquetipo
+
+---
+
+**Última actualización:** 2024-12-30

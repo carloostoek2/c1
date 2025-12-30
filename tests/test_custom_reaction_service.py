@@ -4,18 +4,26 @@ Tests unitarios para CustomReactionService.
 Tests:
 - Registro de reacción válida
 - Prevención de reacciones duplicadas
-- Otorgamiento de besitos
+- Otorgamiento de besitos (usando economy_config)
 - Actualización de estadísticas
 - Obtención de reacciones de usuario
 - Obtención de estadísticas de mensaje
+
+Nota: Los valores de besitos provienen de EconomyConfigService, no de Reaction.besitos_value.
 """
 
 import pytest
 from sqlalchemy import select
 
 from bot.database.models import User, BroadcastMessage
-from bot.gamification.database.models import Reaction, CustomReaction, UserGamification
+from bot.gamification.database.models import (
+    Reaction,
+    CustomReaction,
+    UserGamification,
+    GamificationConfig
+)
 from bot.gamification.services.custom_reaction import CustomReactionService
+from bot.gamification.services.economy_config import EconomyConfigService
 
 
 class TestCustomReactionService:
@@ -36,9 +44,14 @@ class TestCustomReactionService:
             )
             session.add(user)
 
+            # Crear UserGamification para el usuario
+            user_gamif = UserGamification(user_id=user.user_id)
+            session.add(user_gamif)
+
             reaction = Reaction(
                 emoji="👍",
-                besitos_value=10,
+                name="Like",
+                besitos_value=10,  # Este valor ya no se usa directamente
                 active=True,
                 button_emoji="👍",
                 button_label="Me Gusta",
@@ -57,6 +70,12 @@ class TestCustomReactionService:
             session.add(broadcast_msg)
             await session.commit()
 
+            # Obtener valores de economía (para verificar)
+            economy = EconomyConfigService(session)
+            base_value = await economy.get_reaction_base()
+            first_bonus = await economy.get_first_reaction_day()
+            expected_besitos = base_value + first_bonus  # Primera reacción del día
+
             # Obtener IDs
             reaction_id = reaction.id
             broadcast_id = broadcast_msg.id
@@ -73,9 +92,10 @@ class TestCustomReactionService:
             # Verificar resultado
             assert result["success"] is True
             assert result["already_reacted"] is False
-            assert result["besitos_earned"] == 10
-            assert result["total_besitos"] == 10
+            assert result["besitos_earned"] == pytest.approx(expected_besitos, rel=1e-6)
+            assert result["total_besitos"] == pytest.approx(expected_besitos, rel=1e-6)
             assert result["multiplier_applied"] == 1.0
+            assert result["is_first_today"] is True
 
             # Verificar CustomReaction creado
             stmt = select(CustomReaction).where(
@@ -87,15 +107,12 @@ class TestCustomReactionService:
 
             assert custom_reaction is not None
             assert custom_reaction.emoji == "👍"
-            assert custom_reaction.besitos_earned == 10
+            assert custom_reaction.besitos_earned == pytest.approx(expected_besitos, rel=1e-6)
 
             # Verificar besitos otorgados
-            stmt = select(UserGamification).where(UserGamification.user_id == user.user_id)
-            result_db = await session.execute(stmt)
-            user_gamif = result_db.scalar_one()
-
-            assert user_gamif.total_besitos == 10
-            assert user_gamif.besitos_earned == 10
+            await session.refresh(user_gamif)
+            assert user_gamif.total_besitos == pytest.approx(expected_besitos, rel=1e-6)
+            assert user_gamif.besitos_earned == pytest.approx(expected_besitos, rel=1e-6)
 
             # Verificar stats actualizados
             await session.refresh(broadcast_msg)
@@ -117,8 +134,12 @@ class TestCustomReactionService:
             )
             session.add(user)
 
+            user_gamif = UserGamification(user_id=user.user_id)
+            session.add(user_gamif)
+
             reaction = Reaction(
                 emoji="❤️",
+                name="Love",
                 besitos_value=15,
                 active=True
             )
@@ -135,6 +156,12 @@ class TestCustomReactionService:
             session.add(broadcast_msg)
             await session.commit()
 
+            # Obtener valores de economía
+            economy = EconomyConfigService(session)
+            base_value = await economy.get_reaction_base()
+            first_bonus = await economy.get_first_reaction_day()
+            expected_first = base_value + first_bonus
+
             reaction_id = reaction.id
             broadcast_id = broadcast_msg.id
 
@@ -148,7 +175,7 @@ class TestCustomReactionService:
             )
 
             assert result1["success"] is True
-            assert result1["besitos_earned"] == 15
+            assert result1["besitos_earned"] == pytest.approx(expected_first, rel=1e-6)
 
             # Segundo registro (debe fallar por duplicado)
             result2 = await service.register_custom_reaction(
@@ -172,11 +199,8 @@ class TestCustomReactionService:
             assert len(reactions) == 1
 
             # Verificar besitos solo otorgados una vez
-            stmt = select(UserGamification).where(UserGamification.user_id == user.user_id)
-            result_db = await session.execute(stmt)
-            user_gamif = result_db.scalar_one()
-
-            assert user_gamif.total_besitos == 15  # Solo una vez
+            await session.refresh(user_gamif)
+            assert user_gamif.total_besitos == pytest.approx(expected_first, rel=1e-6)
 
     @pytest.mark.asyncio
     async def test_get_user_reactions_for_message(self, db_setup, event_loop):
@@ -193,8 +217,11 @@ class TestCustomReactionService:
             )
             session.add(user)
 
-            reaction1 = Reaction(emoji="👍", besitos_value=10, active=True)
-            reaction2 = Reaction(emoji="❤️", besitos_value=15, active=True)
+            user_gamif = UserGamification(user_id=user.user_id)
+            session.add(user_gamif)
+
+            reaction1 = Reaction(emoji="👍", name="Like", besitos_value=10, active=True)
+            reaction2 = Reaction(emoji="❤️", name="Love", besitos_value=15, active=True)
             session.add_all([reaction1, reaction2])
 
             broadcast_msg = BroadcastMessage(
@@ -241,8 +268,12 @@ class TestCustomReactionService:
             ]
             session.add_all(users)
 
-            reaction1 = Reaction(emoji="👍", besitos_value=10, active=True)
-            reaction2 = Reaction(emoji="❤️", besitos_value=15, active=True)
+            # Crear UserGamification para cada usuario
+            for u in users:
+                session.add(UserGamification(user_id=u.user_id))
+
+            reaction1 = Reaction(emoji="👍", name="Like", besitos_value=10, active=True)
+            reaction2 = Reaction(emoji="❤️", name="Love", besitos_value=15, active=True)
             session.add_all([reaction1, reaction2])
 
             broadcast_msg = BroadcastMessage(
@@ -291,7 +322,10 @@ class TestCustomReactionService:
             )
             session.add(user)
 
-            reaction = Reaction(emoji="🔥", besitos_value=20, active=True)
+            user_gamif = UserGamification(user_id=user.user_id)
+            session.add(user_gamif)
+
+            reaction = Reaction(emoji="🔥", name="Fire", besitos_value=20, active=True)
             session.add(reaction)
 
             broadcast_msg = BroadcastMessage(

@@ -8,7 +8,7 @@ from typing import Optional, List
 from datetime import datetime, UTC
 
 from sqlalchemy import (
-    BigInteger, String, Integer, Boolean, DateTime, ForeignKey, Index, Text
+    BigInteger, String, Integer, Boolean, DateTime, ForeignKey, Index, Text, Float
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -31,9 +31,9 @@ class UserGamification(Base):
     __tablename__ = "user_gamification"
 
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
-    total_besitos: Mapped[int] = mapped_column(Integer, default=0)
-    besitos_earned: Mapped[int] = mapped_column(Integer, default=0)
-    besitos_spent: Mapped[int] = mapped_column(Integer, default=0)
+    total_besitos: Mapped[float] = mapped_column(Float, default=0.0)
+    besitos_earned: Mapped[float] = mapped_column(Float, default=0.0)
+    besitos_spent: Mapped[float] = mapped_column(Float, default=0.0)
     current_level_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("levels.id"), nullable=True
     )
@@ -435,6 +435,7 @@ class GamificationConfig(Base):
     """Configuración global del módulo de gamificación.
 
     Singleton (id=1) que almacena parámetros globales del sistema.
+    Incluye configuración de economía de Favores.
     """
     __tablename__ = "gamification_config"
 
@@ -449,6 +450,32 @@ class GamificationConfig(Base):
     # Configuración de regalo diario
     daily_gift_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     daily_gift_besitos: Mapped[int] = mapped_column(Integer, default=10)
+
+    # ============================================================
+    # ECONOMÍA DE FAVORES (Valores configurables)
+    # ============================================================
+    # Valores por defecto alineados con FAVOR_REWARDS en formatters.py
+
+    # Reacciones a publicaciones
+    earn_reaction_base: Mapped[float] = mapped_column(Float, default=0.1)
+    earn_first_reaction_day: Mapped[float] = mapped_column(Float, default=0.5)
+    limit_reactions_per_day: Mapped[int] = mapped_column(Integer, default=10)
+
+    # Misiones
+    earn_mission_daily: Mapped[float] = mapped_column(Float, default=1.0)
+    earn_mission_weekly: Mapped[float] = mapped_column(Float, default=3.0)
+    earn_level_evaluation: Mapped[float] = mapped_column(Float, default=5.0)
+
+    # Rachas
+    earn_streak_7_days: Mapped[float] = mapped_column(Float, default=2.0)
+    earn_streak_30_days: Mapped[float] = mapped_column(Float, default=10.0)
+
+    # Easter eggs
+    earn_easter_egg_min: Mapped[float] = mapped_column(Float, default=2.0)
+    earn_easter_egg_max: Mapped[float] = mapped_column(Float, default=5.0)
+
+    # Referidos
+    earn_referral_active: Mapped[float] = mapped_column(Float, default=5.0)
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC),
@@ -551,14 +578,14 @@ class BesitoTransaction(Base):
         ForeignKey("users.user_id", ondelete="CASCADE"),
         nullable=False
     )
-    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
     transaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     reference_id: Mapped[Optional[int]] = mapped_column(
         Integer,
         nullable=True
     )
-    balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_after: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(UTC),
@@ -621,4 +648,198 @@ class DailyGiftClaim(Base):
     __table_args__ = (
         Index('idx_daily_gift_last_claim', 'last_claim_date'),
         Index('idx_daily_gift_streak', 'current_streak'),
+    )
+
+
+class UserBehaviorSignals(Base):
+    """Señales de comportamiento del usuario para detección de arquetipos.
+
+    Almacena métricas derivadas de las interacciones del usuario que
+    son utilizadas por el algoritmo de clasificación de arquetipos.
+    Lucien observa estas señales para entender el comportamiento.
+
+    Categorías de métricas:
+        - Exploración: Curiosidad, cobertura de contenido
+        - Velocidad/Directness: Eficiencia, rapidez de decisión
+        - Emocionales: Conexión, expresividad
+        - Análisis: Precisión, estructuración
+        - Persistencia: Tenacidad, retornos
+        - Paciencia: Constancia, calma
+
+    Attributes:
+        user_id: ID del usuario (PK, 1-to-1 con users)
+
+        # Métricas de exploración (EXPLORER)
+        content_sections_visited: Secciones únicas visitadas
+        content_completion_rate: % de contenido disponible visto (0.0-1.0)
+        easter_eggs_found: Easter eggs encontrados
+        avg_time_on_content: Segundos promedio en contenido
+        revisits_old_content: Veces que revisó contenido antiguo
+
+        # Métricas de velocidad/directness (DIRECT)
+        avg_response_time: Segundos promedio para responder
+        avg_response_length: Palabras promedio por respuesta
+        button_vs_text_ratio: % de interacciones via botón vs texto (0.0-1.0)
+        avg_decision_time: Segundos para tomar decisiones
+        actions_per_session: Acciones promedio por sesión
+
+        # Métricas emocionales (ROMANTIC)
+        emotional_words_count: Veces que usó palabras emocionales
+        question_count: Preguntas hechas al bot
+        long_responses_count: Respuestas >50 palabras
+        personal_questions_about_diana: Preguntas sobre Diana como persona
+
+        # Métricas de análisis (ANALYTICAL)
+        quiz_avg_score: Promedio en evaluaciones (0.0-100.0)
+        structured_responses: Respuestas con estructura (listas, puntos)
+        error_reports: Veces que reportó errores/inconsistencias
+
+        # Métricas de persistencia (PERSISTENT)
+        return_after_inactivity: Veces que volvió después de 3+ días
+        retry_failed_actions: Reintentos de acciones fallidas
+        incomplete_flows_completed: Flujos abandonados y luego completados
+
+        # Métricas de paciencia (PATIENT)
+        skip_actions_used: Veces que usó "saltar" o similar
+        current_streak: Racha actual (vinculado a F2.3)
+        best_streak: Mejor racha histórica
+        avg_session_duration: Duración promedio de sesión en segundos
+
+        # Metadata
+        total_interactions: Total de interacciones registradas
+        first_interaction_at: Primera interacción
+        last_updated_at: Última actualización de métricas
+    """
+    __tablename__ = "user_behavior_signals"
+
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    # ========================================
+    # MÉTRICAS DE EXPLORACIÓN (EXPLORER)
+    # ========================================
+    content_sections_visited: Mapped[int] = mapped_column(Integer, default=0)
+    content_completion_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    easter_eggs_found: Mapped[int] = mapped_column(Integer, default=0)
+    avg_time_on_content: Mapped[float] = mapped_column(Float, default=0.0)
+    revisits_old_content: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE VELOCIDAD/DIRECTNESS (DIRECT)
+    # ========================================
+    avg_response_time: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_response_length: Mapped[float] = mapped_column(Float, default=0.0)
+    button_vs_text_ratio: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_decision_time: Mapped[float] = mapped_column(Float, default=0.0)
+    actions_per_session: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # ========================================
+    # MÉTRICAS EMOCIONALES (ROMANTIC)
+    # ========================================
+    emotional_words_count: Mapped[int] = mapped_column(Integer, default=0)
+    question_count: Mapped[int] = mapped_column(Integer, default=0)
+    long_responses_count: Mapped[int] = mapped_column(Integer, default=0)
+    personal_questions_about_diana: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE ANÁLISIS (ANALYTICAL)
+    # ========================================
+    quiz_avg_score: Mapped[float] = mapped_column(Float, default=0.0)
+    structured_responses: Mapped[int] = mapped_column(Integer, default=0)
+    error_reports: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE PERSISTENCIA (PERSISTENT)
+    # ========================================
+    return_after_inactivity: Mapped[int] = mapped_column(Integer, default=0)
+    retry_failed_actions: Mapped[int] = mapped_column(Integer, default=0)
+    incomplete_flows_completed: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE PACIENCIA (PATIENT)
+    # ========================================
+    skip_actions_used: Mapped[int] = mapped_column(Integer, default=0)
+    current_streak: Mapped[int] = mapped_column(Integer, default=0)
+    best_streak: Mapped[int] = mapped_column(Integer, default=0)
+    avg_session_duration: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # ========================================
+    # METADATA
+    # ========================================
+    total_interactions: Mapped[int] = mapped_column(Integer, default=0)
+    first_interaction_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+    last_updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Índices para optimización
+    __table_args__ = (
+        Index('idx_behavior_total_interactions', 'total_interactions'),
+        Index('idx_behavior_last_updated', 'last_updated_at'),
+    )
+
+
+class BehaviorInteraction(Base):
+    """Registro individual de interacción para tracking de comportamiento.
+
+    Almacena cada interacción del usuario con datos específicos
+    para análisis posterior y cálculo de métricas.
+
+    Attributes:
+        id: ID único de la interacción
+        user_id: ID del usuario
+        interaction_type: Tipo de interacción (InteractionType enum)
+        interaction_data: JSON con datos específicos del tipo de interacción
+        created_at: Timestamp de la interacción
+
+    Interaction data por tipo de interacción:
+        BUTTON_CLICK:
+            button_id: str, context: str, time_to_click: float
+
+        TEXT_RESPONSE:
+            word_count: int, has_emotional_words: bool, has_questions: bool,
+            is_structured: bool, response_time: float
+
+        CONTENT_VIEW:
+            content_id: str, content_type: str, time_spent: float,
+            is_revisit: bool, completion: float
+
+        QUIZ_ANSWER:
+            quiz_id: str, question_id: str, is_correct: bool,
+            time_to_answer: float
+
+        DECISION_MADE:
+            fragment_id: str, decision_id: str, time_to_decide: float,
+            options_available: int
+    """
+    __tablename__ = "behavior_interactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False
+    )
+    interaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    interaction_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Índices para optimización
+    __table_args__ = (
+        Index('idx_behavior_user_type', 'user_id', 'interaction_type'),
+        Index('idx_behavior_user_created', 'user_id', 'created_at'),
+        Index('idx_behavior_type_created', 'interaction_type', 'created_at'),
     )
