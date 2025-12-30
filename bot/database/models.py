@@ -92,6 +92,8 @@ class User(Base):
         role: Rol actual del usuario (FREE/VIP/ADMIN)
         created_at: Fecha de primer contacto con el bot
         updated_at: Última actualización de datos
+        last_activity: Última actividad del usuario (para detectar ausencias)
+        is_new_user: Si es la primera vez que interactúa (onboarding pendiente)
 
     Relaciones:
         vip_subscription: Suscripción VIP si existe
@@ -111,6 +113,8 @@ class User(Base):
     )
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_activity = Column(DateTime, nullable=True)  # Última interacción con el bot
+    is_new_user = Column(Boolean, nullable=False, default=True)  # True hasta completar onboarding
 
     # Relaciones (se definen después en VIPSubscriber y FreeChannelRequest)
 
@@ -140,6 +144,18 @@ class User(Base):
     def is_free(self) -> bool:
         """Verifica si el usuario es Free."""
         return self.role == UserRole.FREE
+
+    @property
+    def days_since_last_activity(self) -> int:
+        """Retorna días desde la última actividad."""
+        if not self.last_activity:
+            return 0
+        delta = datetime.utcnow() - self.last_activity
+        return delta.days
+
+    def update_activity(self) -> None:
+        """Actualiza el timestamp de última actividad."""
+        self.last_activity = datetime.utcnow()
 
     def __repr__(self) -> str:
         return (

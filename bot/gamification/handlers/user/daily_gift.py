@@ -2,7 +2,7 @@
 Handler para sistema de regalo diario.
 
 Permite a los usuarios:
-- Reclamar su regalo diario de besitos
+- Reclamar su regalo diario de Favores
 - Ver su racha actual de días consecutivos
 - Ver cuándo podrán reclamar nuevamente
 """
@@ -14,6 +14,7 @@ import logging
 
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
+from bot.gamification.utils.formatters import format_currency, format_currency_change
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ async def callback_daily_gift(callback: CallbackQuery, gamification: Gamificatio
 
             text = (
                 "🎁 <b>Regalo Diario Disponible</b>\n\n"
-                f"💋 Recibirás: <b>{status['besitos_amount']} besitos</b>\n"
+                f"✨ Recibirás: <b>{format_currency(status['besitos_amount'])}</b>\n"
                 f"🔥 Racha actual: <b>{status['current_streak']} día(s)</b>\n"
                 f"🏆 Récord: <b>{status['longest_streak']} día(s)</b>\n"
                 f"📊 Total reclamados: <b>{status['total_claims']}</b>\n\n"
@@ -152,7 +153,7 @@ async def callback_claim_daily_gift(callback: CallbackQuery, gamification: Gamif
 
             text = (
                 "🎉 <b>¡Regalo Diario Reclamado!</b>\n\n"
-                f"💋 +{details['besitos_earned']} besitos\n"
+                f"✨ {format_currency_change(details['besitos_earned'])}\n"
                 f"🔥 Racha: {details['current_streak']} día(s)\n"
                 f"🏆 Récord: {details['longest_streak']} día(s)\n"
                 f"📊 Total reclamados: {details['total_claims']}"

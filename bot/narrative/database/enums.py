@@ -66,10 +66,83 @@ class CooldownType(str, Enum):
     CHALLENGE = "challenge"   # Cooldown para reintentar desafío
 
 
-class ArchetypeType(str, Enum):
-    """Arquetipos de usuario detectados por comportamiento."""
+class SpeakerType(str, Enum):
+    """Hablante en un fragmento narrativo."""
 
-    UNKNOWN = "unknown"              # No determinado aún
+    DIANA = "diana"       # Diana - protagonista misteriosa
+    LUCIEN = "lucien"     # Lucien - mayordomo británico
+    NARRATOR = "narrator" # Narrador omnisciente
+
+    @property
+    def display_name(self) -> str:
+        """Nombre para mostrar al usuario."""
+        names = {
+            "diana": "Diana",
+            "lucien": "Lucien",
+            "narrator": "Narrador",
+        }
+        return names.get(self.value, self.value)
+
+
+class MediaType(str, Enum):
+    """Tipo de media asociado a un fragmento."""
+
+    TEXT = "text"     # Solo texto
+    IMAGE = "image"   # Imagen adjunta
+    AUDIO = "audio"   # Audio adjunto
+    VIDEO = "video"   # Video adjunto
+
+
+class ArchetypeType(str, Enum):
+    """Arquetipos de usuario detectados por comportamiento.
+
+    Sistema expandido de 6 arquetipos del universo narrativo.
+    Los arquetipos legacy (IMPULSIVE, CONTEMPLATIVE, SILENT) se mantienen
+    por compatibilidad pero serán deprecados gradualmente.
+    """
+
+    # Sin determinar
+    UNKNOWN = "unknown"
+
+    # === ARQUETIPOS LEGACY (deprecar gradualmente) ===
     IMPULSIVE = "impulsive"          # Reacciona rápido (< 5 segundos)
     CONTEMPLATIVE = "contemplative"  # Toma su tiempo (> 30 segundos)
     SILENT = "silent"                # No reacciona (timeout)
+
+    # === ARQUETIPOS EXPANDIDOS ===
+    EXPLORER = "explorer"      # Busca cada detalle, revisa todo
+    DIRECT = "direct"          # Va al grano, respuestas concisas
+    ROMANTIC = "romantic"      # Poético, busca conexión emocional
+    ANALYTICAL = "analytical"  # Reflexivo, busca comprensión
+    PERSISTENT = "persistent"  # No se rinde, múltiples intentos
+    PATIENT = "patient"        # Toma tiempo, procesa profundamente
+
+    @property
+    def display_name(self) -> str:
+        """Nombre para mostrar al usuario."""
+        names = {
+            "unknown": "Desconocido",
+            "impulsive": "Impulsivo",
+            "contemplative": "Contemplativo",
+            "silent": "Silencioso",
+            "explorer": "Explorador",
+            "direct": "Directo",
+            "romantic": "Romántico",
+            "analytical": "Analítico",
+            "persistent": "Persistente",
+            "patient": "Paciente",
+        }
+        return names.get(self.value, self.value)
+
+    @property
+    def is_legacy(self) -> bool:
+        """Indica si es un arquetipo legacy (a deprecar)."""
+        return self.value in ("impulsive", "contemplative", "silent")
+
+    @property
+    def is_expanded(self) -> bool:
+        """Indica si es un arquetipo del sistema expandido."""
+        return self.value in (
+            "explorer", "direct", "romantic",
+            "analytical", "persistent", "patient"
+        )

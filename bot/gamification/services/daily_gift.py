@@ -3,7 +3,7 @@
 Responsabilidades:
 - Verificar elegibilidad para reclamar
 - Calcular y mantener rachas de días consecutivos
-- Otorgar besitos por regalo diario
+- Otorgar Favores por regalo diario
 - Integrar con BesitoService para transacciones
 """
 
@@ -19,6 +19,7 @@ from bot.gamification.database.models import (
     GamificationConfig
 )
 from bot.gamification.database.enums import TransactionType
+from bot.gamification.utils.formatters import format_currency, format_currency_change
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +203,7 @@ class DailyGiftService:
 
         logger.info(
             f"User {user_id} claimed daily gift: "
-            f"+{granted} besitos, streak={new_streak}, total_claims={claim.total_claims}"
+            f"+{granted} favores, streak={new_streak}, total_claims={claim.total_claims}"
         )
 
         # 7. Retornar resultado exitoso
@@ -216,7 +217,7 @@ class DailyGiftService:
         streak_emoji = "🔥" if new_streak > 1 else "🎁"
         message = (
             f"🎉 ¡Regalo diario reclamado!\n\n"
-            f"💋 +{granted} besitos\n"
+            f"✨ {format_currency_change(granted)}\n"
             f"{streak_emoji} Racha: {new_streak} día{'s' if new_streak != 1 else ''}"
         )
 
