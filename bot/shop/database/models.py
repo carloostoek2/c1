@@ -7,6 +7,8 @@ Define los modelos SQLAlchemy 2.0 para:
 - UserInventory: Inventario del usuario (Mochila)
 - UserInventoryItem: Items que posee el usuario
 - ItemPurchase: Historial de compras
+- UserDiscount: Descuentos activos del usuario (Gabinete)
+- GabineteNotification: Notificaciones del Gabinete
 """
 
 from typing import Optional, List
@@ -44,6 +46,12 @@ class ItemCategory(Base):
         order: Orden de visualización (menor = primero)
         is_active: Si la categoría está visible
         created_at: Fecha de creación
+        --- Gabinete (Fase 4) ---
+        gabinete_category: Tipo de categoria del Gabinete (ephemeral, distinctive, etc.)
+        lucien_description: Descripcion narrativa de Lucien
+        min_level_to_view: Nivel minimo para ver la categoria
+        min_level_to_buy: Nivel minimo para comprar en esta categoria
+        is_gabinete: Si es una categoria del Gabinete
     """
     __tablename__ = "shop_item_categories"
 
@@ -60,6 +68,23 @@ class ItemCategory(Base):
         nullable=False
     )
 
+    # --- Campos del Gabinete (Fase 4) ---
+    gabinete_category: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True
+    )  # GabineteCategory enum value
+    lucien_description: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Descripcion de Lucien para la categoria
+    min_level_to_view: Mapped[int] = mapped_column(
+        Integer, default=1
+    )  # Nivel minimo para ver
+    min_level_to_buy: Mapped[int] = mapped_column(
+        Integer, default=1
+    )  # Nivel minimo para comprar
+    is_gabinete: Mapped[bool] = mapped_column(
+        Boolean, default=False
+    )  # True si es categoria del Gabinete
+
     # Relaciones
     items: Mapped[List["ShopItem"]] = relationship(
         "ShopItem",
@@ -71,6 +96,7 @@ class ItemCategory(Base):
     __table_args__ = (
         Index("idx_shop_category_order", "order"),
         Index("idx_shop_category_active", "is_active"),
+        Index("idx_shop_category_gabinete", "is_gabinete"),
     )
 
     def __repr__(self) -> str:
@@ -106,6 +132,20 @@ class ShopItem(Base):
         created_by: ID del admin que lo creó
         created_at: Fecha de creación
         updated_at: Fecha de última actualización
+        --- Gabinete (Fase 4) ---
+        lucien_description: Descripcion narrativa de Lucien
+        purchase_message: Mensaje al comprar
+        post_use_message: Mensaje despues de usar
+        min_level_to_view: Nivel minimo para ver
+        min_level_to_buy: Nivel minimo para comprar
+        visibility: Visibilidad (public, confidants, guardians)
+        gabinete_item_type: Tipo de item del Gabinete
+        duration_hours: Duracion para items temporales
+        available_from: Fecha inicio disponibilidad
+        available_until: Fecha fin disponibilidad
+        event_name: Nombre del evento (para items de evento)
+        is_limited: Flag de stock limitado (true = mostrar contador)
+        total_stock: Stock total inicial
     """
     __tablename__ = "shop_items"
 
@@ -160,6 +200,47 @@ class ShopItem(Base):
         nullable=False
     )
 
+    # --- Campos del Gabinete (Fase 4) ---
+    lucien_description: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Descripcion narrativa de Lucien
+    purchase_message: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Mensaje al comprar
+    post_use_message: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Mensaje despues de usar el item
+    min_level_to_view: Mapped[int] = mapped_column(
+        Integer, default=1
+    )  # Nivel minimo para ver
+    min_level_to_buy: Mapped[int] = mapped_column(
+        Integer, default=1
+    )  # Nivel minimo para comprar
+    visibility: Mapped[str] = mapped_column(
+        String(20), default="public"
+    )  # ItemVisibility: public, confidants, guardians
+    gabinete_item_type: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True
+    )  # GabineteItemType enum value
+    duration_hours: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )  # Duracion del efecto en horas
+    available_from: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )  # Fecha inicio disponibilidad
+    available_until: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )  # Fecha fin disponibilidad
+    event_name: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True
+    )  # Nombre del evento (ej: "Halloween 2024")
+    is_limited: Mapped[bool] = mapped_column(
+        Boolean, default=False
+    )  # True = mostrar contador de stock
+    total_stock: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )  # Stock total inicial (para mostrar X/Y)
+
     # Relaciones
     category: Mapped["ItemCategory"] = relationship(
         "ItemCategory",
@@ -175,6 +256,11 @@ class ShopItem(Base):
         back_populates="item",
         cascade="all, delete-orphan"
     )
+    notifications: Mapped[List["GabineteNotification"]] = relationship(
+        "GabineteNotification",
+        back_populates="item",
+        cascade="all, delete-orphan"
+    )
 
     # Índices
     __table_args__ = (
@@ -184,6 +270,8 @@ class ShopItem(Base):
         Index("idx_shop_item_featured", "is_featured"),
         Index("idx_shop_item_order", "order"),
         Index("idx_shop_item_price", "price_besitos"),
+        Index("idx_shop_item_visibility", "visibility"),
+        Index("idx_shop_item_level", "min_level_to_buy"),
     )
 
     def __repr__(self) -> str:
@@ -193,6 +281,25 @@ class ShopItem(Base):
     def is_in_stock(self) -> bool:
         """Verifica si hay stock disponible."""
         return self.stock is None or self.stock > 0
+
+    @property
+    def is_available_now(self) -> bool:
+        """Verifica si el item esta disponible en este momento."""
+        now = datetime.now(UTC)
+        if self.available_from and now < self.available_from:
+            return False
+        if self.available_until and now > self.available_until:
+            return False
+        return self.is_active and self.is_in_stock
+
+    @property
+    def stock_display(self) -> Optional[str]:
+        """Texto para mostrar stock (ej: '3/10 disponibles')."""
+        if not self.is_limited or self.stock is None:
+            return None
+        if self.total_stock:
+            return f"{self.stock}/{self.total_stock}"
+        return str(self.stock)
 
 
 class UserInventory(Base):
@@ -368,3 +475,139 @@ class ItemPurchase(Base):
 
     def __repr__(self) -> str:
         return f"<ItemPurchase(id={self.id}, user={self.user_id}, item={self.item_id}, price={self.price_paid})>"
+
+
+# ============================================================
+# MODELOS DEL GABINETE (FASE 4)
+# ============================================================
+
+
+class UserDiscount(Base):
+    """
+    Descuentos activos de un usuario en el Gabinete.
+
+    Trackea los diferentes descuentos que tiene un usuario
+    basados en nivel, distintivos adquiridos y reliquias.
+
+    Attributes:
+        id: ID unico del registro
+        user_id: ID del usuario
+        discount_source: Fuente del descuento (level, badge, relic, promo)
+        source_item_id: ID del item que otorga el descuento (si aplica)
+        discount_percent: Porcentaje de descuento
+        expires_at: Fecha de expiracion (None = permanente)
+        is_active: Si el descuento esta activo
+        created_at: Fecha de creacion
+    """
+    __tablename__ = "user_discounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    discount_source: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # DiscountSource: level, badge, relic, promo
+    source_item_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("shop_items.id", ondelete="SET NULL"),
+        nullable=True
+    )  # Item que otorga el descuento (distintivo/reliquia)
+    discount_percent: Mapped[float] = mapped_column(
+        Float, nullable=False
+    )  # Porcentaje (ej: 5.0 = 5%)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )  # None = permanente
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Relaciones
+    source_item: Mapped[Optional["ShopItem"]] = relationship(
+        "ShopItem",
+        foreign_keys=[source_item_id]
+    )
+
+    # Indices
+    __table_args__ = (
+        Index("idx_user_discount_user", "user_id"),
+        Index("idx_user_discount_source", "discount_source"),
+        Index("idx_user_discount_active", "user_id", "is_active"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserDiscount(user={self.user_id}, source={self.discount_source}, pct={self.discount_percent})>"
+
+    @property
+    def is_expired(self) -> bool:
+        """Verifica si el descuento ha expirado."""
+        if self.expires_at is None:
+            return False
+        return datetime.now(UTC) > self.expires_at
+
+
+class GabineteNotification(Base):
+    """
+    Notificaciones del Gabinete para usuarios.
+
+    Trackea notificaciones sobre items nuevos, stock bajo,
+    items por terminar, etc.
+
+    Attributes:
+        id: ID unico de la notificacion
+        user_id: ID del usuario destinatario
+        item_id: ID del item relacionado (si aplica)
+        notification_type: Tipo de notificacion
+        title: Titulo de la notificacion
+        message: Mensaje de la notificacion
+        sent_at: Fecha de envio
+        read_at: Fecha de lectura (None = no leida)
+        is_sent: Si fue enviada por el bot
+    """
+    __tablename__ = "gabinete_notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    item_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("shop_items.id", ondelete="CASCADE"),
+        nullable=True
+    )
+    notification_type: Mapped[str] = mapped_column(
+        String(30), nullable=False
+    )  # NotificationType: new_item, low_stock, expiring_soon, etc.
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    sent_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False
+    )
+    read_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
+    is_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Relaciones
+    item: Mapped[Optional["ShopItem"]] = relationship(
+        "ShopItem",
+        back_populates="notifications"
+    )
+
+    # Indices
+    __table_args__ = (
+        Index("idx_gabinete_notif_user", "user_id"),
+        Index("idx_gabinete_notif_type", "notification_type"),
+        Index("idx_gabinete_notif_unread", "user_id", "read_at"),
+        Index("idx_gabinete_notif_sent", "is_sent"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<GabineteNotification(id={self.id}, user={self.user_id}, type={self.notification_type})>"
+
+    @property
+    def is_read(self) -> bool:
+        """Verifica si la notificacion fue leida."""
+        return self.read_at is not None
