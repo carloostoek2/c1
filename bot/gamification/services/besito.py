@@ -28,16 +28,16 @@ class BesitoService:
     async def grant_besitos(
         self,
         user_id: int,
-        amount: int,
+        amount: float,
         transaction_type: TransactionType,
         description: str = "",
         reference_id: Optional[int] = None
-    ) -> int:
+    ) -> float:
         """Otorga besitos a un usuario.
 
         Args:
             user_id: ID del usuario
-            amount: Cantidad de besitos a otorgar
+            amount: Cantidad de besitos a otorgar (puede ser decimal: 0.1, 0.5, 1.0)
             transaction_type: Tipo de transacción
             description: Descripción opcional
             reference_id: ID de referencia (ej: UserReaction.id)
@@ -47,7 +47,7 @@ class BesitoService:
         """
         if amount <= 0:
             logger.warning(f"Attempted to grant {amount} besitos to user {user_id}")
-            return 0
+            return 0.0
 
         # Obtener o crear perfil de gamificación
         user_gamif = await self._get_or_create_user_gamification(user_id)
@@ -119,16 +119,16 @@ class BesitoService:
     async def deduct_besitos(
         self,
         user_id: int,
-        amount: int,
+        amount: float,
         transaction_type: TransactionType,
         description: str = "",
         reference_id: Optional[int] = None
-    ) -> tuple[bool, str, int]:
+    ) -> tuple[bool, str, float]:
         """Deduce besitos de un usuario.
 
         Args:
             user_id: ID del usuario
-            amount: Cantidad a deducir
+            amount: Cantidad a deducir (puede ser decimal: 0.1, 0.5, 1.0)
             transaction_type: Tipo de transacción
             description: Descripción
             reference_id: ID de referencia
@@ -137,7 +137,7 @@ class BesitoService:
             (success, message, new_balance)
         """
         if amount <= 0:
-            return False, "Cantidad inválida", 0
+            return False, "Cantidad inválida", 0.0
 
         user_gamif = await self._get_or_create_user_gamification(user_id)
 
@@ -170,14 +170,14 @@ class BesitoService:
 
         return True, f"Deducidos {amount} besitos", user_gamif.total_besitos
 
-    async def get_balance(self, user_id: int) -> int:
+    async def get_balance(self, user_id: int) -> float:
         """Obtiene balance actual de besitos del usuario.
 
         Args:
             user_id: ID del usuario
 
         Returns:
-            Balance actual de besitos
+            Balance actual de besitos (puede ser decimal)
         """
         user_gamif = await self._get_or_create_user_gamification(user_id)
         return user_gamif.total_besitos

@@ -8,7 +8,7 @@ from typing import Optional, List
 from datetime import datetime, UTC
 
 from sqlalchemy import (
-    BigInteger, String, Integer, Boolean, DateTime, ForeignKey, Index, Text
+    BigInteger, String, Integer, Boolean, DateTime, ForeignKey, Index, Text, Float
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -31,9 +31,9 @@ class UserGamification(Base):
     __tablename__ = "user_gamification"
 
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
-    total_besitos: Mapped[int] = mapped_column(Integer, default=0)
-    besitos_earned: Mapped[int] = mapped_column(Integer, default=0)
-    besitos_spent: Mapped[int] = mapped_column(Integer, default=0)
+    total_besitos: Mapped[float] = mapped_column(Float, default=0.0)
+    besitos_earned: Mapped[float] = mapped_column(Float, default=0.0)
+    besitos_spent: Mapped[float] = mapped_column(Float, default=0.0)
     current_level_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("levels.id"), nullable=True
     )
@@ -435,6 +435,7 @@ class GamificationConfig(Base):
     """Configuración global del módulo de gamificación.
 
     Singleton (id=1) que almacena parámetros globales del sistema.
+    Incluye configuración de economía de Favores.
     """
     __tablename__ = "gamification_config"
 
@@ -449,6 +450,32 @@ class GamificationConfig(Base):
     # Configuración de regalo diario
     daily_gift_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     daily_gift_besitos: Mapped[int] = mapped_column(Integer, default=10)
+
+    # ============================================================
+    # ECONOMÍA DE FAVORES (Valores configurables)
+    # ============================================================
+    # Valores por defecto alineados con FAVOR_REWARDS en formatters.py
+
+    # Reacciones a publicaciones
+    earn_reaction_base: Mapped[float] = mapped_column(Float, default=0.1)
+    earn_first_reaction_day: Mapped[float] = mapped_column(Float, default=0.5)
+    limit_reactions_per_day: Mapped[int] = mapped_column(Integer, default=10)
+
+    # Misiones
+    earn_mission_daily: Mapped[float] = mapped_column(Float, default=1.0)
+    earn_mission_weekly: Mapped[float] = mapped_column(Float, default=3.0)
+    earn_level_evaluation: Mapped[float] = mapped_column(Float, default=5.0)
+
+    # Rachas
+    earn_streak_7_days: Mapped[float] = mapped_column(Float, default=2.0)
+    earn_streak_30_days: Mapped[float] = mapped_column(Float, default=10.0)
+
+    # Easter eggs
+    earn_easter_egg_min: Mapped[float] = mapped_column(Float, default=2.0)
+    earn_easter_egg_max: Mapped[float] = mapped_column(Float, default=5.0)
+
+    # Referidos
+    earn_referral_active: Mapped[float] = mapped_column(Float, default=5.0)
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC),
@@ -551,14 +578,14 @@ class BesitoTransaction(Base):
         ForeignKey("users.user_id", ondelete="CASCADE"),
         nullable=False
     )
-    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
     transaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     reference_id: Mapped[Optional[int]] = mapped_column(
         Integer,
         nullable=True
     )
-    balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_after: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.now(UTC),
