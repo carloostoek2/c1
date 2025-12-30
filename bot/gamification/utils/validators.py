@@ -184,7 +184,7 @@ def validate_reward_metadata(
         is_valid, error = validate_json_structure(
             metadata,
             required_fields=['amount'],
-            optional_fields=[],
+            optional_fields=['multiplier'],
             field_types={'amount': int}
         )
         if not is_valid:
@@ -192,6 +192,67 @@ def validate_reward_metadata(
 
         if metadata['amount'] <= 0:
             return False, "amount must be > 0"
+
+        return True, "OK"
+
+    elif reward_type == RewardType.SHOP_ITEM:
+        # SHOP_ITEM requiere item_id o item_slug
+        has_id = 'item_id' in metadata and metadata['item_id']
+        has_slug = 'item_slug' in metadata and metadata['item_slug']
+
+        if not has_id and not has_slug:
+            return False, "SHOP_ITEM requires item_id or item_slug"
+
+        is_valid, error = validate_json_structure(
+            metadata,
+            required_fields=[],
+            optional_fields=['item_id', 'item_slug', 'quantity'],
+            field_types={
+                'item_id': int,
+                'item_slug': str,
+                'quantity': int
+            }
+        )
+        if not is_valid:
+            return False, error
+
+        # Validar quantity si existe
+        quantity = metadata.get('quantity', 1)
+        if quantity < 1:
+            return False, "quantity must be >= 1"
+
+        return True, "OK"
+
+    elif reward_type == RewardType.NARRATIVE_UNLOCK:
+        # NARRATIVE_UNLOCK requiere unlock_type y chapter_slug o fragment_key
+        unlock_type = metadata.get('unlock_type')
+        if unlock_type not in ('chapter', 'fragment'):
+            return False, "NARRATIVE_UNLOCK requires unlock_type='chapter' or 'fragment'"
+
+        if unlock_type == 'chapter' and not metadata.get('chapter_slug'):
+            return False, "NARRATIVE_UNLOCK with unlock_type='chapter' requires chapter_slug"
+
+        if unlock_type == 'fragment' and not metadata.get('fragment_key'):
+            return False, "NARRATIVE_UNLOCK with unlock_type='fragment' requires fragment_key"
+
+        return True, "OK"
+
+    elif reward_type == RewardType.VIP_DAYS:
+        # VIP_DAYS requiere days
+        is_valid, error = validate_json_structure(
+            metadata,
+            required_fields=['days'],
+            optional_fields=['extend_existing'],
+            field_types={
+                'days': int,
+                'extend_existing': bool
+            }
+        )
+        if not is_valid:
+            return False, error
+
+        if metadata['days'] <= 0:
+            return False, "days must be > 0"
 
         return True, "OK"
 
@@ -255,6 +316,75 @@ def validate_unlock_conditions(conditions: dict) -> Tuple[bool, str]:
             is_valid, error = validate_unlock_conditions(cond)
             if not is_valid:
                 return False, f"Condition {idx}: {error}"
+
+        return True, "OK"
+
+    # ========================================
+    # CONDICIONES NARRATIVAS
+    # ========================================
+
+    elif condition_type == 'narrative_chapter':
+        is_valid, error = validate_json_structure(
+            conditions,
+            required_fields=['type', 'chapter_slug'],
+            optional_fields=[],
+            field_types={'chapter_slug': str}
+        )
+        if not is_valid:
+            return False, error
+
+        # Validar que chapter_slug no esté vacío
+        if not conditions['chapter_slug'].strip():
+            return False, "chapter_slug cannot be empty"
+
+        return True, "OK"
+
+    elif condition_type == 'narrative_fragment':
+        is_valid, error = validate_json_structure(
+            conditions,
+            required_fields=['type', 'fragment_key'],
+            optional_fields=[],
+            field_types={'fragment_key': str}
+        )
+        if not is_valid:
+            return False, error
+
+        # Validar que fragment_key no esté vacío
+        if not conditions['fragment_key'].strip():
+            return False, "fragment_key cannot be empty"
+
+        return True, "OK"
+
+    elif condition_type == 'narrative_decision':
+        is_valid, error = validate_json_structure(
+            conditions,
+            required_fields=['type', 'decision_key'],
+            optional_fields=[],
+            field_types={'decision_key': str}
+        )
+        if not is_valid:
+            return False, error
+
+        # Validar que decision_key no esté vacío
+        if not conditions['decision_key'].strip():
+            return False, "decision_key cannot be empty"
+
+        return True, "OK"
+
+    elif condition_type == 'archetype':
+        is_valid, error = validate_json_structure(
+            conditions,
+            required_fields=['type', 'archetype'],
+            optional_fields=[],
+            field_types={'archetype': str}
+        )
+        if not is_valid:
+            return False, error
+
+        # Validar que el arquetipo sea válido
+        valid_archetypes = ['unknown', 'impulsive', 'contemplative', 'silent']
+        if conditions['archetype'] not in valid_archetypes:
+            return False, f"Invalid archetype. Valid: {', '.join(valid_archetypes)}"
 
         return True, "OK"
 

@@ -7,9 +7,11 @@ Proporciona fixtures comunes para todos los tests:
 """
 import pytest
 import asyncio
+import os
 from unittest.mock import AsyncMock, Mock
 
 from bot.database import init_db, close_db, get_session
+from config import Config
 
 
 @pytest.fixture
@@ -28,7 +30,19 @@ def event_loop():
 def db_setup(event_loop):
     """
     Setup BD antes de cada test.
+
+    Elimina la BD existente para asegurar tests aislados.
     """
+    # Eliminar archivo de BD si existe (para tests limpios)
+    db_path = Config.DATABASE_URL.replace("sqlite+aiosqlite:///", "")
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    # También eliminar archivos auxiliares de WAL
+    for suffix in ["-wal", "-shm"]:
+        aux_path = db_path + suffix
+        if os.path.exists(aux_path):
+            os.remove(aux_path)
+
     # Ejecutar init_db antes del test
     event_loop.run_until_complete(init_db())
 

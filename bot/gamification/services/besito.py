@@ -28,16 +28,16 @@ class BesitoService:
     async def grant_besitos(
         self,
         user_id: int,
-        amount: int,
+        amount: float,
         transaction_type: TransactionType,
         description: str = "",
         reference_id: Optional[int] = None
-    ) -> int:
+    ) -> float:
         """Otorga besitos a un usuario.
 
         Args:
             user_id: ID del usuario
-            amount: Cantidad de besitos a otorgar
+            amount: Cantidad de besitos a otorgar (puede ser decimal: 0.1, 0.5, 1.0)
             transaction_type: Tipo de transacción
             description: Descripción opcional
             reference_id: ID de referencia (ej: UserReaction.id)
@@ -47,7 +47,7 @@ class BesitoService:
         """
         if amount <= 0:
             logger.warning(f"Attempted to grant {amount} besitos to user {user_id}")
-            return 0
+            return 0.0
 
         # Obtener o crear perfil de gamificación
         user_gamif = await self._get_or_create_user_gamification(user_id)
@@ -114,21 +114,55 @@ class BesitoService:
                 exc_info=True
             )
 
+        # ========================================
+        # F2.4: Verificar level-up automático
+        # ========================================
+        try:
+            from bot.gamification.services.level import LevelService
+            level_service = LevelService(self.session)
+            level_changed, old_level, new_level = await level_service.check_and_apply_level_up(user_id)
+
+            if level_changed:
+                logger.info(
+                    f"⬆️ Level up! User {user_id}: {old_level.name if old_level else 'None'} → {new_level.name}"
+                )
+
+                # Intentar notificar usando el container global
+                try:
+                    from bot.gamification.services.container import get_container
+                    container = get_container()
+                    await container.notifications.notify_level_up(
+                        user_id, new_level
+                    )
+                    logger.info(f"✅ Level-up notification sent for user {user_id}")
+
+                except RuntimeError as e:
+                    # Container no inicializado (ej: en tests)
+                    logger.warning(f"❌ Container not available for level-up notification: {e}")
+                except Exception as e:
+                    logger.error(f"❌ Could not send level-up notification: {e}", exc_info=True)
+
+        except Exception as e:
+            logger.error(
+                f"Error checking/applying level-up for user {user_id}: {e}",
+                exc_info=True
+            )
+
         return amount
 
     async def deduct_besitos(
         self,
         user_id: int,
-        amount: int,
+        amount: float,
         transaction_type: TransactionType,
         description: str = "",
         reference_id: Optional[int] = None
-    ) -> tuple[bool, str, int]:
+    ) -> tuple[bool, str, float]:
         """Deduce besitos de un usuario.
 
         Args:
             user_id: ID del usuario
-            amount: Cantidad a deducir
+            amount: Cantidad a deducir (puede ser decimal: 0.1, 0.5, 1.0)
             transaction_type: Tipo de transacción
             description: Descripción
             reference_id: ID de referencia
@@ -137,7 +171,7 @@ class BesitoService:
             (success, message, new_balance)
         """
         if amount <= 0:
-            return False, "Cantidad inválida", 0
+            return False, "Cantidad inválida", 0.0
 
         user_gamif = await self._get_or_create_user_gamification(user_id)
 
@@ -170,14 +204,14 @@ class BesitoService:
 
         return True, f"Deducidos {amount} besitos", user_gamif.total_besitos
 
-    async def get_balance(self, user_id: int) -> int:
+    async def get_balance(self, user_id: int) -> float:
         """Obtiene balance actual de besitos del usuario.
 
         Args:
             user_id: ID del usuario
 
         Returns:
-            Balance actual de besitos
+            Balance actual de besitos (puede ser decimal)
         """
         user_gamif = await self._get_or_create_user_gamification(user_id)
         return user_gamif.total_besitos

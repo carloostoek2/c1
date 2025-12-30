@@ -12,9 +12,13 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import F
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
+from bot.services.container import ServiceContainer
+from bot.utils.keyboards import create_inline_keyboard
+from bot.utils.menu_helpers import build_profile_menu
 
 router = Router()
 
@@ -25,7 +29,7 @@ router.callback_query.middleware(DatabaseMiddleware())
 
 @router.message(Command("profile"))
 @router.message(Command("perfil"))
-async def show_profile(message: Message, gamification: GamificationContainer):
+async def show_profile(message: Message, session: AsyncSession, gamification: GamificationContainer):
     """
     Muestra perfil completo del usuario.
 
@@ -35,36 +39,17 @@ async def show_profile(message: Message, gamification: GamificationContainer):
 
     Args:
         message: Mensaje del usuario
+        session: Sesión de BD
         gamification: Container de servicios de gamificación
     """
     try:
-        summary = await gamification.user_gamification.get_profile_summary(
-            message.from_user.id
+        # Usar helper con botón de volver al menú principal
+        summary, keyboard = await build_profile_menu(
+            session=session,
+            bot=message.bot,
+            user_id=message.from_user.id,
+            show_back_button=True
         )
-
-        # Verificar estado del regalo diario para mostrar indicador
-        daily_gift_status = await gamification.daily_gift.get_daily_gift_status(
-            message.from_user.id
-        )
-
-        # Texto del botón de regalo diario con indicador visual
-        if daily_gift_status['can_claim'] and daily_gift_status['system_enabled']:
-            daily_gift_text = "🎁 Regalo Diario ⭐"  # Indicador de disponible
-        else:
-            daily_gift_text = "🎁 Regalo Diario ✅"  # Indicador de reclamado
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(text=daily_gift_text, callback_data="user:daily_gift")
-            ],
-            [
-                InlineKeyboardButton(text="📋 Mis Misiones", callback_data="user:missions"),
-                InlineKeyboardButton(text="🎁 Recompensas", callback_data="user:rewards")
-            ],
-            [
-                InlineKeyboardButton(text="🏆 Leaderboard", callback_data="user:leaderboard")
-            ]
-        ])
 
         await message.answer(summary, reply_markup=keyboard, parse_mode="HTML")
 
@@ -76,42 +61,23 @@ async def show_profile(message: Message, gamification: GamificationContainer):
 
 
 @router.callback_query(F.data == "user:profile")
-async def show_profile_callback(callback: CallbackQuery, gamification: GamificationContainer):
+async def show_profile_callback(callback: CallbackQuery, session: AsyncSession, gamification: GamificationContainer):
     """
     Muestra perfil completo del usuario (versión callback para navegación).
 
     Args:
         callback: Callback query del usuario
+        session: Sesión de BD
         gamification: Container de servicios de gamificación
     """
     try:
-        summary = await gamification.user_gamification.get_profile_summary(
-            callback.from_user.id
+        # Usar helper con botón de volver al menú principal
+        summary, keyboard = await build_profile_menu(
+            session=session,
+            bot=callback.bot,
+            user_id=callback.from_user.id,
+            show_back_button=True
         )
-
-        # Verificar estado del regalo diario para mostrar indicador
-        daily_gift_status = await gamification.daily_gift.get_daily_gift_status(
-            callback.from_user.id
-        )
-
-        # Texto del botón de regalo diario con indicador visual
-        if daily_gift_status['can_claim'] and daily_gift_status['system_enabled']:
-            daily_gift_text = "🎁 Regalo Diario ⭐"  # Indicador de disponible
-        else:
-            daily_gift_text = "🎁 Regalo Diario ✅"  # Indicador de reclamado
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(text=daily_gift_text, callback_data="user:daily_gift")
-            ],
-            [
-                InlineKeyboardButton(text="📋 Mis Misiones", callback_data="user:missions"),
-                InlineKeyboardButton(text="🎁 Recompensas", callback_data="user:rewards")
-            ],
-            [
-                InlineKeyboardButton(text="🏆 Leaderboard", callback_data="user:leaderboard")
-            ]
-        ])
 
         await callback.message.edit_text(summary, reply_markup=keyboard, parse_mode="HTML")
         await callback.answer()

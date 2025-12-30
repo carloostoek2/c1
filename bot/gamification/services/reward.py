@@ -318,6 +318,39 @@ class RewardService:
                     return False
             return True
 
+        # Condiciones narrativas
+        elif condition_type == 'narrative_chapter':
+            # Verificar que usuario completó el capítulo
+            from bot.narrative.services.container import NarrativeContainer
+            narrative = NarrativeContainer(self.session)
+            chapter_slug = condition['chapter_slug']
+            completed = await narrative.progress.has_completed_chapter(user_id, chapter_slug)
+            return completed
+
+        elif condition_type == 'narrative_fragment':
+            # Verificar que usuario visitó el fragmento
+            from bot.narrative.services.container import NarrativeContainer
+            narrative = NarrativeContainer(self.session)
+            fragment_key = condition['fragment_key']
+            visited = await narrative.progress.has_visited_fragment(user_id, fragment_key)
+            return visited
+
+        elif condition_type == 'narrative_decision':
+            # Verificar que usuario tomó la decisión específica
+            from bot.narrative.services.container import NarrativeContainer
+            narrative = NarrativeContainer(self.session)
+            decision_key = condition['decision_key']
+            taken = await narrative.progress.has_taken_decision(user_id, decision_key)
+            return taken
+
+        elif condition_type == 'archetype':
+            # Verificar que usuario tiene el arquetipo requerido
+            from bot.narrative.services.container import NarrativeContainer
+            narrative = NarrativeContainer(self.session)
+            progress = await narrative.progress.get_or_create_progress(user_id)
+            required_archetype = condition['archetype']
+            return progress.detected_archetype.value == required_archetype
+
         return False
 
     def _get_unlock_requirement_text(self, conditions: dict) -> str:
@@ -339,6 +372,14 @@ class RewardService:
             return f"Requiere {conditions['min_besitos']} besitos totales"
         elif condition_type == 'multiple':
             return "Requiere múltiples condiciones"
+        elif condition_type == 'narrative_chapter':
+            return f"Requiere completar el capítulo '{conditions['chapter_slug']}'"
+        elif condition_type == 'narrative_fragment':
+            return f"Requiere avanzar en la historia hasta '{conditions['fragment_key']}'"
+        elif condition_type == 'narrative_decision':
+            return f"Requiere tomar la decisión '{conditions['decision_key']}'"
+        elif condition_type == 'archetype':
+            return f"Requiere tener arquetipo '{conditions['archetype']}'"
 
         return "Condiciones no especificadas"
 
@@ -419,6 +460,36 @@ class RewardService:
                     description=f"Recompensa: {reward.name}",
                     reference_id=user_reward.id
                 )
+
+        # Si es SHOP_ITEM, otorgar item de tienda
+        if reward.reward_type == RewardType.SHOP_ITEM.value:
+            metadata = json.loads(reward.reward_metadata) if reward.reward_metadata else {}
+            item_id = metadata.get('item_id')
+            item_slug = metadata.get('item_slug')
+            quantity = metadata.get('quantity', 1)
+
+            if item_id or item_slug:
+                from bot.gamification.services.unified import UnifiedRewardService
+                unified_service = UnifiedRewardService(self.session)
+
+                success, msg, _ = await unified_service.grant_shop_item(
+                    user_id=user_id,
+                    item_id=item_id,
+                    quantity=quantity,
+                    source=obtained_via.value,
+                    reference_id=user_reward.id
+                ) if item_id else await unified_service.grant_shop_item_by_slug(
+                    user_id=user_id,
+                    item_slug=item_slug,
+                    quantity=quantity,
+                    source=obtained_via.value,
+                    reference_id=user_reward.id
+                )
+
+                if not success:
+                    logger.warning(
+                        f"Failed to grant shop item for reward {reward.name}: {msg}"
+                    )
 
         logger.info(f"User {user_id} obtained reward {reward.name} via {obtained_via.value}")
         return True, f"Recompensa obtenida: {reward.name}", user_reward
@@ -513,6 +584,36 @@ class RewardService:
                     description=f"Recompensa: {reward.name}",
                     reference_id=user_reward.id
                 )
+
+        # Si es SHOP_ITEM, otorgar item de tienda
+        if reward.reward_type == RewardType.SHOP_ITEM.value:
+            metadata = json.loads(reward.reward_metadata) if reward.reward_metadata else {}
+            item_id = metadata.get('item_id')
+            item_slug = metadata.get('item_slug')
+            quantity = metadata.get('quantity', 1)
+
+            if item_id or item_slug:
+                from bot.gamification.services.unified import UnifiedRewardService
+                unified_service = UnifiedRewardService(self.session)
+
+                success, msg, _ = await unified_service.grant_shop_item(
+                    user_id=user_id,
+                    item_id=item_id,
+                    quantity=quantity,
+                    source=ObtainedVia.PURCHASE.value,
+                    reference_id=user_reward.id
+                ) if item_id else await unified_service.grant_shop_item_by_slug(
+                    user_id=user_id,
+                    item_slug=item_slug,
+                    quantity=quantity,
+                    source=ObtainedVia.PURCHASE.value,
+                    reference_id=user_reward.id
+                )
+
+                if not success:
+                    logger.warning(
+                        f"Failed to grant shop item for purchased reward {reward.name}: {msg}"
+                    )
 
         logger.info(f"User {user_id} purchased reward {reward.name}")
         return True, f"Recompensa comprada: {reward.name}", user_reward

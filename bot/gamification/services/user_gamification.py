@@ -20,6 +20,7 @@ from bot.gamification.database.models import (
     UserReaction, Reaction
 )
 from bot.gamification.database.enums import MissionStatus, TransactionType
+from bot.gamification.utils.formatters import format_currency, CURRENCY_NAME_PLURAL
 
 logger = logging.getLogger(__name__)
 
@@ -346,9 +347,12 @@ class UserGamificationService:
         level_name = profile['level']['current'].name if profile['level']['current'] else 'Sin nivel'
         progress = profile['level']['progress_percentage']
 
+        # Formatear Favores usando el helper
+        favores_text = format_currency(profile['besitos']['total'])
+
         summary = f"""👤 <b>Perfil de Usuario</b>
 
-💰 Besitos: <b>{profile['besitos']['total']:,}</b>
+✨ {CURRENCY_NAME_PLURAL}: <b>{favores_text}</b>
 ⭐ Nivel: <b>{level_name}</b> ({progress:.0f}% al siguiente)
 🔥 Racha: <b>{profile['streak']['current']}</b> días (récord: {profile['streak']['longest']})
 

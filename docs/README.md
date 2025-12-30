@@ -22,6 +22,21 @@ Guía completa de arquitectura, configuración, uso y desarrollo del bot de admi
 - **[SERVICES.md](./SERVICES.md)** - Documentación de servicios y lógica de negocio
 - **[API.md](./API.md)** - API interna, métodos principales y dependencias
 
+### Módulo Narrativo
+- **[narrativa/README.md](./narrativa/README.md)** - Documentación general del módulo narrativo
+- **[narrativa/API.md](./narrativa/API.md)** - Referencia de API del módulo narrativo
+- **[narrativa/SETUP.md](./narrativa/SETUP.md)** - Guía de instalación del módulo narrativo
+- **[narrativa/HANDLERS.md](./narrativa/HANDLERS.md)** - Documentación de handlers narrativos
+- **[narrativa/DATABASE.md](./narrativa/DATABASE.md)** - Documentación de modelos narrativos
+
+### Módulo de Tienda y Mochila
+- **[shop/README.md](./shop/README.md)** - Documentación general del módulo de tienda y mochila
+- **[shop/API.md](./shop/API.md)** - Referencia de API del módulo de tienda y mochila
+- **[shop/SETUP.md](./shop/SETUP.md)** - Guía de instalación del módulo de tienda y mochila
+- **[shop/HANDLERS.md](./shop/HANDLERS.md)** - Documentación de handlers de tienda e inventario
+- **[shop/DATABASE.md](./shop/DATABASE.md)** - Documentación de modelos de tienda y mochila
+- **[shop/tracking.md](./shop/tracking.md)** - Tracking del desarrollo del módulo de tienda
+
 ### Operación y Mantenimiento
 - **[TESTING.md](./TESTING.md)** - Guía de testing y configuración
 - **[MAINTENANCE.md](./MAINTENANCE.md)** - Procedimientos de mantenimiento y troubleshooting

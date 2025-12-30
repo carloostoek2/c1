@@ -469,6 +469,50 @@ Tareas programadas automáticas que realizan operaciones periódicas para manten
 - **Configuración de intervalos:** Configuración de frecuencias de ejecución mediante variables de entorno
 - **Manejo de errores:** Control de errores en todas las tareas con logging apropiado
 
+### Daily Gift System (T25)
+Sistema de regalo diario que permite a los usuarios reclamar besitos diariamente manteniendo rachas de días consecutivos:
+
+- **Reclamación diaria:** Usuarios pueden reclamar un regalo diario con un monto configurable de besitos
+- **Sistema de rachas:** Mantiene registro de días consecutivos de reclamación con récords personales
+- **Configuración flexible:** Administradores pueden configurar cantidad de besitos y habilitar/deshabilitar el sistema
+- **Integración con gamificación:** Los besitos recibidos se integran con el sistema de economía de gamificación
+- **Validación de horarios:** Sistema considera zona horaria de Ciudad de México para cálculo de días
+- **Seguimiento de progreso:** Registro de total de reclamos y rachas máximas por usuario
+
+### Dynamic Menu Configuration (T28)
+Sistema que permite a los administradores configurar dinámicamente los menús visibles para usuarios:
+
+- **Configuración por rol:** Diferencia entre menús VIP y FREE
+- **Botones personalizables:** Texto, emojis, acciones configurables por admin
+- **Tipos de acción:** Soporta información, URLs, callbacks y contactos
+- **Ordenamiento flexible:** Control sobre posición y agrupación de botones
+- **Activación/desactivación:** Control granular sobre visibilidad de botones
+- **Integración con usuarios:** Menús se generan dinámicamente según rol del usuario
+
+### Narrative Module (T35)
+Sistema de historias interactivas con decisiones del usuario, requisitos de acceso y tracking de progreso:
+
+- **Capítulos y fragmentos narrativos:** Estructura modular para contenido narrativo
+- **Decisiones del usuario:** Ramificaciones narrativas basadas en elecciones del usuario
+- **Requisitos de acceso:** Control de acceso basado en VIP, besitos o arquetipo
+- **Tracking de progreso:** Registro del avance del usuario en la narrativa
+- **Detección de arquetipos:** Análisis de patrones de decisión para identificar tipo de usuario
+- **Integración con gamificación:** Recompensas y misiones vinculadas a la narrativa
+- **Sistema de recompensas:** Besitos, misiones y niveles por completar fragmentos
+
+### Shop and Backpack Module (T36)
+Sistema de e-commerce que permite a los usuarios comprar productos con besitos y gestionar su inventario personal:
+
+- **Catálogo de productos:** Organizado por categorías con descripciones y precios
+- **Sistema de compras:** Compra segura con deducción automática de besitos
+- **Inventario personal (Mochila):** Sistema donde los usuarios almacenan sus items
+- **Items consumibles:** Productos que pueden usarse para obtener efectos
+- **Items cosméticos:** Artículos que pueden equiparse para personalización
+- **Items narrativos:** Items que desbloquean contenido en la historia
+- **Control de stock:** Gestión de disponibilidad de productos
+- **Historial de transacciones:** Registro completo de compras y posesiones
+- **Integración con otros sistemas:** Compatible con gamificación y narrativa
+
 **Ejemplo de uso de las background tasks:**
 ```python
 from aiogram import Bot

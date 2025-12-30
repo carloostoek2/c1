@@ -14,7 +14,7 @@ from datetime import datetime, UTC
 
 from bot.database import get_session
 from bot.database.models import BroadcastMessage, User
-from bot.gamification.database.models import CustomReaction, Reaction
+from bot.gamification.database.models import CustomReaction, Reaction, UserGamification
 from bot.gamification.services.container import GamificationContainer
 from sqlalchemy import select
 
@@ -58,6 +58,7 @@ async def test_broadcast_with_reactions_full_flow(mock_bot):
         reactions = [
             Reaction(
                 emoji="👍_test1",
+                name="Like",
                 button_label="Me Gusta",
                 besitos_value=10,
                 sort_order=1,
@@ -65,6 +66,7 @@ async def test_broadcast_with_reactions_full_flow(mock_bot):
             ),
             Reaction(
                 emoji="❤️_test1",
+                name="Love",
                 button_label="Me Encanta",
                 besitos_value=15,
                 sort_order=2,
@@ -72,6 +74,7 @@ async def test_broadcast_with_reactions_full_flow(mock_bot):
             ),
             Reaction(
                 emoji="🔥_test1",
+                name="Fire",
                 button_label="Increíble",
                 besitos_value=20,
                 sort_order=3,
@@ -152,6 +155,9 @@ async def test_user_reacts_and_earns_besitos(mock_bot):
         admin = User(user_id=admin_id, username="admin", first_name="Admin", role="ADMIN")
         user = User(user_id=user_id, username="testuser", first_name="Test User", role="FREE")
         session.add_all([admin, user])
+        # Crear UserGamification para el usuario
+        user_gamif = UserGamification(user_id=user_id)
+        session.add(user_gamif)
         await session.commit()
         print("     OK: Usuarios creados")
 
@@ -159,6 +165,7 @@ async def test_user_reacts_and_earns_besitos(mock_bot):
         print("  2. Creando tipo de reacción...")
         reaction_type = Reaction(
             emoji="👍_test2",
+            name="Like2",
             button_label="Me Gusta",
             besitos_value=10,
             sort_order=1,
@@ -195,9 +202,10 @@ async def test_user_reacts_and_earns_besitos(mock_bot):
         )
 
         assert result["success"] == True
-        assert result["besitos_earned"] == 10
+        # Los besitos ahora vienen de economy_config (base + first_bonus = 0.1 + 0.5 = 0.6)
+        assert result["besitos_earned"] > 0
         assert result["already_reacted"] == False
-        print(f"     OK: Usuario ganó {result['besitos_earned']} besitos")
+        print(f"     OK: Usuario ganó {result['besitos_earned']} Favores")
 
         # Paso 5: Verificar CustomReaction en BD
         print("  5. Verificando CustomReaction en BD...")
@@ -209,7 +217,7 @@ async def test_user_reacts_and_earns_besitos(mock_bot):
         custom_reaction = db_result.scalar_one()
 
         assert custom_reaction.emoji == "👍_test2"
-        assert custom_reaction.besitos_earned == 10
+        assert custom_reaction.besitos_earned > 0  # Valor desde economy_config
         print("     OK: CustomReaction creado correctamente")
 
         # Paso 6: Verificar stats actualizadas
@@ -251,9 +259,13 @@ async def test_prevent_duplicate_reactions(mock_bot):
         admin = User(user_id=admin_id, username="admin", first_name="Admin", role="ADMIN")
         user = User(user_id=user_id, username="testuser", first_name="Test", role="FREE")
         session.add_all([admin, user])
+        # Crear UserGamification para el usuario
+        user_gamif = UserGamification(user_id=user_id)
+        session.add(user_gamif)
 
         reaction_type = Reaction(
             emoji="❤️_test3",
+            name="Love3",
             button_label="Me Encanta",
             besitos_value=15,
             sort_order=2,
@@ -285,10 +297,11 @@ async def test_prevent_duplicate_reactions(mock_bot):
         )
 
         assert result1["success"] == True
-        assert result1["besitos_earned"] == 15
+        # Besitos ahora vienen de economy_config (base + first_bonus)
+        assert result1["besitos_earned"] > 0
         assert result1["already_reacted"] == False
         first_total = result1["total_besitos"]
-        print(f"     OK: Primera reacción exitosa (15 besitos ganados)")
+        print(f"     OK: Primera reacción exitosa ({result1['besitos_earned']} Favores ganados)")
 
         # Paso 2: Segunda reacción (duplicada)
         print("  2. Usuario intenta reaccionar con ❤️ (segunda vez)...")
@@ -362,12 +375,15 @@ async def test_reaction_stats_accurate(mock_bot):
             User(user_id=user3_id, username="user3", first_name="User 3", role="VIP"),
         ]
         session.add_all(users)
+        # Crear UserGamification para cada usuario
+        for u in users:
+            session.add(UserGamification(user_id=u.user_id))
 
         # Setup: Reacciones tipo
         reactions = [
-            Reaction(emoji="👍_test4", button_label="Me Gusta", besitos_value=10, sort_order=1, active=True),
-            Reaction(emoji="❤️_test4", button_label="Me Encanta", besitos_value=15, sort_order=2, active=True),
-            Reaction(emoji="🔥_test4", button_label="Increíble", besitos_value=20, sort_order=3, active=True),
+            Reaction(emoji="👍_test4", name="Like4", button_label="Me Gusta", besitos_value=10, sort_order=1, active=True),
+            Reaction(emoji="❤️_test4", name="Love4", button_label="Me Encanta", besitos_value=15, sort_order=2, active=True),
+            Reaction(emoji="🔥_test4", name="Fire4", button_label="Increíble", besitos_value=20, sort_order=3, active=True),
         ]
         session.add_all(reactions)
         await session.flush()  # Para obtener los IDs

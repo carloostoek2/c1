@@ -12,7 +12,10 @@ from bot.gamification.handlers.admin import (
     mission_config,
     reward_config,
     reaction_config,
-    daily_gift_config
+    daily_gift_config,
+    unified_wizard,
+    config_panel,
+    economy_admin
 )
 
 __all__ = [
@@ -27,5 +30,8 @@ __all__ = [
     "mission_config",
     "reward_config",
     "reaction_config",
-    "daily_gift_config"
+    "daily_gift_config",
+    "unified_wizard",
+    "config_panel",
+    "economy_admin"
 ]
