@@ -42,6 +42,7 @@ class GamificationContainer:
         self._config_panel_service = None
         self._economy_config_service = None
         self._behavior_tracking_service = None
+        self._archetype_detection_service = None
 
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
@@ -178,6 +179,14 @@ class GamificationContainer:
         return self._behavior_tracking_service
 
     @property
+    def archetype_detection(self):
+        """Servicio de detección automática de arquetipos."""
+        if self._archetype_detection_service is None:
+            from bot.gamification.services.archetype_detection import ArchetypeDetectionService
+            self._archetype_detection_service = ArchetypeDetectionService(self._session)
+        return self._archetype_detection_service
+
+    @property
     def mission_orchestrator(self):
         """Orquestador de creación de misiones."""
         if self._mission_orchestrator is None:
@@ -238,6 +247,8 @@ class GamificationContainer:
             loaded.append('economy_config')
         if self._behavior_tracking_service is not None:
             loaded.append('behavior_tracking')
+        if self._archetype_detection_service is not None:
+            loaded.append('archetype_detection')
         if self._mission_orchestrator is not None:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
@@ -263,6 +274,7 @@ class GamificationContainer:
         self._config_panel_service = None
         self._economy_config_service = None
         self._behavior_tracking_service = None
+        self._archetype_detection_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
         self._configuration_orchestrator = None

@@ -4,6 +4,7 @@ Tests E2E para Fase 3 - Sistema de Arquetipos y Tracking de Comportamiento.
 Prueba:
 - F3.1: Modelo UserBehaviorSignals y campos de arquetipo en User
 - F3.2: BehaviorTrackingService con registro de interacciones
+- F3.3: ArchetypeDetectionService con algoritmo de scoring
 """
 
 import pytest
@@ -17,6 +18,13 @@ from bot.gamification.database.models import (
     BehaviorInteraction
 )
 from bot.gamification.services.behavior_tracking import BehaviorTrackingService
+from bot.gamification.services.archetype_detection import (
+    ArchetypeDetectionService,
+    ArchetypeResult,
+    ArchetypeInsights,
+    MIN_INTERACTIONS_FOR_DETECTION,
+    MIN_CONFIDENCE_THRESHOLD,
+)
 from bot.gamification.services.container import GamificationContainer
 
 
@@ -637,3 +645,655 @@ class TestInteractionCounts:
             # Verificar orden (más reciente primero)
             for i in range(len(recent) - 1):
                 assert recent[i].created_at >= recent[i + 1].created_at
+
+
+# ============================================================
+# F3.3: TESTS DE ARCHETYPE DETECTION SERVICE
+# ============================================================
+
+class TestArchetypeDetectionNormalize:
+    """Tests para función normalize."""
+
+    def test_normalize_in_range(self):
+        """Verifica normalización de valor dentro del rango."""
+        result = ArchetypeDetectionService.normalize(50, 0, 100)
+        assert result == 0.5
+
+    def test_normalize_below_min(self):
+        """Verifica normalización de valor menor al mínimo."""
+        result = ArchetypeDetectionService.normalize(-10, 0, 100)
+        assert result == 0.0
+
+    def test_normalize_above_max(self):
+        """Verifica normalización de valor mayor al máximo."""
+        result = ArchetypeDetectionService.normalize(150, 0, 100)
+        assert result == 1.0
+
+    def test_normalize_at_min(self):
+        """Verifica normalización exactamente en el mínimo."""
+        result = ArchetypeDetectionService.normalize(0, 0, 100)
+        assert result == 0.0
+
+    def test_normalize_at_max(self):
+        """Verifica normalización exactamente en el máximo."""
+        result = ArchetypeDetectionService.normalize(100, 0, 100)
+        assert result == 1.0
+
+
+class TestArchetypeDetectionScoring:
+    """Tests para cálculo de scores de arquetipos."""
+
+    @pytest.mark.asyncio
+    async def test_explorer_score_calculation(self):
+        """Verifica cálculo de score para EXPLORER."""
+        async with get_session() as session:
+            user = User(
+                user_id=62345,
+                first_name="Explorer",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Crear señales con comportamiento explorador
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                content_completion_rate=0.8,  # Alto completado
+                easter_eggs_found=5,  # Encuentra secretos
+                avg_time_on_content=60.0,  # Tiempo moderado
+                revisits_old_content=10,  # Revisita contenido
+                content_sections_visited=15,  # Muchas secciones
+                total_interactions=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            score = service._calculate_explorer_score(signals)
+
+            # Score alto para comportamiento explorador
+            assert score > 0.5
+
+    @pytest.mark.asyncio
+    async def test_direct_score_calculation(self):
+        """Verifica cálculo de score para DIRECT."""
+        async with get_session() as session:
+            user = User(
+                user_id=62346,
+                first_name="Direct",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Crear señales con comportamiento directo
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                avg_response_time=3.0,  # Muy rápido
+                avg_response_length=8.0,  # Respuestas cortas
+                button_vs_text_ratio=0.9,  # Usa muchos botones
+                avg_decision_time=2.0,  # Decisiones rápidas
+                actions_per_session=15.0,  # Muchas acciones
+                total_interactions=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            score = service._calculate_direct_score(signals)
+
+            # Score alto para comportamiento directo
+            assert score > 0.5
+
+    @pytest.mark.asyncio
+    async def test_romantic_score_calculation(self):
+        """Verifica cálculo de score para ROMANTIC."""
+        async with get_session() as session:
+            user = User(
+                user_id=62347,
+                first_name="Romantic",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Crear señales con comportamiento romántico
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                emotional_words_count=30,  # Muchas palabras emocionales
+                long_responses_count=12,  # Respuestas largas
+                personal_questions_about_diana=7,  # Preguntas personales
+                avg_response_length=60.0,  # Respuestas elaboradas
+                question_count=20,
+                total_interactions=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            score = service._calculate_romantic_score(signals)
+
+            # Score alto para comportamiento romántico
+            assert score > 0.5
+
+    @pytest.mark.asyncio
+    async def test_analytical_score_calculation(self):
+        """Verifica cálculo de score para ANALYTICAL."""
+        async with get_session() as session:
+            user = User(
+                user_id=62348,
+                first_name="Analytical",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Crear señales con comportamiento analítico
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                quiz_avg_score=85.0,  # Alto rendimiento
+                question_count=25,  # Muchas preguntas
+                structured_responses=10,  # Respuestas estructuradas
+                error_reports=3,  # Reporta errores
+                total_interactions=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            score = service._calculate_analytical_score(signals)
+
+            # Score alto para comportamiento analítico
+            assert score > 0.5
+
+    @pytest.mark.asyncio
+    async def test_persistent_score_calculation(self):
+        """Verifica cálculo de score para PERSISTENT."""
+        async with get_session() as session:
+            user = User(
+                user_id=62349,
+                first_name="Persistent",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Crear señales con comportamiento persistente
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                return_after_inactivity=4,  # Vuelve después de ausencia
+                retry_failed_actions=8,  # Reintenta acciones
+                incomplete_flows_completed=3,  # Completa flujos
+                first_interaction_at=datetime.now(UTC) - timedelta(days=60),  # Cuenta antigua
+                total_interactions=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            score = service._calculate_persistent_score(signals)
+
+            # Score alto para comportamiento persistente
+            assert score > 0.5
+
+    @pytest.mark.asyncio
+    async def test_patient_score_calculation(self):
+        """Verifica cálculo de score para PATIENT."""
+        async with get_session() as session:
+            user = User(
+                user_id=62350,
+                first_name="Patient",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Crear señales con comportamiento paciente extremo
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                avg_response_time=90.0,  # Respuestas muy lentas/pensadas
+                skip_actions_used=0,  # Nunca salta
+                current_streak=50,  # Racha muy larga
+                best_streak=70,  # Mejor racha excelente
+                avg_session_duration=1500.0,  # Sesiones largas
+                total_interactions=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            score = service._calculate_patient_score(signals)
+
+            # Score alto para comportamiento paciente
+            assert score > 0.5
+
+
+class TestArchetypeDetection:
+    """Tests para detección de arquetipos."""
+
+    @pytest.mark.asyncio
+    async def test_detect_insufficient_data(self):
+        """Verifica que no detecta con pocas interacciones."""
+        async with get_session() as session:
+            user = User(
+                user_id=72345,
+                first_name="New",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Pocas interacciones
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                total_interactions=5  # < MIN_INTERACTIONS_FOR_DETECTION (20)
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            result = await service.detect_archetype(user.user_id)
+
+            assert result.archetype is None
+            assert result.reason == "insufficient_data"
+            assert not result.is_detected
+
+    @pytest.mark.asyncio
+    async def test_detect_no_signals(self):
+        """Verifica manejo cuando no hay señales."""
+        async with get_session() as session:
+            user = User(
+                user_id=72346,
+                first_name="NoSignals",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            result = await service.detect_archetype(user.user_id)
+
+            assert result.archetype is None
+            assert result.reason == "no_signals"
+
+    @pytest.mark.asyncio
+    async def test_detect_explorer_archetype(self):
+        """Verifica detección de arquetipo EXPLORER."""
+        async with get_session() as session:
+            user = User(
+                user_id=72347,
+                first_name="Explorer",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Señales fuertemente exploradoras
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                total_interactions=50,
+                content_completion_rate=0.9,
+                easter_eggs_found=8,
+                avg_time_on_content=80.0,
+                revisits_old_content=15,
+                content_sections_visited=18,
+                # Otros arquetipos con valores bajos
+                avg_response_time=20.0,
+                avg_response_length=20.0,
+                button_vs_text_ratio=0.5,
+                emotional_words_count=3,
+                quiz_avg_score=50.0,
+                return_after_inactivity=1,
+                current_streak=5,
+                first_interaction_at=datetime.now(UTC) - timedelta(days=30)
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            result = await service.detect_archetype(user.user_id)
+
+            # Debe detectar EXPLORER con alta confianza
+            assert result.is_detected
+            assert result.archetype == ArchetypeType.EXPLORER
+            assert result.confidence >= MIN_CONFIDENCE_THRESHOLD
+
+    @pytest.mark.asyncio
+    async def test_detect_saves_to_user(self):
+        """Verifica que la detección se guarda en el usuario."""
+        async with get_session() as session:
+            user = User(
+                user_id=72348,
+                first_name="Test",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.flush()
+
+            # Señales para DIRECT
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                total_interactions=30,
+                avg_response_time=2.0,
+                avg_response_length=5.0,
+                button_vs_text_ratio=0.95,
+                avg_decision_time=1.5,
+                actions_per_session=18.0,
+                # Otros bajos
+                content_completion_rate=0.2,
+                easter_eggs_found=0,
+                emotional_words_count=1,
+                quiz_avg_score=40.0,
+                return_after_inactivity=0,
+                current_streak=2,
+                first_interaction_at=datetime.now(UTC) - timedelta(days=10)
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            result = await service.detect_archetype(user.user_id)
+
+            # Refrescar usuario
+            await session.refresh(user)
+
+            # Verificar que se guardó
+            assert user.archetype is not None
+            assert user.archetype_confidence is not None
+            assert user.archetype_scores is not None
+            assert user.archetype_detected_at is not None
+
+    @pytest.mark.asyncio
+    async def test_get_archetype_without_recalculate(self):
+        """Verifica get_archetype retorna sin recalcular."""
+        async with get_session() as session:
+            user = User(
+                user_id=72349,
+                first_name="Cached",
+                role=UserRole.FREE,
+                archetype=ArchetypeType.ROMANTIC,
+                archetype_confidence=0.75
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            archetype = await service.get_archetype(user.user_id)
+
+            assert archetype == ArchetypeType.ROMANTIC
+
+    @pytest.mark.asyncio
+    async def test_get_archetype_scores(self):
+        """Verifica obtención de scores guardados."""
+        async with get_session() as session:
+            scores = {
+                "explorer": 0.7,
+                "direct": 0.3,
+                "romantic": 0.5,
+            }
+            user = User(
+                user_id=72350,
+                first_name="WithScores",
+                role=UserRole.FREE,
+                archetype_scores=scores
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            result = await service.get_archetype_scores(user.user_id)
+
+            assert result == scores
+
+
+class TestArchetypeReevaluation:
+    """Tests para lógica de re-evaluación."""
+
+    @pytest.mark.asyncio
+    async def test_should_reevaluate_no_archetype(self):
+        """Verifica que re-evalúa si no tiene arquetipo."""
+        async with get_session() as session:
+            user = User(
+                user_id=82345,
+                first_name="NoArchetype",
+                role=UserRole.FREE,
+                archetype=None
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            should = await service.should_reevaluate(user.user_id)
+
+            assert should is True
+
+    @pytest.mark.asyncio
+    async def test_should_reevaluate_old_detection(self):
+        """Verifica que re-evalúa si la detección es antigua."""
+        async with get_session() as session:
+            user = User(
+                user_id=82346,
+                first_name="OldDetection",
+                role=UserRole.FREE,
+                archetype=ArchetypeType.EXPLORER,
+                archetype_confidence=0.8,
+                archetype_detected_at=datetime.now(UTC) - timedelta(days=10),  # > 7 días
+                archetype_version=1
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            should = await service.should_reevaluate(user.user_id)
+
+            assert should is True
+
+    @pytest.mark.asyncio
+    async def test_should_not_reevaluate_recent(self):
+        """Verifica que no re-evalúa si la detección es reciente."""
+        async with get_session() as session:
+            user = User(
+                user_id=82347,
+                first_name="RecentDetection",
+                role=UserRole.FREE,
+                archetype=ArchetypeType.DIRECT,
+                archetype_confidence=0.8,
+                archetype_detected_at=datetime.now(UTC) - timedelta(days=2),  # < 7 días
+                archetype_version=1
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            should = await service.should_reevaluate(user.user_id)
+
+            assert should is False
+
+    @pytest.mark.asyncio
+    async def test_force_reevaluation(self):
+        """Verifica que force_reevaluation recalcula."""
+        async with get_session() as session:
+            user = User(
+                user_id=82348,
+                first_name="ForceReval",
+                role=UserRole.FREE,
+                archetype=ArchetypeType.EXPLORER,
+                archetype_confidence=0.5
+            )
+            session.add(user)
+            await session.flush()
+
+            # Cambiar señales a PATIENT
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                total_interactions=40,
+                avg_response_time=90.0,
+                skip_actions_used=0,
+                current_streak=50,
+                best_streak=60,
+                avg_session_duration=1200.0,
+                # Otros bajos
+                content_completion_rate=0.2,
+                easter_eggs_found=0,
+                emotional_words_count=1,
+                quiz_avg_score=40.0,
+                button_vs_text_ratio=0.5,
+                first_interaction_at=datetime.now(UTC) - timedelta(days=90)
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            result = await service.force_reevaluation(user.user_id)
+
+            # Debe cambiar de EXPLORER a PATIENT
+            assert result.is_detected
+            assert result.archetype == ArchetypeType.PATIENT
+
+
+class TestArchetypeInsights:
+    """Tests para ArchetypeInsights."""
+
+    @pytest.mark.asyncio
+    async def test_get_insights_with_archetype(self):
+        """Verifica obtención de insights con arquetipo."""
+        async with get_session() as session:
+            user = User(
+                user_id=92345,
+                first_name="WithInsights",
+                role=UserRole.FREE,
+                archetype=ArchetypeType.ANALYTICAL,
+                archetype_confidence=0.85,
+                archetype_scores={
+                    "analytical": 0.85,
+                    "explorer": 0.45,
+                    "direct": 0.30,
+                    "romantic": 0.20,
+                    "persistent": 0.15,
+                    "patient": 0.10
+                },
+                archetype_detected_at=datetime.now(UTC)
+            )
+            session.add(user)
+            await session.flush()
+
+            signals = UserBehaviorSignals(
+                user_id=user.user_id,
+                total_interactions=100,
+                quiz_avg_score=90.0,
+                structured_responses=12,
+                question_count=25
+            )
+            session.add(signals)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            insights = await service.get_archetype_insights(user.user_id)
+
+            assert insights.current_archetype == ArchetypeType.ANALYTICAL
+            assert insights.confidence == 0.85
+            assert len(insights.top_archetypes) == 3
+            assert insights.total_interactions == 100
+            assert len(insights.key_behaviors) > 0
+
+    @pytest.mark.asyncio
+    async def test_get_insights_no_archetype(self):
+        """Verifica insights cuando no hay arquetipo."""
+        async with get_session() as session:
+            user = User(
+                user_id=92346,
+                first_name="NoInsights",
+                role=UserRole.FREE
+            )
+            session.add(user)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            insights = await service.get_archetype_insights(user.user_id)
+
+            assert insights.current_archetype is None
+            assert insights.confidence == 0.0
+            assert len(insights.top_archetypes) == 0
+
+
+class TestArchetypeDistribution:
+    """Tests para estadísticas de distribución."""
+
+    @pytest.mark.asyncio
+    async def test_get_distribution(self):
+        """Verifica obtención de distribución de arquetipos."""
+        async with get_session() as session:
+            # Crear usuarios con diferentes arquetipos
+            users = [
+                User(user_id=102345, first_name="E1", role=UserRole.FREE, archetype=ArchetypeType.EXPLORER),
+                User(user_id=102346, first_name="E2", role=UserRole.FREE, archetype=ArchetypeType.EXPLORER),
+                User(user_id=102347, first_name="D1", role=UserRole.FREE, archetype=ArchetypeType.DIRECT),
+                User(user_id=102348, first_name="R1", role=UserRole.FREE, archetype=ArchetypeType.ROMANTIC),
+                User(user_id=102349, first_name="N1", role=UserRole.FREE, archetype=None),
+            ]
+            for u in users:
+                session.add(u)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            distribution = await service.get_archetype_distribution()
+
+            assert distribution["explorer"] == 2
+            assert distribution["direct"] == 1
+            assert distribution["romantic"] == 1
+            # Sin arquetipo no cuenta
+            assert distribution["analytical"] == 0
+
+    @pytest.mark.asyncio
+    async def test_get_unclassified_count(self):
+        """Verifica conteo de usuarios sin clasificar."""
+        async with get_session() as session:
+            users = [
+                User(user_id=112345, first_name="C1", role=UserRole.FREE, archetype=ArchetypeType.EXPLORER),
+                User(user_id=112346, first_name="U1", role=UserRole.FREE, archetype=None),
+                User(user_id=112347, first_name="U2", role=UserRole.FREE, archetype=None),
+            ]
+            for u in users:
+                session.add(u)
+            await session.commit()
+
+            service = ArchetypeDetectionService(session)
+            count = await service.get_unclassified_count()
+
+            assert count >= 2  # Al menos los 2 que creamos
+
+
+class TestArchetypeContainerIntegration:
+    """Tests de integración con GamificationContainer."""
+
+    @pytest.mark.asyncio
+    async def test_archetype_detection_via_container(self):
+        """Verifica acceso a ArchetypeDetectionService via container."""
+        async with get_session() as session:
+            container = GamificationContainer(session)
+
+            # Verificar que el servicio está disponible
+            service = container.archetype_detection
+            assert service is not None
+            assert isinstance(service, ArchetypeDetectionService)
+
+            # Verificar lazy loading (misma instancia)
+            service2 = container.archetype_detection
+            assert service is service2
+
+    @pytest.mark.asyncio
+    async def test_container_tracks_archetype_service(self):
+        """Verifica que container reporta archetype_detection como cargado."""
+        async with get_session() as session:
+            container = GamificationContainer(session)
+
+            # Antes de acceder
+            loaded = container.get_loaded_services()
+            assert "archetype_detection" not in loaded
+
+            # Acceder al servicio
+            _ = container.archetype_detection
+
+            # Después de acceder
+            loaded = container.get_loaded_services()
+            assert "archetype_detection" in loaded
