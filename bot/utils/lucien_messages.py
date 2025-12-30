@@ -452,24 +452,111 @@ class LucienMessages:
     )
 
     # ================================================================
-    # 5. CONFIRMACIONES
+    # 5. CONFIRMACIONES - CATÁLOGO UNIFICADO
     # ================================================================
 
+    # --- Confirmación genérica ---
     CONFIRM_ACTION = (
         "Hecho.\n\n"
         "La acción ha sido registrada. Diana sabrá de esto."
     )
 
+    CONFIRM_ACTION_GENERIC = (
+        "Hecho.\n\n"
+        "{action_description}"
+    )
+
+    # --- Confirmación de compra ---
     CONFIRM_PURCHASE = (
+        "Transacción completada.\n\n"
+        "'{item_name}' es suyo ahora.\n\n"
+        "Favores restantes: {remaining}"
+    )
+
+    CONFIRM_PURCHASE_DETAILED = (
         "Adquisición completada.\n\n"
         "El artículo ha sido añadido a su inventario. Úselo con sabiduría... "
         "o no. Las consecuencias son suyas."
     )
 
+    # --- Confirmación de misión ---
     CONFIRM_MISSION_COMPLETE = (
+        "Encargo cumplido.\n\n"
+        "+{reward} Favor(es)\n\n"
+        "{mission_specific_comment}"
+    )
+
+    CONFIRM_MISSION_COMPLETE_SIMPLE = (
         "Misión cumplida.\n\n"
         "Ha demostrado capacidad. Sus Favores han sido acreditados. "
         "Hay más tareas esperando, si está a la altura."
+    )
+
+    # --- Confirmación de nivel ---
+    CONFIRM_LEVEL_UP = (
+        "Ascenso confirmado.\n\n"
+        "Nuevo nivel: {level_number} - {level_name}\n\n"
+        "{level_specific_message}\n\n"
+        "Nuevos privilegios desbloqueados. Nuevas expectativas establecidas."
+    )
+
+    CONFIRM_LEVEL_UP_SIMPLE = (
+        "Ha ascendido.\n\n"
+        "Nivel actual: <b>{level_name}</b>\n\n"
+        "Las puertas que antes estaban cerradas... ya no lo están."
+    )
+
+    # --- Confirmación de badge/distintivo ---
+    CONFIRM_BADGE_EARNED = (
+        "Distinción otorgada.\n\n"
+        "{badge_name}\n\n"
+        "\"{badge_description}\"\n\n"
+        "Esta marca permanecerá en su expediente. Diana la verá."
+    )
+
+    CONFIRM_BADGE_EARNED_SIMPLE = (
+        "Nueva distinción.\n\n"
+        "Ha obtenido: <b>{badge_name}</b>\n\n"
+        "Su colección crece. Su reputación también."
+    )
+
+    # --- Confirmación de racha ---
+    CONFIRM_STREAK_MILESTONE = (
+        "Hito de constancia alcanzado.\n\n"
+        "{streak_days} días consecutivos.\n\n"
+        "+{bonus_favors} Favores de bonificación.\n\n"
+        "La regularidad es una virtud subestimada. Usted la demuestra."
+    )
+
+    CONFIRM_STREAK_CONTINUE = (
+        "Racha mantenida.\n\n"
+        "Día {streak_days} consecutivo. La constancia construye oportunidades."
+    )
+
+    # --- Confirmación de registro/onboarding ---
+    CONFIRM_REGISTRATION = (
+        "Registro completado.\n\n"
+        "Ha sido añadido al sistema de Diana. Su expediente ha sido creado.\n\n"
+        "A partir de ahora, cada acción cuenta."
+    )
+
+    # --- Confirmación de uso de item ---
+    CONFIRM_ITEM_USED = (
+        "Item utilizado.\n\n"
+        "'{item_name}' ha sido consumido.\n\n"
+        "{effect_description}"
+    )
+
+    # --- Confirmación de equipamiento ---
+    CONFIRM_ITEM_EQUIPPED = (
+        "Equipado.\n\n"
+        "'{item_name}' ahora forma parte de su presentación.\n\n"
+        "Los demás lo notarán."
+    )
+
+    CONFIRM_ITEM_UNEQUIPPED = (
+        "Desequipado.\n\n"
+        "'{item_name}' ha sido guardado. Disponible cuando lo desee."
     )
 
     # ================================================================

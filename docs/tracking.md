@@ -448,6 +448,96 @@ _Ninguno por ahora_
 - `bot/handlers/__init__.py` → Registro de favors_router
 - `bot/handlers/user/__init__.py` → Export de favors_router
 
+### F1.8 Mensajes de Confirmación Unificados ✅ **COMPLETADO**
+- [x] Catálogo centralizado en `bot/utils/lucien_messages.py`
+- [x] Confirmaciones genéricas:
+  - CONFIRM_ACTION (genérica)
+  - CONFIRM_ACTION_GENERIC (con placeholder)
+- [x] Confirmaciones de compra:
+  - CONFIRM_PURCHASE (con placeholders)
+  - CONFIRM_PURCHASE_DETAILED
+- [x] Confirmaciones de misión:
+  - CONFIRM_MISSION_COMPLETE (con placeholders)
+  - CONFIRM_MISSION_COMPLETE_SIMPLE
+- [x] Confirmaciones de nivel:
+  - CONFIRM_LEVEL_UP (con placeholders)
+  - CONFIRM_LEVEL_UP_SIMPLE
+- [x] Confirmaciones de distintivos:
+  - CONFIRM_BADGE_EARNED (con placeholders)
+  - CONFIRM_BADGE_EARNED_SIMPLE
+- [x] Confirmaciones de racha:
+  - CONFIRM_STREAK_MILESTONE (con placeholders)
+  - CONFIRM_STREAK_CONTINUE
+- [x] Confirmaciones adicionales:
+  - CONFIRM_REGISTRATION
+  - CONFIRM_ITEM_USED
+  - CONFIRM_ITEM_EQUIPPED
+  - CONFIRM_ITEM_UNEQUIPPED
+
+---
+
+## ✅ FASE 1 COMPLETADA - CRITERIOS DE ACEPTACIÓN
+
+### F1.1 Comando /start
+- [x] Flujo de usuario nuevo implementado con 2+ mensajes
+- [x] Flujo de usuario que regresa (<7 días) implementado
+- [x] Flujo de usuario inactivo (7-14 días) implementado
+- [x] Flujo de usuario muy inactivo (14+ días) implementado
+- [x] Flujo VIP diferenciado implementado
+- [x] Todos los mensajes usan voz de Lucien (usted, formal)
+- [x] Botones del menú principal funcionan
+
+### F1.2 Menú Principal
+- [x] Menú diferenciado Free vs VIP
+- [x] Mensajes de contexto dinámicos funcionando
+- [x] Todos los callbacks responden correctamente
+
+### F1.3 Perfil
+- [x] Vista de perfil muestra nivel, favores, arquetipo
+- [x] Barra de progreso visual funciona (▓▒)
+- [x] Comentario de Lucien varía según nivel (4 variantes)
+- [x] Badges se muestran correctamente
+
+### F1.4 Gabinete
+- [x] Vista por categorías implementada (4 categorías)
+- [x] Descripciones de Lucien en cada categoría
+- [x] Flujo de compra con confirmación (2 pasos)
+- [x] Mensaje de éxito personalizado
+- [x] Mensaje de error por fondos insuficientes
+
+### F1.5 Encargos/Misiones
+- [x] Vista de misiones activas
+- [x] Progreso visible
+- [x] Notificación de completado con voz Lucien
+- [x] Diferenciación diaria/semanal/especial (3 secciones)
+
+### F1.6 Favores
+- [x] Comando /favores funciona
+- [x] Balance con comentario contextual (7 rangos)
+- [x] Historial de actividad reciente
+- [x] Notificaciones de ganancia con diferentes niveles
+
+### F1.7-F1.8 Errores y Confirmaciones
+- [x] Todos los errores usan mensajes de Lucien (10 tipos)
+- [x] Todas las confirmaciones usan mensajes de Lucien (14 tipos)
+- [x] No quedan mensajes genéricos/sin personalidad
+
+### General
+- [x] Ningún mensaje usa "tú" (siempre "usted")
+- [x] Ningún mensaje tiene emojis en el texto (solo en botones)
+- [x] Tono consistente en todo el bot
+
+---
+
+## 📊 ESTADÍSTICAS FASE 1
+
+- **Archivos modificados:** 8+
+- **Líneas de código Lucien:** 871+ (lucien_messages.py)
+- **Mensajes configurados:** 100+
+- **Flujos implementados:** 8+ (5 de /start + Gabinete + Encargos + Favores)
+- **Variantes contextuales:** 15+
+- **Commits realizados:** 6+
+
 ---
 
 **Última actualización:** 2024-12-29
