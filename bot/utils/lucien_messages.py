@@ -224,6 +224,98 @@ class LucienMessages:
         "merecía reconocimiento. Úselos con criterio."
     )
 
+    # --- Menú principal de Favores (/favores o "Mis Favores") ---
+    FAVORS_MENU_HEADER = "Su cuenta de Favores con Diana:"
+
+    FAVORS_BALANCE_SECTION = (
+        "BALANCE ACTUAL\n\n"
+        "Favores acumulados: <b>{total}</b>\n\n"
+        "{comment}"
+    )
+
+    FAVORS_ACTIVITY_SECTION = (
+        "ACTIVIDAD RECIENTE\n\n"
+        "Hoy: +{today_earned} / -{today_spent}\n"
+        "Esta semana: +{week_earned} / -{week_spent}\n"
+        "Este mes: +{month_earned} / -{month_spent}"
+    )
+
+    FAVORS_MILESTONES_SECTION = (
+        "PRÓXIMOS HITOS\n\n"
+        "Siguiente nivel ({next_level_name}): {favors_needed} Favores más"
+    )
+
+    FAVORS_MILESTONES_WITH_WISHLIST = (
+        "PRÓXIMOS HITOS\n\n"
+        "Siguiente nivel ({next_level_name}): {favors_needed} Favores más\n"
+        "Para '{wishlist_item}': {item_favors_needed} Favores más"
+    )
+
+    # --- Comentarios según cantidad de Favores ---
+    FAVORS_COMMENT_0_5 = "Apenas comenzando. La constancia construye Favores."
+
+    FAVORS_COMMENT_6_15 = "Un inicio modesto. Hay potencial, si persiste."
+
+    FAVORS_COMMENT_16_35 = "Progreso visible. Diana empieza a notar patrones."
+
+    FAVORS_COMMENT_36_70 = (
+        "Acumulación respetable. El Gabinete tiene opciones para usted."
+    )
+
+    FAVORS_COMMENT_71_120 = (
+        "Una cuenta considerable. Pocos llegan a estos números."
+    )
+
+    FAVORS_COMMENT_121_200 = (
+        "Impresionante moderación. ¿O indecisión? Solo usted lo sabe."
+    )
+
+    FAVORS_COMMENT_200_PLUS = (
+        "Acumula sin gastar. Prudente. O quizás espera algo específico. "
+        "El Gabinete tiene sus mejores piezas reservadas para cuentas como la suya."
+    )
+
+    # --- Notificaciones al ganar Favores ---
+    FAVOR_NOTIFICATION_SMALL = "+{amount} Favor. Diana lo nota."
+
+    FAVOR_NOTIFICATION_MEDIUM = (
+        "+{amount} Favor(es). Su cuenta crece.\n\n"
+        "Total: {new_total}"
+    )
+
+    FAVOR_NOTIFICATION_HIGH = (
+        "+{amount} Favores.\n\n"
+        "Eso fue significativo. Diana ha sido informada.\n\n"
+        "Total: {new_total}"
+    )
+
+    FAVOR_NOTIFICATION_MILESTONE = (
+        "Ha alcanzado {total} Favores.\n\n"
+        "Eso lo coloca entre el {percentile}% superior de visitantes.\n\n"
+        "Diana tiene... expectativas para quienes llegan a estos números."
+    )
+
+    # --- Historial de Favores ---
+    FAVORS_HISTORY_HEADER = (
+        "Su historial de Favores.\n\n"
+        "Cada línea cuenta una historia. ¿Qué dice la suya?"
+    )
+
+    FAVORS_HISTORY_EMPTY = (
+        "Sin movimientos registrados aún.\n\n"
+        "Su historial está vacío. Eso cambiará pronto... o no. Depende de usted."
+    )
+
+    FAVORS_HOW_TO_EARN = (
+        "Cómo ganar Favores.\n\n"
+        "Diana recompensa la participación genuina:\n\n"
+        "• Reaccionar a publicaciones del canal\n"
+        "• Completar encargos diarios y semanales\n"
+        "• Mantener rachas de actividad\n"
+        "• Descubrir... cosas ocultas\n\n"
+        "No hay atajos. La constancia es la única moneda que no se puede comprar."
+    )
+
     # ================================================================
     # 3. NIVELES
     # ================================================================
@@ -278,19 +370,46 @@ class LucienMessages:
     )
 
     # ================================================================
-    # 4. ERRORES
+    # 4. ERRORES - CATÁLOGO UNIFICADO
     # ================================================================
 
+    # --- Errores de sistema ---
     ERROR_GENERIC = (
-        "Algo ha salido mal.\n\n"
-        "Incluso los sistemas más elegantes tienen sus momentos. "
-        "Intente nuevamente en un momento."
+        "Algo ha fallado. No es culpa suya... probablemente.\n\n"
+        "Intente de nuevo. Si persiste, quizás el universo le está diciendo algo."
     )
 
-    ERROR_NOT_FOUND = (
-        "Eso que busca... no existe. O no debería existir para usted.\n\n"
-        "Algunas cosas están reservadas para niveles superiores. Otras simplemente "
-        "no existen. No siempre le diré cuál es el caso."
+    ERROR_TIMEOUT = (
+        "El tiempo se agotó esperando su respuesta.\n\n"
+        "Diana no espera indefinidamente. Yo tampoco.\n\n"
+        "Comience de nuevo cuando esté listo para comprometerse."
+    )
+
+    ERROR_MAINTENANCE = (
+        "El Diván está en mantenimiento temporal.\n\n"
+        "Incluso los espacios de Diana requieren... atención ocasional.\n\n"
+        "Regrese en unos momentos."
+    )
+
+    # --- Errores de permisos ---
+    ERROR_VIP_REQUIRED = (
+        "Este contenido está reservado para miembros del Diván.\n\n"
+        "Usted aún observa desde Los Kinkys. No es un insulto, es un hecho.\n\n"
+        "Cuando esté listo para cruzar, la Llave del Diván estará disponible."
+    )
+
+    ERROR_LEVEL_REQUIRED = (
+        "Su nivel actual no permite acceder a esto.\n\n"
+        "Nivel requerido: {required_level} ({required_level_name})\n"
+        "Su nivel: {current_level} ({current_level_name})\n\n"
+        "La paciencia y la constancia construyen acceso. "
+        "O puede intentar atajos... que no existen."
+    )
+
+    ERROR_NOT_OWNED = (
+        "No posee este artículo.\n\n"
+        "El Gabinete está abierto si desea adquirirlo. "
+        "Los Favores son la moneda. La decisión es suya."
     )
 
     ERROR_PERMISSION = (
@@ -299,15 +418,37 @@ class LucienMessages:
         "Ascienda de nivel o acepte las restricciones actuales."
     )
 
-    ERROR_TIMEOUT = (
-        "El tiempo ha expirado.\n\n"
-        "La paciencia es una virtud, pero la mía tiene límites. "
-        "Cuando esté listo para continuar, comience de nuevo."
+    ERROR_NOT_FOUND = (
+        "Eso que busca... no existe. O no debería existir para usted.\n\n"
+        "Algunas cosas están reservadas para niveles superiores. Otras simplemente "
+        "no existen. No siempre le diré cuál es el caso."
     )
 
+    # --- Errores de input ---
     ERROR_INVALID_INPUT = (
-        "Eso no tiene sentido.\n\n"
-        "Revise lo que ha enviado e intente con algo... coherente."
+        "Eso no es lo que esperaba recibir.\n\n"
+        "Intente de nuevo. Con más... precisión esta vez."
+    )
+
+    ERROR_OPTION_UNAVAILABLE = (
+        "Esa opción ya no está disponible.\n\n"
+        "Las oportunidades en el universo de Diana son efímeras. Esta pasó."
+    )
+
+    ERROR_ALREADY_DONE = (
+        "Esto ya fue completado anteriormente.\n\n"
+        "No puede repetir lo que ya hizo. Avance hacia lo que falta."
+    )
+
+    # --- Errores de límites ---
+    ERROR_DAILY_LIMIT = (
+        "Ha alcanzado el límite diario para esta acción.\n\n"
+        "Incluso la generosidad de Diana tiene límites. Regrese mañana."
+    )
+
+    ERROR_COOLDOWN = (
+        "Demasiado pronto para repetir esta acción.\n\n"
+        "Espere {time_remaining}. La impaciencia rara vez es recompensada aquí."
     )
 
     # ================================================================
