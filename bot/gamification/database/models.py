@@ -649,3 +649,197 @@ class DailyGiftClaim(Base):
         Index('idx_daily_gift_last_claim', 'last_claim_date'),
         Index('idx_daily_gift_streak', 'current_streak'),
     )
+
+
+class UserBehaviorSignals(Base):
+    """Señales de comportamiento del usuario para detección de arquetipos.
+
+    Almacena métricas derivadas de las interacciones del usuario que
+    son utilizadas por el algoritmo de clasificación de arquetipos.
+    Lucien observa estas señales para entender el comportamiento.
+
+    Categorías de métricas:
+        - Exploración: Curiosidad, cobertura de contenido
+        - Velocidad/Directness: Eficiencia, rapidez de decisión
+        - Emocionales: Conexión, expresividad
+        - Análisis: Precisión, estructuración
+        - Persistencia: Tenacidad, retornos
+        - Paciencia: Constancia, calma
+
+    Attributes:
+        user_id: ID del usuario (PK, 1-to-1 con users)
+
+        # Métricas de exploración (EXPLORER)
+        content_sections_visited: Secciones únicas visitadas
+        content_completion_rate: % de contenido disponible visto (0.0-1.0)
+        easter_eggs_found: Easter eggs encontrados
+        avg_time_on_content: Segundos promedio en contenido
+        revisits_old_content: Veces que revisó contenido antiguo
+
+        # Métricas de velocidad/directness (DIRECT)
+        avg_response_time: Segundos promedio para responder
+        avg_response_length: Palabras promedio por respuesta
+        button_vs_text_ratio: % de interacciones via botón vs texto (0.0-1.0)
+        avg_decision_time: Segundos para tomar decisiones
+        actions_per_session: Acciones promedio por sesión
+
+        # Métricas emocionales (ROMANTIC)
+        emotional_words_count: Veces que usó palabras emocionales
+        question_count: Preguntas hechas al bot
+        long_responses_count: Respuestas >50 palabras
+        personal_questions_about_diana: Preguntas sobre Diana como persona
+
+        # Métricas de análisis (ANALYTICAL)
+        quiz_avg_score: Promedio en evaluaciones (0.0-100.0)
+        structured_responses: Respuestas con estructura (listas, puntos)
+        error_reports: Veces que reportó errores/inconsistencias
+
+        # Métricas de persistencia (PERSISTENT)
+        return_after_inactivity: Veces que volvió después de 3+ días
+        retry_failed_actions: Reintentos de acciones fallidas
+        incomplete_flows_completed: Flujos abandonados y luego completados
+
+        # Métricas de paciencia (PATIENT)
+        skip_actions_used: Veces que usó "saltar" o similar
+        current_streak: Racha actual (vinculado a F2.3)
+        best_streak: Mejor racha histórica
+        avg_session_duration: Duración promedio de sesión en segundos
+
+        # Metadata
+        total_interactions: Total de interacciones registradas
+        first_interaction_at: Primera interacción
+        last_updated_at: Última actualización de métricas
+    """
+    __tablename__ = "user_behavior_signals"
+
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    # ========================================
+    # MÉTRICAS DE EXPLORACIÓN (EXPLORER)
+    # ========================================
+    content_sections_visited: Mapped[int] = mapped_column(Integer, default=0)
+    content_completion_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    easter_eggs_found: Mapped[int] = mapped_column(Integer, default=0)
+    avg_time_on_content: Mapped[float] = mapped_column(Float, default=0.0)
+    revisits_old_content: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE VELOCIDAD/DIRECTNESS (DIRECT)
+    # ========================================
+    avg_response_time: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_response_length: Mapped[float] = mapped_column(Float, default=0.0)
+    button_vs_text_ratio: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_decision_time: Mapped[float] = mapped_column(Float, default=0.0)
+    actions_per_session: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # ========================================
+    # MÉTRICAS EMOCIONALES (ROMANTIC)
+    # ========================================
+    emotional_words_count: Mapped[int] = mapped_column(Integer, default=0)
+    question_count: Mapped[int] = mapped_column(Integer, default=0)
+    long_responses_count: Mapped[int] = mapped_column(Integer, default=0)
+    personal_questions_about_diana: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE ANÁLISIS (ANALYTICAL)
+    # ========================================
+    quiz_avg_score: Mapped[float] = mapped_column(Float, default=0.0)
+    structured_responses: Mapped[int] = mapped_column(Integer, default=0)
+    error_reports: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE PERSISTENCIA (PERSISTENT)
+    # ========================================
+    return_after_inactivity: Mapped[int] = mapped_column(Integer, default=0)
+    retry_failed_actions: Mapped[int] = mapped_column(Integer, default=0)
+    incomplete_flows_completed: Mapped[int] = mapped_column(Integer, default=0)
+
+    # ========================================
+    # MÉTRICAS DE PACIENCIA (PATIENT)
+    # ========================================
+    skip_actions_used: Mapped[int] = mapped_column(Integer, default=0)
+    current_streak: Mapped[int] = mapped_column(Integer, default=0)
+    best_streak: Mapped[int] = mapped_column(Integer, default=0)
+    avg_session_duration: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # ========================================
+    # METADATA
+    # ========================================
+    total_interactions: Mapped[int] = mapped_column(Integer, default=0)
+    first_interaction_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime,
+        nullable=True
+    )
+    last_updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Índices para optimización
+    __table_args__ = (
+        Index('idx_behavior_total_interactions', 'total_interactions'),
+        Index('idx_behavior_last_updated', 'last_updated_at'),
+    )
+
+
+class BehaviorInteraction(Base):
+    """Registro individual de interacción para tracking de comportamiento.
+
+    Almacena cada interacción del usuario con datos específicos
+    para análisis posterior y cálculo de métricas.
+
+    Attributes:
+        id: ID único de la interacción
+        user_id: ID del usuario
+        interaction_type: Tipo de interacción (InteractionType enum)
+        interaction_data: JSON con datos específicos del tipo de interacción
+        created_at: Timestamp de la interacción
+
+    Interaction data por tipo de interacción:
+        BUTTON_CLICK:
+            button_id: str, context: str, time_to_click: float
+
+        TEXT_RESPONSE:
+            word_count: int, has_emotional_words: bool, has_questions: bool,
+            is_structured: bool, response_time: float
+
+        CONTENT_VIEW:
+            content_id: str, content_type: str, time_spent: float,
+            is_revisit: bool, completion: float
+
+        QUIZ_ANSWER:
+            quiz_id: str, question_id: str, is_correct: bool,
+            time_to_answer: float
+
+        DECISION_MADE:
+            fragment_id: str, decision_id: str, time_to_decide: float,
+            options_available: int
+    """
+    __tablename__ = "behavior_interactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False
+    )
+    interaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    interaction_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Índices para optimización
+    __table_args__ = (
+        Index('idx_behavior_user_type', 'user_id', 'interaction_type'),
+        Index('idx_behavior_user_created', 'user_id', 'created_at'),
+        Index('idx_behavior_type_created', 'interaction_type', 'created_at'),
+    )

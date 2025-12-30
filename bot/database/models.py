@@ -23,7 +23,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from bot.database.base import Base
-from bot.database.enums import UserRole
+from bot.database.enums import UserRole, ArchetypeType
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +116,16 @@ class User(Base):
     last_activity = Column(DateTime, nullable=True)  # Última interacción con el bot
     is_new_user = Column(Boolean, nullable=False, default=True)  # True hasta completar onboarding
 
+    # Campos de arquetipo (F3.1)
+    archetype = Column(
+        Enum(ArchetypeType),
+        nullable=True
+    )  # Arquetipo detectado automáticamente por Lucien
+    archetype_confidence = Column(Float, nullable=True)  # Confianza 0.0-1.0
+    archetype_scores = Column(JSON, nullable=True)  # {"EXPLORER": 0.7, "DIRECT": 0.3, ...}
+    archetype_detected_at = Column(DateTime, nullable=True)  # Cuándo se detectó
+    archetype_version = Column(Integer, nullable=True, default=1)  # Versión del algoritmo
+
     # Relaciones (se definen después en VIPSubscriber y FreeChannelRequest)
 
     @property
@@ -156,6 +166,25 @@ class User(Base):
     def update_activity(self) -> None:
         """Actualiza el timestamp de última actividad."""
         self.last_activity = datetime.utcnow()
+
+    @property
+    def has_archetype(self) -> bool:
+        """Verifica si el usuario tiene arquetipo asignado."""
+        return self.archetype is not None
+
+    @property
+    def archetype_display(self) -> str:
+        """Retorna nombre legible del arquetipo o 'Sin clasificar'."""
+        if self.archetype:
+            return self.archetype.display_name
+        return "Sin clasificar"
+
+    @property
+    def archetype_description(self) -> str:
+        """Retorna descripción de Lucien del arquetipo o vacío."""
+        if self.archetype:
+            return self.archetype.lucien_description
+        return ""
 
     def __repr__(self) -> str:
         return (
