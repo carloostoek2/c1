@@ -63,7 +63,7 @@ async def _get_period_stats(
     session: AsyncSession,
     user_id: int,
     start_date: datetime
-) -> tuple[int, int]:
+) -> tuple[float, float]:
     """Obtiene estadísticas de período (ganado/gastado).
 
     Args:
@@ -83,7 +83,7 @@ async def _get_period_stats(
         BesitoTransaction.created_at >= start_date
     )
     result = await session.execute(stmt_earned)
-    earned = int(result.scalar() or 0)
+    earned = float(result.scalar() or 0)
 
     # Gastado en el período (valor absoluto)
     stmt_spent = select(
@@ -94,7 +94,7 @@ async def _get_period_stats(
         BesitoTransaction.created_at >= start_date
     )
     result = await session.execute(stmt_spent)
-    spent = abs(int(result.scalar() or 0))
+    spent = abs(float(result.scalar() or 0))
 
     return earned, spent
 

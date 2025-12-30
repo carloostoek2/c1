@@ -125,24 +125,24 @@ async def _get_context_message(session: AsyncSession, user_id: int, bot) -> str:
             pending_missions = await gamification.mission.get_pending_missions(user_id)
             if pending_missions:
                 return Lucien.MENU_CONTEXT_MISSION_PENDING
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"⚠️ Error verificando misiones pendientes para usuario {user_id}: {e}")
 
         # Verificar favores acumulados (>20)
         try:
             balance = await gamification.besitos.get_balance(user_id)
             if balance and balance > 20:
                 return Lucien.MENU_CONTEXT_FAVORS_ACCUMULATED
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"⚠️ Error obteniendo balance de favores para usuario {user_id}: {e}")
 
         # Verificar racha activa 7+ días
         try:
             streak = await gamification.daily_gift.get_streak_info(user_id)
             if streak and streak.get("current_streak", 0) >= 7:
                 return Lucien.MENU_CONTEXT_STREAK_ACTIVE
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"⚠️ Error obteniendo racha para usuario {user_id}: {e}")
 
     except Exception as e:
         logger.warning(f"⚠️ Error obteniendo contexto: {e}")

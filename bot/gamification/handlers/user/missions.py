@@ -348,8 +348,8 @@ async def claim_mission_reward(callback: CallbackQuery, gamification: Gamificati
             try:
                 streak_info = await gamification.daily_gift.get_streak_info(user_id)
                 current_streak = streak_info.get('current_streak', 0) if streak_info else 0
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"⚠️ Error obteniendo racha del usuario {user_id}: {e}")
 
             comment = _get_mission_complete_comment(mission_type, current_streak)
 
@@ -357,8 +357,8 @@ async def claim_mission_reward(callback: CallbackQuery, gamification: Gamificati
             new_total = 0
             try:
                 new_total = await gamification.besitos.get_balance(user_id) or 0
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"⚠️ Error obteniendo balance del usuario {user_id}: {e}")
 
             text = Lucien.MISSION_COMPLETE.format(
                 mission_name=mission.name,

@@ -30,7 +30,7 @@ def upgrade() -> None:
     # Add is_new_user column with default True
     op.add_column(
         'users',
-        sa.Column('is_new_user', sa.Boolean(), nullable=False, server_default='1')
+        sa.Column('is_new_user', sa.Boolean(), nullable=False, server_default=sa.text('1'))
     )
 
     # For existing users, set is_new_user to False (they already went through some flow)

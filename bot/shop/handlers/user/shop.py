@@ -41,7 +41,8 @@ async def _get_user_favors(session: AsyncSession, user_id: int) -> int:
         from bot.gamification.database.models import UserGamification
         user_gamif = await session.get(UserGamification, user_id)
         return user_gamif.total_besitos if user_gamif else 0
-    except Exception:
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo favores del usuario {user_id}: {e}")
         return 0
 
 
