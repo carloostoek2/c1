@@ -40,6 +40,7 @@ class GamificationContainer:
         self._unified_reward_service = None
         self._narrative_condition_service = None
         self._config_panel_service = None
+        self._economy_config_service = None
 
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
@@ -160,6 +161,14 @@ class GamificationContainer:
         return self._config_panel_service
 
     @property
+    def economy_config(self):
+        """Servicio de configuración de economía de Favores."""
+        if self._economy_config_service is None:
+            from bot.gamification.services.economy_config import EconomyConfigService
+            self._economy_config_service = EconomyConfigService(self._session)
+        return self._economy_config_service
+
+    @property
     def mission_orchestrator(self):
         """Orquestador de creación de misiones."""
         if self._mission_orchestrator is None:
@@ -216,6 +225,8 @@ class GamificationContainer:
             loaded.append('narrative_condition')
         if self._config_panel_service is not None:
             loaded.append('config_panel')
+        if self._economy_config_service is not None:
+            loaded.append('economy_config')
         if self._mission_orchestrator is not None:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
@@ -239,6 +250,7 @@ class GamificationContainer:
         self._unified_reward_service = None
         self._narrative_condition_service = None
         self._config_panel_service = None
+        self._economy_config_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
         self._configuration_orchestrator = None
