@@ -6,7 +6,7 @@ Permite añadir, editar, deshabilitar items, ajustar stock y ver estadísticas.
 """
 import logging
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup
 from aiogram.filters import Command
 from sqlalchemy.ext.asyncio import AsyncSession
 
