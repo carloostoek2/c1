@@ -149,7 +149,7 @@ async def _get_context_message(session: AsyncSession, user_id: int, bot) -> str:
 
         # Verificar racha activa 7+ días
         try:
-            streak = await gamification.daily_gift.get_streak_info(user_id)
+            streak = await gamification.daily_gift.get_daily_gift_status(user_id)
             if streak and streak.get("current_streak", 0) >= 7:
                 return Lucien.MENU_CONTEXT_STREAK_ACTIVE
         except Exception as e:
@@ -295,7 +295,7 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
         favors = besitos_balance or 0
 
         # Obtener estado de racha
-        streak = await gamification.daily_gift.get_streak_info(user_id)
+        streak = await gamification.daily_gift.get_daily_gift_status(user_id)
         if streak:
             current_streak = streak.get("current_streak", 0)
             best_streak = streak.get("best_streak", 0)
@@ -1411,22 +1411,22 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
             return
 
         # Procesar compra (deducir favores y otorgar item)
-        success = await gamification.besito.grant_besitos(
+        # Usar deduct_besitos en lugar de grant_besitos con cantidad negativa
+        from bot.gamification.database.enums import TransactionType
+        new_balance = await gamification.besito.deduct_besitos(
             user_id=user_id,
-            amount=-item.price_besitos,
-            transaction_type="shop_purchase",
+            amount=item.price_besitos,
+            transaction_type=TransactionType.SHOP_PURCHASE,
             description=f"Compra: {item.name}"
         )
 
-        if success:
+        if new_balance is not None:
             # Agregar item al inventario del usuario (aquí se necesitaría implementar el inventario)
             # Por ahora, solo confirmamos la compra
-            new_favors = favors - item.price_besitos
-
             text = Lucien.format(
                 "CABINET_PURCHASE_SUCCESS",
                 item_name=item.name,
-                new_total=new_favors
+                new_total=int(new_balance)
             )
             keyboard = create_inline_keyboard([
                 [{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}]
