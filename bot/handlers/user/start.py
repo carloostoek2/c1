@@ -260,8 +260,8 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
         from bot.gamification.services.container import GamificationContainer
         gamification = GamificationContainer(session, bot)
 
-        # Obtener nivel
-        user_gam = await gamification.user_gamification.get_or_create_profile(user_id)
+        # Obtener nivel (usar ensure_user_exists para obtener el objeto BD)
+        user_gam = await gamification.user_gamification.ensure_user_exists(user_id)
         if user_gam:
             if user_gam.current_level:
                 level_name = user_gam.current_level.name
@@ -681,7 +681,7 @@ async def callback_continue_onboarding(callback: CallbackQuery, session: AsyncSe
         from bot.gamification.services.container import GamificationContainer
         gamification = GamificationContainer(session, callback.bot)
 
-        user_gam = await gamification.user_gamification.get_or_create_profile(user_id)
+        user_gam = await gamification.user_gamification.ensure_user_exists(user_id)
         if user_gam and user_gam.current_level:
             level_name = user_gam.current_level.name
 

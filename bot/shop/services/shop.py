@@ -141,9 +141,12 @@ class ShopService:
         Returns:
             Lista de categorías con items, ordenadas
         """
-        # Subquery para contar items por categoría
+        from sqlalchemy.orm import selectinload
+
+        # Obtener categorías con items precargados
         stmt = (
             select(ItemCategory)
+            .options(selectinload(ItemCategory.items))
             .join(ShopItem, ShopItem.category_id == ItemCategory.id)
             .where(ShopItem.is_active == True)
             .group_by(ItemCategory.id)
@@ -156,19 +159,9 @@ class ShopService:
         result = await self.session.execute(stmt)
         categories = list(result.scalars().all())
 
-        # Cargar relación items para cada categoría
+        # Filtrar items activos para cada categoría
         for category in categories:
-            stmt = (
-                select(ShopItem)
-                .where(
-                    ShopItem.category_id == category.id,
-                    ShopItem.is_active == True
-                )
-                .order_by(ShopItem.order, ShopItem.name)
-            )
-            items_result = await self.session.execute(stmt)
-            # Agregar items como atributo temporal
-            category.items = list(items_result.scalars().all())
+            category.items = [item for item in category.items if item.is_active]
 
         return categories
 
