@@ -54,9 +54,13 @@ class DecisionService:
         """
         Obtiene decisiones disponibles para un fragmento.
 
+        Filtra decisiones basadas en:
+        - Estado activo
+        - Flags requeridos (requires_flag) - Fase 5
+
         Args:
             fragment_key: Key del fragmento
-            user_id: ID del usuario (para validar besitos si aplica)
+            user_id: ID del usuario (para validar besitos y flags si aplica)
 
         Returns:
             Lista de decisiones disponibles
@@ -75,6 +79,29 @@ class DecisionService:
 
         # Filtrar decisiones activas
         decisions = [d for d in fragment.decisions if d.is_active]
+
+        # Fase 5: Filtrar por flags requeridos
+        if user_id:
+            from bot.narrative.services.progress import ProgressService
+            progress_service = ProgressService(self._session)
+
+            filtered_decisions = []
+            for decision in decisions:
+                # Si requiere flag, verificar que el usuario lo tenga
+                if decision.requires_flag:
+                    has_required_flag = await progress_service.has_flag(
+                        user_id,
+                        decision.requires_flag
+                    )
+                    if not has_required_flag:
+                        logger.debug(
+                            f"⛔ Decisión {decision.id} oculta: requiere flag '{decision.requires_flag}'"
+                        )
+                        continue
+
+                filtered_decisions.append(decision)
+
+            decisions = filtered_decisions
 
         # Ordenar por order
         decisions.sort(key=lambda d: d.order)
@@ -143,6 +170,17 @@ class DecisionService:
                 f"💝 Usuario {user_id} recibió {decision.grants_besitos} besitos"
             )
 
+        # Fase 5: Setear flag si aplica
+        from bot.narrative.services.progress import ProgressService
+
+        progress_service = ProgressService(self._session)
+
+        if decision.sets_flag:
+            await progress_service.set_flag(user_id, decision.sets_flag, True)
+            logger.info(
+                f"🏴 Flag '{decision.sets_flag}' seteado para usuario {user_id}"
+            )
+
         # Registrar decisión en historial
         await self.record_decision(
             user_id=user_id,
@@ -151,10 +189,8 @@ class DecisionService:
         )
 
         # Actualizar progreso
-        from bot.narrative.services.progress import ProgressService
         from bot.narrative.services.fragment import FragmentService
 
-        progress_service = ProgressService(self._session)
         await progress_service.increment_decisions(user_id)
 
         # Obtener fragmento destino
@@ -348,9 +384,13 @@ class DecisionService:
         target_fragment_key: str,
         order: int = 0,
         button_emoji: Optional[str] = None,
+        subtext: Optional[str] = None,
         besitos_cost: int = 0,
         grants_besitos: int = 0,
-        affects_archetype: Optional[str] = None
+        affects_archetype: Optional[str] = None,
+        favor_change: Optional[float] = None,
+        sets_flag: Optional[str] = None,
+        requires_flag: Optional[str] = None
     ) -> FragmentDecision:
         """
         Crea nueva decisión para un fragmento.
@@ -361,9 +401,13 @@ class DecisionService:
             target_fragment_key: Key del fragmento destino
             order: Orden de presentación (default 0)
             button_emoji: Emoji opcional para el botón
+            subtext: Texto pequeño debajo del botón (Fase 5)
             besitos_cost: Costo en besitos (default 0)
             grants_besitos: Besitos a otorgar (default 0)
             affects_archetype: Arquetipo afectado (opcional)
+            favor_change: Cambio en favores (Fase 5, puede ser negativo)
+            sets_flag: Flag a setear cuando se toma esta decisión (Fase 5)
+            requires_flag: Flag requerido para ver esta opción (Fase 5)
 
         Returns:
             Decisión creada
@@ -374,9 +418,13 @@ class DecisionService:
             target_fragment_key=target_fragment_key,
             order=order,
             button_emoji=button_emoji,
+            subtext=subtext,
             besitos_cost=besitos_cost,
             grants_besitos=grants_besitos,
             affects_archetype=affects_archetype,
+            favor_change=favor_change,
+            sets_flag=sets_flag,
+            requires_flag=requires_flag,
             is_active=True
         )
 
@@ -397,9 +445,13 @@ class DecisionService:
         target_fragment_key: Optional[str] = None,
         order: Optional[int] = None,
         button_emoji: Optional[str] = None,
+        subtext: Optional[str] = None,
         besitos_cost: Optional[int] = None,
         grants_besitos: Optional[int] = None,
         affects_archetype: Optional[str] = None,
+        favor_change: Optional[float] = None,
+        sets_flag: Optional[str] = None,
+        requires_flag: Optional[str] = None,
         is_active: Optional[bool] = None
     ) -> Optional[FragmentDecision]:
         """
@@ -411,9 +463,13 @@ class DecisionService:
             target_fragment_key: Nuevo fragmento destino
             order: Nuevo orden
             button_emoji: Nuevo emoji
+            subtext: Nuevo subtext (Fase 5)
             besitos_cost: Nuevo costo
             grants_besitos: Nuevos besitos a otorgar
             affects_archetype: Nuevo arquetipo afectado
+            favor_change: Nuevo cambio en favores (Fase 5)
+            sets_flag: Nuevo flag a setear (Fase 5)
+            requires_flag: Nuevo flag requerido (Fase 5)
             is_active: Nuevo estado activo
 
         Returns:
@@ -432,12 +488,20 @@ class DecisionService:
             decision.order = order
         if button_emoji is not None:
             decision.button_emoji = button_emoji if button_emoji != "" else None
+        if subtext is not None:
+            decision.subtext = subtext if subtext != "" else None
         if besitos_cost is not None:
             decision.besitos_cost = besitos_cost
         if grants_besitos is not None:
             decision.grants_besitos = grants_besitos
         if affects_archetype is not None:
             decision.affects_archetype = affects_archetype if affects_archetype != "" else None
+        if favor_change is not None:
+            decision.favor_change = favor_change
+        if sets_flag is not None:
+            decision.sets_flag = sets_flag if sets_flag != "" else None
+        if requires_flag is not None:
+            decision.requires_flag = requires_flag if requires_flag != "" else None
         if is_active is not None:
             decision.is_active = is_active
 
