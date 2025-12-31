@@ -550,6 +550,31 @@ async def show_fragment(
             await message.edit_text(limit_message, parse_mode="HTML", reply_markup=keyboard)
         return
 
+    # Fase 5: Aplicar delay si el fragmento lo tiene configurado
+    fragment_for_delay = await container.fragment.get_fragment(fragment_key)
+    if fragment_for_delay and fragment_for_delay.delay_seconds > 0:
+        import asyncio
+        from bot.narrative.config import NarrativeConfig
+
+        # Verificar si delays están habilitados globalmente
+        if NarrativeConfig.ENABLE_FRAGMENT_DELAYS:
+            delay_seconds = min(fragment_for_delay.delay_seconds, NarrativeConfig.MAX_DELAY_SECONDS)
+
+            # Mostrar mensaje de "typing" durante el delay
+            try:
+                chat_action = "typing"
+                if fragment_for_delay.speaker == "diana":
+                    chat_action = "typing"  # Diana escribiendo
+                elif fragment_for_delay.media_file_id:
+                    chat_action = "upload_photo"  # Si tiene imagen
+
+                # Enviar acción de chat y esperar
+                await message.bot.send_chat_action(chat_id=message.chat.id, action=chat_action)
+                await asyncio.sleep(delay_seconds)
+            except Exception as e:
+                logger.warning(f"Error aplicando delay: {e}")
+                # Continuar sin delay en caso de error
+
     # 1. Construir contexto del usuario
     user_context = await build_full_user_context(container, user_id, fragment_key)
 

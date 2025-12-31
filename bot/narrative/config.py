@@ -37,6 +37,16 @@ class NarrativeConfig:
     FRAGMENT_REVISIT_COOLDOWN_SECONDS: int = 0  # Desactivado por defecto
 
     # ========================================
+    # DELAYS NARRATIVOS (Fase 5)
+    # ========================================
+
+    # Habilitar delays antes de mostrar fragmentos
+    ENABLE_FRAGMENT_DELAYS: bool = True
+
+    # Delay máximo permitido (segundos)
+    MAX_DELAY_SECONDS: int = 5  # Previene delays excesivos
+
+    # ========================================
     # LÍMITES DIARIOS
     # ========================================
 
