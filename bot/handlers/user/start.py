@@ -3,7 +3,7 @@ User Start Handler - Punto de entrada con la voz de Lucien.
 
 Handler del comando /start que implementa flujos diferenciados según
 el estado del usuario:
-- Flujo A: Usuario completamente nuevo
+- Flujo A: Usuario completamente nuevo → Onboarding → Menú
 - Flujo B: Usuario que regresa (< 7 días)
 - Flujo C: Usuario que regresa (7-14 días)
 - Flujo D: Usuario que regresa (> 14 días)
@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.database.enums import UserRole
@@ -26,6 +27,9 @@ from bot.services.container import ServiceContainer
 from bot.utils.keyboards import create_inline_keyboard
 from bot.utils.lucien_messages import Lucien
 from config import Config
+
+# Importar para onboarding
+from bot.narrative.services.container import NarrativeContainer
 
 logger = logging.getLogger(__name__)
 
@@ -59,24 +63,29 @@ def lucien_continue_keyboard() -> dict:
 
 
 def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
-    """Keyboard del menú principal de Lucien."""
+    """Keyboard del menú principal de Lucien.
+
+    Usa los callbacks correctos que coinciden con los handlers existentes.
+    """
     if is_vip:
         buttons = [
-            [{"text": "Continuar Historia", "callback_data": "story:continue"}],
-            [{"text": "Mi Perfil", "callback_data": "profile:view"}],
-            [{"text": "El Gabinete", "callback_data": "cabinet:browse"}],
-            [{"text": "Mis Encargos", "callback_data": "missions:list"}],
-            [{"text": "Mis Favores", "callback_data": "favors:balance"}],
-            [{"text": "Lo Nuevo", "callback_data": "content:new"}],
-            [{"text": "Mapa del Deseo", "callback_data": "map:view"}],
+            [{"text": "📖 Continuar Historia", "callback_data": "story:continue"}],
+            [{"text": "🎭 Mi Perfil", "callback_data": "profile:view"}],
+            [{"text": "🗄️ El Gabinete", "callback_data": "shop:browse"}],
+            [{"text": "📋 Mis Encargos", "callback_data": "user:missions"}],
+            [{"text": "💫 Mis Favores", "callback_data": "start:favors"}],
+            [{"text": "🎁 Lo Nuevo", "callback_data": "content:new"}],
+            [{"text": "💎 Premium", "callback_data": "premium:info"}],
+            [{"text": "🗺️ Mapa del Deseo", "callback_data": "mapa:info"}],
         ]
     else:
         buttons = [
-            [{"text": "La Historia", "callback_data": "story:start"}],
-            [{"text": "Mi Perfil", "callback_data": "profile:view"}],
-            [{"text": "El Gabinete", "callback_data": "cabinet:browse"}],
-            [{"text": "Mis Encargos", "callback_data": "missions:list"}],
-            [{"text": "Mis Favores", "callback_data": "favors:balance"}],
+            [{"text": "📖 La Historia", "callback_data": "narr:start"}],
+            [{"text": "🎭 Mi Perfil", "callback_data": "profile:view"}],
+            [{"text": "🗄️ El Gabinete", "callback_data": "shop:browse"}],
+            [{"text": "📋 Mis Encargos", "callback_data": "user:missions"}],
+            [{"text": "💫 Mis Favores", "callback_data": "start:favors"}],
+            [{"text": "🔑 La Llave VIP", "callback_data": "vip:info"}],
         ]
 
     return create_inline_keyboard(buttons)
@@ -433,21 +442,105 @@ async def cmd_start(message: Message, session: AsyncSession):
 # =============================================================================
 
 async def _flow_new_user(message: Message, session: AsyncSession, user):
-    """Flujo A: Usuario completamente nuevo."""
+    """
+    Flujo A: Usuario completamente nuevo.
 
-    # Mensaje 1: Presentación de Lucien
-    await message.answer(
-        Lucien.START_NEW_USER_1,
-        parse_mode="HTML"
+    Verifica si ha completado el onboarding.
+    Si no ha completado, inicia el tutorial de 5 pasos.
+    Si ya completó, muestra mensaje de bienvenida estándar.
+    """
+    user_id = user.user_id if hasattr(user, 'user_id') else user.id
+
+    try:
+        # Verificar si ya completó el onboarding
+        narrative = NarrativeContainer(session)
+        has_completed = await narrative.onboarding.has_completed_onboarding(user_id)
+
+        if not has_completed:
+            # Iniciar onboarding de 5 pasos
+            await _send_onboarding_from_start(message, session, user_id)
+        else:
+            # Ya completó onboarding, flujo normal de Lucien
+            await _show_lucien_introduction(message, session)
+            await session.commit()
+
+    except Exception as e:
+        logger.error(f"❌ Error en _flow_new_user para usuario {user_id}: {e}")
+        # Fallback: mostrar introducción de Lucien
+        await _show_lucien_introduction(message, session)
+
+
+async def _send_onboarding_from_start(message: Message, session: AsyncSession, user_id: int):
+    """
+    Envía mensaje de bienvenida con botón para iniciar onboarding.
+
+    Llamado desde /start cuando el usuario no ha completado el tutorial.
+
+    Args:
+        message: Message de Telegram
+        session: Sesión de BD
+        user_id: ID del usuario
+    """
+    try:
+        narrative = NarrativeContainer(session)
+
+        # Otorgar besitos de bienvenida si no los tiene
+        besitos_granted = await narrative.onboarding.grant_welcome_besitos(user_id, amount=30)
+        logger.info(f"🎁 Otorgados {besitos_granted} besitos de bienvenida a usuario {user_id}")
+
+        # Crear keyboard con botón para comenzar
+        keyboard = InlineKeyboardBuilder()
+        keyboard.button(text="📖 Comenzar Tutorial", callback_data="onboard:start")
+        keyboard.adjust(1)
+
+        # Mensaje de bienvenida con voz de Lucien + botón onboarding
+        text = (
+            f"{Lucien.START_NEW_USER_1}\n\n"
+            f"{Lucien.START_NEW_USER_2}\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎁 <b>Regalo de Bienvenida</b>\n\n"
+            f"Le otorgo <b>30 Favor(es)</b> para comenzar.\n\n"
+            "Antes de continuar, un breve tutorial le ayudará a "
+            "comprender cómo funciona este universo.\n\n"
+            "<i>Duración: ~4 minutos</i>"
+        )
+
+        await message.answer(
+            text=text,
+            reply_markup=keyboard.as_markup(),
+            parse_mode="HTML"
+        )
+
+        logger.info(f"✅ Onboarding iniciado desde /start para usuario {user_id}")
+
+    except Exception as e:
+        logger.error(f"❌ Error iniciando onboarding desde /start: {e}")
+        # Fallback a introducción de Lucien
+        await _show_lucien_introduction(message, session)
+
+
+async def _show_lucien_introduction(message: Message, session: AsyncSession):
+    """
+    Muestra la introducción de Lucien después de onboarding o para usuarios que ya completaron.
+
+    Args:
+        message: Message de Telegram
+        session: Sesión de BD
+    """
+    user_id = message.from_user.id
+
+    # Obtener contexto del usuario
+    context = await _get_user_context(session, user_id, message.bot)
+
+    # Mensaje de bienvenida con datos del usuario
+    text = Lucien.START_REGISTERED.format(
+        level_name=context["level_name"],
+        favors=context["favors"]
     )
 
-    # Delay dramático
-    await asyncio.sleep(2)
-
-    # Mensaje 2: Advertencia de observación
     await message.answer(
-        Lucien.START_NEW_USER_2,
-        reply_markup=lucien_new_user_keyboard(),
+        text=text,
+        reply_markup=lucien_main_menu_keyboard(context["is_vip"]),
         parse_mode="HTML"
     )
 
@@ -864,33 +957,8 @@ async def _activate_token_from_deeplink(
 # CALLBACKS DEL MENÚ PRINCIPAL
 # =============================================================================
 
-@user_router.callback_query(F.data.in_({"story:start", "story:continue"}))
-async def callback_story(callback: CallbackQuery, session: AsyncSession):
-    """Handler para iniciar/continuar la historia."""
-    context = await _get_user_context(session, callback.from_user.id, callback.bot)
-
-    if callback.data == "story:continue" and context["is_vip"]:
-        text = (
-            "La historia continúa en el Diván.\n\n"
-            "Diana ha preparado nuevos capítulos para usted. "
-            "Los secretos que aún no conoce están a punto de revelarse."
-        )
-    else:
-        text = (
-            "La Historia del Diván.\n\n"
-            "Cada capítulo revela más sobre Diana y su universo. "
-            "Pero los capítulos más profundos... esos requieren algo más que curiosidad."
-        )
-
-    await callback.message.edit_text(
-        text=text,
-        reply_markup=create_inline_keyboard([
-            [{"text": "Volver al menú", "callback_data": "start:menu"}]
-        ]),
-        parse_mode="HTML"
-    )
-    await callback.answer()
-
+# NOTA: Los callbacks de historia (narr:start, story:continue) se manejan
+# en el story_router del módulo narrativo (bot/narrative/handlers/user/story.py)
 
 @user_router.callback_query(F.data == "cabinet:browse")
 async def callback_cabinet(callback: CallbackQuery, session: AsyncSession):
@@ -1023,4 +1091,486 @@ async def callback_badges(callback: CallbackQuery, session: AsyncSession):
         ]),
         parse_mode="HTML"
     )
+    await callback.answer()
+
+
+# =============================================================================
+# CALLBACKS ADICIONALES DEL MENÚ PRINCIPAL
+# =============================================================================
+
+@user_router.callback_query(F.data == "start:favors")
+async def callback_favors_menu_redirect(callback: CallbackQuery, session: AsyncSession):
+    """
+    Callback para "Mis Favores" desde el menú principal.
+
+    Redirige al callback del handler de favores que muestra el balance completo.
+    """
+    # Simular el callback favors:balance que existe en favors_router
+    # Editamos el mensaje actual para mostrar el menú de favores
+    user_id = callback.from_user.id
+
+    try:
+        from bot.gamification.services.container import GamificationContainer
+        from bot.utils.lucien_messages import Lucien
+        from bot.gamification.utils.formatters import format_currency
+
+        gamification = GamificationContainer(session, callback.bot)
+
+        # Obtener perfil del usuario
+        profile = await gamification.user_gamification.get_user_profile(user_id)
+
+        # Datos de Favores
+        total = profile['besitos']['total']
+
+        # Comentario según cantidad
+        if total <= 5:
+            comment = Lucien.FAVORS_COMMENT_0_5
+        elif total <= 15:
+            comment = Lucien.FAVORS_COMMENT_6_15
+        elif total <= 35:
+            comment = Lucien.FAVORS_COMMENT_16_35
+        elif total <= 70:
+            comment = Lucien.FAVORS_COMMENT_36_70
+        elif total <= 120:
+            comment = Lucien.FAVORS_COMMENT_71_120
+        elif total <= 200:
+            comment = Lucien.FAVORS_COMMENT_121_200
+        else:
+            comment = Lucien.FAVORS_COMMENT_200_PLUS
+
+        # Construir mensaje
+        text = f"{Lucien.FAVORS_MENU_HEADER}\n\n"
+        text += "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"💫 {Lucien.format('FAVORS_BALANCE_SECTION', total=total, comment=comment)}"
+
+        # Keyboard con opciones adicionales
+        keyboard = create_inline_keyboard([
+            [{"text": "📜 Ver historial", "callback_data": "favors:history"}],
+            [{"text": "💡 Cómo ganar Favores", "callback_data": "favors:how_to_earn"}],
+            [{"text": "🔙 Volver al menú", "callback_data": "start:menu"}]
+        ])
+
+        await callback.message.edit_text(
+            text=text,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error en callback_favors_menu_redirect: {e}")
+        await callback.answer("Error al cargar Favores", show_alert=True)
+
+
+@user_router.callback_query(F.data.in_({"favors:history", "favors:how_to_earn"}))
+async def callback_favors_subsections(callback: CallbackQuery, session: AsyncSession):
+    """Handlers para subsecciones de Favores (historial, cómo ganar)."""
+    from bot.gamification.services.container import GamificationContainer
+
+    if callback.data == "favors:history":
+        try:
+            gamification = GamificationContainer(session, callback.bot)
+            history = await gamification.besito.get_transaction_history(callback.from_user.id, limit=10)
+
+            if not history:
+                text = Lucien.FAVORS_HISTORY_EMPTY
+            else:
+                text_parts = [Lucien.FAVORS_HISTORY_HEADER, ""]
+                for tx in history:
+                    sign = "+" if tx.amount > 0 else ""
+                    date_str = tx.created_at.strftime("%d/%m %H:%M")
+                    amount_str = f"{sign}{tx.amount}"
+                    desc = tx.description[:30] + "..." if len(tx.description) > 30 else tx.description
+                    text_parts.append(f"• {date_str}: <b>{amount_str}</b> - {desc}")
+                text = "\n".join(text_parts)
+
+            keyboard = create_inline_keyboard([
+                [{"text": "🔙 Volver a Favores", "callback_data": "start:favors"}]
+            ])
+
+        except Exception as e:
+            logger.error(f"❌ Error en favors:history: {e}")
+            text = Lucien.ERROR_GENERIC
+            keyboard = create_inline_keyboard([[{"text": "🔙 Volver", "callback_data": "start:menu"}]])
+
+    elif callback.data == "favors:how_to_earn":
+        text = Lucien.FAVORS_HOW_TO_EARN
+        keyboard = create_inline_keyboard([[{"text": "🔙 Volver a Favores", "callback_data": "start:favors"}]])
+
+    await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "shop:browse")
+async def callback_shop_browse(callback: CallbackQuery, session: AsyncSession):
+    """
+    Handler para El Gabinete (Tienda) con voz de Lucien.
+
+    Muestra las categorías disponibles del Gabinete.
+    """
+    user_id = callback.from_user.id
+
+    try:
+        from bot.gamification.services.container import GamificationContainer
+        from bot.shop.services import ShopService
+
+        gamification = GamificationContainer(session, callback.bot)
+        shop_service = ShopService(session)
+
+        # Obtener balance de favores
+        profile = await gamification.user_gamification.get_user_profile(user_id)
+        favors = profile['besitos']['total']
+
+        # Obtener categorías con items
+        categories = await shop_service.get_categories_with_items()
+
+        if not categories:
+            # Gabinete vacío
+            text = Lucien.CABINET_EMPTY
+            keyboard = create_inline_keyboard([[{"text": "🔙 Volver al menú", "callback_data": "start:menu"}]])
+        else:
+            # Construir mensaje con categorías
+            text = f"{Lucien.CABINET_WELCOME}\n\n"
+            text += f"Sus Favores disponibles: <b>{favors}</b>\n\n"
+
+            # Listar categorías
+            for category in categories:
+                category_emoji = category.button_emoji or "📦"
+                text += f"\n{category_emoji} <b>{category.name}</b>\n"
+                text += f"{category.description}\n"
+
+            # Keyboard con categorías
+            keyboard_buttons = []
+            for category in categories:
+                keyboard_buttons.append([
+                    {"text": f"{category.button_emoji or '📦'} {category.name}", "callback_data": f"shop:category:{category.id}"}
+                ])
+            keyboard_buttons.append([{"text": "🔙 Volver al menú", "callback_data": "start:menu"}])
+
+            keyboard = create_inline_keyboard(keyboard_buttons)
+
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error en shop:browse: {e}")
+        # Mensaje de fallback
+        text = (
+            f"{Lucien.CABINET_WELCOME}\n\n"
+            f"Sus Favores: <b>?</b>\n\n"
+            "El Gabinete está siendo reabastecido. "
+            "Regrese en unos momentos."
+        )
+        keyboard = create_inline_keyboard([[{"text": "🔙 Volver al menú", "callback_data": "start:menu"}]])
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+
+@user_router.callback_query(F.data.startswith("shop:category:"))
+async def callback_shop_category(callback: CallbackQuery, session: AsyncSession):
+    """Handler para ver items de una categoría específica."""
+    try:
+        from bot.shop.services import ShopService
+        from bot.gamification.services.container import GamificationContainer
+
+        # Parsear category_id
+        category_id = int(callback.data.split(":")[2])
+
+        shop_service = ShopService(session)
+        gamification = GamificationContainer(session, callback.bot)
+
+        # Obtener items de la categoría
+        items = await shop_service.get_items_by_category(category_id)
+        category = await shop_service.get_category(category_id)
+        user_id = callback.from_user.id
+
+        # Obtener favores del usuario
+        profile = await gamification.user_gamification.get_user_profile(user_id)
+        favors = profile['besitos']['total']
+
+        if not items:
+            text = f"No hay artículos disponibles en esta categoría."
+            keyboard = create_inline_keyboard([[{"text": "🔙 Volver", "callback_data": "shop:browse"}]])
+        else:
+            # Construir mensaje
+            text = f"{category.button_emoji or '📦'} <b>{category.name}</b>\n\n"
+            text += f"{category.description}\n\n"
+            text += f"Sus Favores: <b>{favors}</b>\n\n"
+            text += "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+            # Listar items
+            for item in items:
+                emoji = item.button_emoji or "🎁"
+                price = item.price
+                can_afford = favors >= price
+
+                # Indicador visual de si puede permitírselo
+                status_emoji = "✅" if can_afford else "🔒"
+
+                text += f"{status_emoji} {emoji} <b>{item.name}</b>\n"
+                text += f"    {item.description}\n"
+                text += f"    Precio: {price} Favor(es)\n\n"
+
+            # Keyboard con items
+            keyboard_buttons = []
+            for item in items:
+                can_afford = favors >= item.price
+                status = "" if can_afford else "(No disponible)"
+                keyboard_buttons.append([
+                    {"text": f"{item.button_emoji or '🎁'} {item.name} {status}", "callback_data": f"shop:item:{item.id}"}
+                ])
+            keyboard_buttons.append([{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}])
+
+            keyboard = create_inline_keyboard(keyboard_buttons)
+
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error en shop:category: {e}")
+        await callback.answer("Error al cargar categoría", show_alert=True)
+
+
+@user_router.callback_query(F.data.startswith("shop:item:"))
+async def callback_shop_item(callback: CallbackQuery, session: AsyncSession):
+    """Handler para ver detalles y comprar un item."""
+    try:
+        from bot.shop.services import ShopService
+        from bot.gamification.services.container import GamificationContainer
+
+        item_id = int(callback.data.split(":")[2])
+
+        shop_service = ShopService(session)
+        gamification = GamificationContainer(session, callback.bot)
+
+        item = await shop_service.get_item(item_id)
+        user_id = callback.from_user.id
+
+        if not item:
+            await callback.answer("Item no encontrado", show_alert=True)
+            return
+
+        # Obtener favores del usuario
+        profile = await gamification.user_gamification.get_user_profile(user_id)
+        favors = profile['besitos']['total']
+        can_afford = favors >= item.price
+
+        # Mensaje de confirmación
+        remaining = favors - item.price
+        text = Lucien.format(
+            "CABINET_CONFIRM_PURCHASE",
+            item_name=item.name,
+            price=item.price,
+            total=favors,
+            remaining=remaining,
+            description=item.description
+        )
+
+        if can_afford:
+            keyboard = create_inline_keyboard([
+                [{"text": f"✅ Comprar ({item.price} Favor(es))", "callback_data": f"shop:buy:{item.id}"}],
+                [{"text": "🔙 Volver", "callback_data": f"shop:category:{item.category_id}"}]
+            ])
+        else:
+            text += f"\n\n❌ Favores insuficientes. Necesita {item.price - favors} Favor(es) más."
+            keyboard = create_inline_keyboard([
+                [{"text": "🔙 Volver", "callback_data": f"shop:category:{item.category_id}"}]
+            ])
+
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error en shop:item: {e}")
+        await callback.answer("Error al cargar item", show_alert=True)
+
+
+@user_router.callback_query(F.data.startswith("shop:buy:"))
+async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
+    """Handler para procesar la compra de un item."""
+    try:
+        from bot.shop.services import ShopService
+        from bot.gamification.services.container import GamificationContainer
+
+        item_id = int(callback.data.split(":")[2])
+        user_id = callback.from_user.id
+
+        shop_service = ShopService(session)
+        gamification = GamificationContainer(session, callback.bot)
+
+        # Obtener item y verificar
+        item = await shop_service.get_item(item_id)
+        profile = await gamification.user_gamification.get_user_profile(user_id)
+        favors = profile['besitos']['total']
+
+        if not item:
+            await callback.answer("Item no encontrado", show_alert=True)
+            return
+
+        if favors < item.price:
+            await callback.answer("Favores insuficientes", show_alert=True)
+            return
+
+        # Procesar compra (deducir favores y otorgar item)
+        success = await gamification.besito.grant_besitos(
+            user_id=user_id,
+            amount=-item.price,
+            transaction_type="shop_purchase",
+            description=f"Compra: {item.name}"
+        )
+
+        if success:
+            # Agregar item al inventario del usuario (aquí se necesitaría implementar el inventario)
+            # Por ahora, solo confirmamos la compra
+            new_favors = favors - item.price
+
+            text = Lucien.format(
+                "CABINET_PURCHASE_SUCCESS",
+                item_name=item.name,
+                new_total=new_favors
+            )
+            keyboard = create_inline_keyboard([
+                [{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}]
+            ])
+        else:
+            text = "Hubo un error al procesar la compra. Por favor intente nuevamente."
+            keyboard = create_inline_keyboard([
+                [{"text": "🔙 Volver", "callback_data": f"shop:category:{item.category_id}"}]
+            ])
+
+        await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"❌ Error en shop:buy: {e}")
+        await callback.answer("Error al procesar compra", show_alert=True)
+
+
+@user_router.callback_query(F.data == "vip:info")
+async def callback_vip_info(callback: CallbackQuery, session: AsyncSession):
+    """Handler para información de VIP (La Llave del Diván)."""
+    from bot.services.container import ServiceContainer
+
+    container = ServiceContainer(session, callback.bot)
+    config = await container.config.get_config()
+
+    # Obtener precios de suscripción
+    prices = config.get_subscription_fees()
+    vip_price = prices.get("vip_monthly", 0)
+    vip_currency = prices.get("currency", "USD")
+
+    text = (
+        "🔑 <b>La Llave del Diván</b>\n\n"
+        f"{Lucien.CONVERSION_VIP_INTRO}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"{Lucien.format('CONVERSION_VIP_OFFER')}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "💰 <b>INVERSIÓN</b>\n\n"
+        f"{vip_price} {vip_currency}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"{Lucien.CONVERSION_VIP_BENEFITS}"
+    )
+
+    # Botón para ir al comando /vip
+    keyboard = create_inline_keyboard([
+        [{"text": "🔑 Obtener mi Llave", "callback_data": "conversion:start_vip"}],
+        [{"text": "🔙 Volver al menú", "callback_data": "start:menu"}]
+    ])
+
+    await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "premium:info")
+async def callback_premium_info(callback: CallbackQuery, session: AsyncSession):
+    """Handler para información de Premium."""
+    text = (
+        "💎 <b>Contenido Premium</b>\n\n"
+        "Más allá del Diván existe contenido exclusivo.\n\n"
+        "Piezas individuales de la colección más íntima de Diana.\n\n"
+        "Este nivel requiere membresía VIP activa.\n\n"
+        "Próximamente disponible."
+    )
+
+    keyboard = create_inline_keyboard([
+        [{"text": "🔙 Volver al menú", "callback_data": "start:menu"}]
+    ])
+
+    await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "mapa:info")
+async def callback_mapa_info(callback: CallbackQuery, session: AsyncSession):
+    """Handler para información del Mapa del Deseo."""
+    text = (
+        "🗺️ <b>El Mapa del Deseo</b>\n\n"
+        f"{Lucien.CONVERSION_MAP_INTRO}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "Disponible en 3 niveles:\n\n"
+        "🥉 <b>Nivel Explorador</b>\n"
+        "• Acceso a territorios seleccionados\n"
+        "• Guía básica del universo de Diana\n\n"
+        "🥈 <b>Nivel Conocedor</b>\n"
+        "• Territorios profundos del mapa\n"
+        "• Secretos revelados\n"
+        "• Conexión personalizada\n\n"
+        "🥇 <b>Nivel Íntimo</b>\n"
+        "• Todo lo anterior\n"
+        "• Acceso a los archivos privados\n"
+        "• Sesiones exclusivas\n\n"
+        "Próximamente disponible para miembros VIP."
+    )
+
+    keyboard = create_inline_keyboard([
+        [{"text": "🔙 Volver al menú", "callback_data": "start:menu"}]
+    ])
+
+    await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == "conversion:start_vip")
+async def callback_conversion_start_vip(callback: CallbackQuery, session: AsyncSession):
+    """Inicia el flujo de conversión a VIP."""
+    # Track conversion event
+    from bot.gamification.services.container import GamificationContainer
+    from bot.gamification.enums import ConversionEventType
+
+    user_id = callback.from_user.id
+
+    try:
+        gamification = GamificationContainer(session, callback.bot)
+        await gamification.conversion_tracking.track_conversion_event(
+            user_id=user_id,
+            event_type=ConversionEventType.CONVERSION_VIEW,
+            product_type="vip",
+            source="menu_button",
+            referrer=callback.message.chat.id
+        )
+    except Exception as e:
+        logger.warning(f"⚠️ Error tracking conversion event: {e}")
+
+    # Mostrar el mensaje de conversión VIP (mismo que /vip pero editando el mensaje)
+    text = (
+        "🔑 <b>La Llave del Diván</b>\n\n"
+        "¿Listo/a para traspasar el umbral del Diván?\n\n"
+        "<b>✨ Beneficios VIP:</b>\n"
+        "• Acceso exclusivo a contenido premium\n"
+        "• Interacción directa con Diana\n"
+        "• Contenido personalizado según tu arquetipo\n"
+        "• Prioridad en eventos y lanzamientos\n\n"
+        "<b>💰 Inversión:</b>\n"
+        "• Precio especial: $47 (1 mes)\n"
+        "• Opción de descuento por mérito\n\n"
+        "¿Te gustaría obtener tu <b>La Llave del Diván</b> hoy?"
+    )
+
+    keyboard = create_inline_keyboard([
+        [{"text": "🔐 Obtener mi Llave", "callback_data": "conversion:vip:get_key"}],
+        [{"text": "🤔 Tengo preguntas", "callback_data": "conversion:vip:questions"}],
+        [{"text": "❌ No estoy interesado/a", "callback_data": "conversion:vip:objection:not_interested"}]
+    ])
+
+    await callback.message.edit_text(text=text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
