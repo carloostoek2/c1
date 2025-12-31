@@ -73,6 +73,7 @@ def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
             [{"text": "🎭 Mi Perfil", "callback_data": "profile:view"}],
             [{"text": "🗄️ El Gabinete", "callback_data": "shop:browse"}],
             [{"text": "📋 Mis Encargos", "callback_data": "user:missions"}],
+            [{"text": "🎁 Regalo Diario", "callback_data": "user:daily_gift"}],
             [{"text": "💫 Mis Favores", "callback_data": "start:favors"}],
             [{"text": "🎁 Lo Nuevo", "callback_data": "content:new"}],
             [{"text": "💎 Premium", "callback_data": "premium:info"}],
@@ -84,6 +85,7 @@ def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
             [{"text": "🎭 Mi Perfil", "callback_data": "profile:view"}],
             [{"text": "🗄️ El Gabinete", "callback_data": "shop:browse"}],
             [{"text": "📋 Mis Encargos", "callback_data": "user:missions"}],
+            [{"text": "🎁 Regalo Diario", "callback_data": "user:daily_gift"}],
             [{"text": "💫 Mis Favores", "callback_data": "start:favors"}],
             [{"text": "🔑 La Llave VIP", "callback_data": "vip:info"}],
         ]
@@ -271,22 +273,22 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
             # Obtener progreso hacia siguiente nivel
             level_progress = user_gam.total_besitos or 0
 
-            # Obtener arquetipo
-            archetype = user_gam.archetype if user_gam else None
-            if archetype:
-                archetype_val = archetype.value if hasattr(archetype, 'value') else archetype
-                archetype_names = {
-                    "explorer": "Explorador",
-                    "direct": "Directo",
-                    "romantic": "Romántico",
-                    "analytical": "Analítico",
-                    "persistent": "Persistente",
-                    "patient": "Paciente",
-                    "impulsive": "Impulsivo",
-                    "contemplative": "Contemplativo",
-                    "silent": "Silencioso",
-                }
-                archetype_name = archetype_names.get(archetype_val)
+        # Obtener arquetipo del usuario (del modelo User, no UserGamification)
+        archetype = user.archetype if user else None
+        if archetype:
+            archetype_val = archetype.value if hasattr(archetype, 'value') else archetype
+            archetype_names = {
+                "explorer": "Explorador",
+                "direct": "Directo",
+                "romantic": "Romántico",
+                "analytical": "Analítico",
+                "persistent": "Persistente",
+                "patient": "Paciente",
+                "impulsive": "Impulsivo",
+                "contemplative": "Contemplativo",
+                "silent": "Silencioso",
+            }
+            archetype_name = archetype_names.get(archetype_val)
 
         # Obtener favores (besitos)
         besitos_balance = await gamification.besito.get_balance(user_id)
