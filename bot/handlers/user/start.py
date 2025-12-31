@@ -1416,7 +1416,7 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
         new_balance = await gamification.besito.deduct_besitos(
             user_id=user_id,
             amount=item.price_besitos,
-            transaction_type=TransactionType.SHOP_PURCHASE,
+            transaction_type=TransactionType.PURCHASE,
             description=f"Compra: {item.name}"
         )
 
