@@ -1,7 +1,7 @@
 """Add gamification module with 13 tables
 
 Revision ID: 004
-Revises: 003
+Revises: None
 Create Date: 2024-12-24 01:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from datetime import datetime, UTC
 
 # revision identifiers, used by Alembic.
 revision = '004'
-down_revision = '003'
+down_revision = None
 branch_labels = None
 depends_on = None
 
