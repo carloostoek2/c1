@@ -1284,9 +1284,8 @@ async def callback_shop_category(callback: CallbackQuery, session: AsyncSession)
         category = await shop_service.get_category(category_id)
         user_id = callback.from_user.id
 
-        # Obtener favores del usuario
-        profile = await gamification.user_gamification.get_user_profile(user_id)
-        favors = profile['besitos']['total']
+        # Obtener favores del usuario - usar get_balance directamente
+        favors = await gamification.besitos.get_balance(user_id) or 0
 
         if not items:
             text = f"No hay artículos disponibles en esta categoría."
@@ -1301,7 +1300,7 @@ async def callback_shop_category(callback: CallbackQuery, session: AsyncSession)
             # Listar items
             for item in items:
                 emoji = item.icon or "🎁"
-                price = item.price
+                price = item.price_besitos
                 can_afford = favors >= price
 
                 # Indicador visual de si puede permitírselo
@@ -1314,7 +1313,7 @@ async def callback_shop_category(callback: CallbackQuery, session: AsyncSession)
             # Keyboard con items
             keyboard_buttons = []
             for item in items:
-                can_afford = favors >= item.price
+                can_afford = favors >= item.price_besitos
                 status = "" if can_afford else "(No disponible)"
                 keyboard_buttons.append([
                     {"text": f"{item.icon or '🎁'} {item.name} {status}", "callback_data": f"shop:item:{item.id}"}
@@ -1350,17 +1349,16 @@ async def callback_shop_item(callback: CallbackQuery, session: AsyncSession):
             await callback.answer("Item no encontrado", show_alert=True)
             return
 
-        # Obtener favores del usuario
-        profile = await gamification.user_gamification.get_user_profile(user_id)
-        favors = profile['besitos']['total']
-        can_afford = favors >= item.price
+        # Obtener favores del usuario - usar get_balance directamente
+        favors = await gamification.besitos.get_balance(user_id) or 0
+        can_afford = favors >= item.price_besitos
 
         # Mensaje de confirmación
-        remaining = favors - item.price
+        remaining = favors - item.price_besitos
         text = Lucien.format(
             "CABINET_CONFIRM_PURCHASE",
             item_name=item.name,
-            price=item.price,
+            price=item.price_besitos,
             total=favors,
             remaining=remaining,
             description=item.description
@@ -1368,11 +1366,11 @@ async def callback_shop_item(callback: CallbackQuery, session: AsyncSession):
 
         if can_afford:
             keyboard = create_inline_keyboard([
-                [{"text": f"✅ Comprar ({item.price} Favor(es))", "callback_data": f"shop:buy:{item.id}"}],
+                [{"text": f"✅ Comprar ({item.price_besitos} Favor(es))", "callback_data": f"shop:buy:{item.id}"}],
                 [{"text": "🔙 Volver", "callback_data": f"shop:category:{item.category_id}"}]
             ])
         else:
-            text += f"\n\n❌ Favores insuficientes. Necesita {item.price - favors} Favor(es) más."
+            text += f"\n\n❌ Favores insuficientes. Necesita {item.price_besitos - favors} Favor(es) más."
             keyboard = create_inline_keyboard([
                 [{"text": "🔙 Volver", "callback_data": f"shop:category:{item.category_id}"}]
             ])
@@ -1400,21 +1398,20 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
 
         # Obtener item y verificar
         item = await shop_service.get_item(item_id)
-        profile = await gamification.user_gamification.get_user_profile(user_id)
-        favors = profile['besitos']['total']
+        favors = await gamification.besitos.get_balance(user_id) or 0
 
         if not item:
             await callback.answer("Item no encontrado", show_alert=True)
             return
 
-        if favors < item.price:
+        if favors < item.price_besitos:
             await callback.answer("Favores insuficientes", show_alert=True)
             return
 
         # Procesar compra (deducir favores y otorgar item)
         success = await gamification.besito.grant_besitos(
             user_id=user_id,
-            amount=-item.price,
+            amount=-item.price_besitos,
             transaction_type="shop_purchase",
             description=f"Compra: {item.name}"
         )
@@ -1422,7 +1419,7 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
         if success:
             # Agregar item al inventario del usuario (aquí se necesitaría implementar el inventario)
             # Por ahora, solo confirmamos la compra
-            new_favors = favors - item.price
+            new_favors = favors - item.price_besitos
 
             text = Lucien.format(
                 "CABINET_PURCHASE_SUCCESS",
