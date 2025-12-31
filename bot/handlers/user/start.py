@@ -139,7 +139,7 @@ async def _get_context_message(session: AsyncSession, user_id: int, bot) -> str:
 
         # Verificar favores acumulados (>20)
         try:
-            balance = await gamification.besitos.get_balance(user_id)
+            balance = await gamification.besito.get_balance(user_id)
             if balance and balance > 20:
                 return Lucien.MENU_CONTEXT_FAVORS_ACCUMULATED
         except Exception as e:
@@ -265,8 +265,8 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
         if user_gam:
             if user_gam.current_level:
                 level_name = user_gam.current_level.name
-                level_number = user_gam.current_level.level_number
-                level_next_req = user_gam.current_level.min_besitos_required or 100
+                level_number = user_gam.current_level.order
+                level_next_req = user_gam.current_level.min_besitos or 100
 
             # Obtener progreso hacia siguiente nivel
             level_progress = user_gam.total_besitos or 0
@@ -289,7 +289,7 @@ async def _get_user_context(session: AsyncSession, user_id: int, bot) -> dict:
                 archetype_name = archetype_names.get(archetype_val)
 
         # Obtener favores (besitos)
-        besitos_balance = await gamification.besitos.get_balance(user_id)
+        besitos_balance = await gamification.besito.get_balance(user_id)
         favors = besitos_balance or 0
 
         # Obtener estado de racha
@@ -685,7 +685,7 @@ async def callback_continue_onboarding(callback: CallbackQuery, session: AsyncSe
         if user_gam and user_gam.current_level:
             level_name = user_gam.current_level.name
 
-        besitos_balance = await gamification.besitos.get_balance(user_id)
+        besitos_balance = await gamification.besito.get_balance(user_id)
         favors = besitos_balance or 0
     except Exception as e:
         logger.warning(f"⚠️ Error obteniendo gamificación: {e}")
@@ -1285,7 +1285,7 @@ async def callback_shop_category(callback: CallbackQuery, session: AsyncSession)
         user_id = callback.from_user.id
 
         # Obtener favores del usuario - usar get_balance directamente
-        favors = await gamification.besitos.get_balance(user_id) or 0
+        favors = await gamification.besito.get_balance(user_id) or 0
 
         if not items:
             text = f"No hay artículos disponibles en esta categoría."
@@ -1350,7 +1350,7 @@ async def callback_shop_item(callback: CallbackQuery, session: AsyncSession):
             return
 
         # Obtener favores del usuario - usar get_balance directamente
-        favors = await gamification.besitos.get_balance(user_id) or 0
+        favors = await gamification.besito.get_balance(user_id) or 0
         can_afford = favors >= item.price_besitos
 
         # Mensaje de confirmación
@@ -1398,7 +1398,7 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
 
         # Obtener item y verificar
         item = await shop_service.get_item(item_id)
-        favors = await gamification.besitos.get_balance(user_id) or 0
+        favors = await gamification.besito.get_balance(user_id) or 0
 
         if not item:
             await callback.answer("Item no encontrado", show_alert=True)
