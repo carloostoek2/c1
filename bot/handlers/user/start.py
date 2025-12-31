@@ -1392,12 +1392,14 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
     """Handler para procesar la compra de un item."""
     try:
         from bot.shop.services import ShopService
+        from bot.shop.services.container import ShopContainer
         from bot.gamification.services.container import GamificationContainer
 
         item_id = int(callback.data.split(":")[2])
         user_id = callback.from_user.id
 
         shop_service = ShopService(session)
+        shop_container = ShopContainer(session)
         gamification = GamificationContainer(session, callback.bot)
 
         # Obtener item y verificar
@@ -1423,16 +1425,30 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
         )
 
         if success:
-            # Agregar item al inventario del usuario (aquí se necesitaría implementar el inventario)
-            # Por ahora, solo confirmamos la compra
-            text = Lucien.format(
-                "CABINET_PURCHASE_SUCCESS",
-                item_name=item.name,
-                new_total=int(new_balance)
+            # Agregar item al inventario del usuario
+            grant_success, grant_message = await shop_container.inventory.grant_item(
+                user_id=user_id,
+                item_id=item.id,
+                quantity=1,
+                obtained_via="purchase"
             )
-            keyboard = create_inline_keyboard([
-                [{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}]
-            ])
+
+            if grant_success:
+                text = Lucien.format(
+                    "CABINET_PURCHASE_SUCCESS",
+                    item_name=item.name,
+                    new_total=int(new_balance)
+                )
+                keyboard = create_inline_keyboard([
+                    [{"text": "🎒 Ver en Mochila", "callback_data": "backpack:main"}],
+                    [{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}]
+                ])
+            else:
+                # Item otorgado pero con warning (ej: max_per_user)
+                text = f"{grant_message}\n\nFavores deducidos: {item.price_besitos}"
+                keyboard = create_inline_keyboard([
+                    [{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}]
+                ])
         else:
             text = "Hubo un error al procesar la compra. Por favor intente nuevamente."
             keyboard = create_inline_keyboard([
