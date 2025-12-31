@@ -70,9 +70,10 @@ def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
     if is_vip:
         buttons = [
             [{"text": "📖 Continuar Historia", "callback_data": "story:continue"}],
-            [{"text": "🎭 Mi Perfil", "callback_data": "profile:view"}],
+            [{"text": "🎭 Mi Perfil", "callback_data": "user:profile"}],
             [{"text": "🗄️ El Gabinete", "callback_data": "shop:browse"}],
             [{"text": "📋 Mis Encargos", "callback_data": "user:missions"}],
+            [{"text": "🎒 Mi Mochila", "callback_data": "backpack:main"}],
             [{"text": "🎁 Regalo Diario", "callback_data": "user:daily_gift"}],
             [{"text": "💫 Mis Favores", "callback_data": "start:favors"}],
             [{"text": "🎁 Lo Nuevo", "callback_data": "content:new"}],
@@ -82,9 +83,10 @@ def lucien_main_menu_keyboard(is_vip: bool = False) -> dict:
     else:
         buttons = [
             [{"text": "📖 La Historia", "callback_data": "narr:start"}],
-            [{"text": "🎭 Mi Perfil", "callback_data": "profile:view"}],
+            [{"text": "🎭 Mi Perfil", "callback_data": "user:profile"}],
             [{"text": "🗄️ El Gabinete", "callback_data": "shop:browse"}],
             [{"text": "📋 Mis Encargos", "callback_data": "user:missions"}],
+            [{"text": "🎒 Mi Mochila", "callback_data": "backpack:main"}],
             [{"text": "🎁 Regalo Diario", "callback_data": "user:daily_gift"}],
             [{"text": "💫 Mis Favores", "callback_data": "start:favors"}],
             [{"text": "🔑 La Llave VIP", "callback_data": "vip:info"}],
