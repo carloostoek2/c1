@@ -11,6 +11,10 @@ Tablas:
 - broadcast_messages: Mensajes de broadcasting con gamificación
 - menu_items: Items de menú configurables (botones)
 - menu_configs: Configuración de menús por rol
+- pending_payments: Pagos pendientes de aprobación
+- conversion_events: Eventos de conversión y ventas
+- conversion_funnels: Seguimiento de embudo de conversión
+- lead_qualifications: Calificación de leads/probabilidad de conversión
 """
 import logging
 from datetime import datetime
