@@ -202,6 +202,11 @@ def build_decisions_keyboard(
 async def cmd_start_story(message: Message, session: AsyncSession):
     """
     Comando para iniciar o continuar la historia.
+
+    Muestra:
+    - Progreso actual del usuario
+    - Misión activa (si hay)
+    - Botones para continuar
     """
     user_id = message.from_user.id
     container = NarrativeContainer(session)
@@ -209,14 +214,84 @@ async def cmd_start_story(message: Message, session: AsyncSession):
     # Obtener progreso del usuario
     progress = await container.progress.get_or_create_progress(user_id)
 
+    # Construir mensaje de estado
+    status_message = "📖 <b>Tu Viaje en el Universo de Diana</b>\n\n"
+
+    # Nivel actual
+    level = getattr(progress, 'current_level', 1)
+    status_message += f"📊 <b>Nivel Actual:</b> {level}/6\n"
+
+    # Arquetipo detectado
+    if progress.detected_archetype and progress.detected_archetype.value != "UNKNOWN":
+        archetype_name = progress.detected_archetype.value.replace("_", " ").title()
+        confidence = getattr(progress, 'archetype_confidence', 0.0)
+        status_message += f"🎭 <b>Arquetipo:</b> {archetype_name} ({confidence*100:.0f}%)\n"
+
+    # Capítulo actual
+    if progress.current_chapter_id:
+        chapter = await container.chapter.get_chapter(progress.current_chapter_id)
+        if chapter:
+            status_message += f"📚 <b>Capítulo:</b> {chapter.name}\n"
+
+    # Misión activa (Fase 5)
+    if getattr(progress, 'active_mission_id', None):
+        status_message += "\n⏳ <b>MISIÓN ACTIVA</b>\n"
+
+        mission_id = progress.active_mission_id
+        mission_data = getattr(progress, 'mission_data', {}) or {}
+        mission_started = getattr(progress, 'mission_started_at', None)
+
+        # Formatear según tipo de misión
+        if mission_id == "observation":
+            hints_found = mission_data.get('hints_found', 0)
+            hints_required = mission_data.get('hints_required', 3)
+            status_message += f"🔍 <b>El Ojo Atento</b>\n"
+            status_message += f"Hallazgos encontrados: <b>{hints_found}/{hints_required}</b>\n"
+
+            # Calcular tiempo restante
+            if mission_started:
+                from datetime import datetime, UTC, timedelta
+                duration_hours = mission_data.get('mission_duration_hours', 72)
+                deadline = mission_started.replace(tzinfo=UTC) + timedelta(hours=duration_hours)
+                time_left = deadline - datetime.now(UTC)
+
+                if time_left.total_seconds() > 0:
+                    days = time_left.days
+                    hours = time_left.seconds // 3600
+                    if days > 0:
+                        status_message += f"Tiempo restante: <b>{days}d {hours}h</b>\n"
+                    else:
+                        status_message += f"Tiempo restante: <b>{hours}h</b>\n"
+                else:
+                    status_message += "⚠️ <b>Tiempo límite alcanzado</b>\n"
+
+        elif mission_id == "questionnaire":
+            questions_answered = mission_data.get('questions_answered', 0)
+            questions_total = mission_data.get('questions_total', 5)
+            status_message += f"📝 <b>Perfil de Deseo</b>\n"
+            status_message += f"Preguntas respondidas: <b>{questions_answered}/{questions_total}</b>\n"
+
+        else:
+            # Misión genérica
+            status_message += f"📋 <b>{mission_id}</b>\n"
+
+    status_message += "\n"
+
     if progress.current_fragment_key:
-        # Tiene progreso - mostrar fragmento actual
-        await show_fragment(
-            message=message,
-            session=session,
-            fragment_key=progress.current_fragment_key,
-            user_id=user_id,
-            is_new_message=True
+        # Tiene progreso - agregar botón para continuar
+        status_message += "Usa el botón de abajo para continuar tu historia."
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(
+                text="▶️ Continuar Historia",
+                callback_data="narr:continue"
+            )]
+        ])
+
+        await message.answer(
+            status_message,
+            parse_mode="HTML",
+            reply_markup=keyboard
         )
     else:
         # No tiene progreso - mostrar bienvenida y opciones
@@ -259,6 +334,37 @@ async def callback_start_story(callback: CallbackQuery, session: AsyncSession):
             "Selecciona un capítulo para empezar:",
             parse_mode="HTML",
             reply_markup=await _build_chapter_selection_keyboard(container)
+        )
+
+
+@story_router.callback_query(F.data == "narr:continue")
+async def callback_continue_story(callback: CallbackQuery, session: AsyncSession):
+    """
+    Callback para continuar la historia desde el botón de /historia.
+    Muestra el fragmento actual del usuario.
+    """
+    await callback.answer()
+    user_id = callback.from_user.id
+    container = NarrativeContainer(session)
+
+    # Obtener progreso del usuario
+    progress = await container.progress.get_or_create_progress(user_id)
+
+    if progress.current_fragment_key:
+        # Mostrar fragmento actual
+        await show_fragment(
+            message=callback.message,
+            session=session,
+            fragment_key=progress.current_fragment_key,
+            user_id=user_id,
+            is_new_message=False
+        )
+    else:
+        # No debería llegar aquí, pero por seguridad
+        await callback.message.edit_text(
+            "No tienes progreso en la historia aún.\n"
+            "Usa /historia para comenzar.",
+            parse_mode="HTML"
         )
 
 

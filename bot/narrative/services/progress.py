@@ -384,6 +384,11 @@ class ProgressService:
 
         # Setear flag
         progress.narrative_flags[flag_key] = value
+
+        # Marcar como modificado para que SQLAlchemy detecte el cambio en el JSON
+        from sqlalchemy.orm import attributes
+        attributes.flag_modified(progress, "narrative_flags")
+
         await self._session.flush()
 
         logger.debug(f"🏴 Flag '{flag_key}' = {value} para usuario {user_id}")
