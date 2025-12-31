@@ -347,3 +347,158 @@ class ProgressService:
         history = result.scalar_one_or_none()
 
         return history is not None
+
+    # ===== Fase 5: Sistema de Flags Narrativos =====
+
+    async def set_flag(
+        self,
+        user_id: int,
+        flag_key: str,
+        value: any = True
+    ) -> bool:
+        """
+        Establece un flag narrativo para el usuario.
+
+        Los flags permiten guardar estado narrativo arbitrario como:
+        - first_reaction_fast: Reaccionó rápido en nivel 1
+        - curious: Mostró curiosidad en cuestionario
+        - depth: Acepta complejidad en respuestas
+
+        Args:
+            user_id: ID del usuario
+            flag_key: Clave del flag (ej: "first_reaction_fast")
+            value: Valor del flag (default: True). Puede ser bool, str, int, etc.
+
+        Returns:
+            True si se guardó correctamente
+
+        Example:
+            >>> await progress_service.set_flag(user_id, "curious", True)
+            >>> await progress_service.set_flag(user_id, "reaction_time", 45)
+        """
+        progress = await self.get_or_create_progress(user_id)
+
+        # Inicializar narrative_flags si es None
+        if progress.narrative_flags is None:
+            progress.narrative_flags = {}
+
+        # Setear flag
+        progress.narrative_flags[flag_key] = value
+        await self._session.flush()
+
+        logger.debug(f"🏴 Flag '{flag_key}' = {value} para usuario {user_id}")
+
+        return True
+
+    async def get_flag(
+        self,
+        user_id: int,
+        flag_key: str,
+        default: any = None
+    ) -> any:
+        """
+        Obtiene el valor de un flag narrativo.
+
+        Args:
+            user_id: ID del usuario
+            flag_key: Clave del flag
+            default: Valor por defecto si no existe
+
+        Returns:
+            Valor del flag o default si no existe
+
+        Example:
+            >>> is_curious = await progress_service.get_flag(user_id, "curious", False)
+            >>> reaction_time = await progress_service.get_flag(user_id, "reaction_time", 0)
+        """
+        progress = await self.get_progress(user_id)
+
+        if not progress or not progress.narrative_flags:
+            return default
+
+        return progress.narrative_flags.get(flag_key, default)
+
+    async def has_flag(
+        self,
+        user_id: int,
+        flag_key: str
+    ) -> bool:
+        """
+        Verifica si un flag existe (independiente de su valor).
+
+        Args:
+            user_id: ID del usuario
+            flag_key: Clave del flag
+
+        Returns:
+            True si el flag existe (incluso si es False)
+
+        Example:
+            >>> if await progress_service.has_flag(user_id, "first_reaction_fast"):
+            >>>     print("Usuario reaccionó rápido")
+        """
+        progress = await self.get_progress(user_id)
+
+        if not progress or not progress.narrative_flags:
+            return False
+
+        return flag_key in progress.narrative_flags
+
+    async def get_all_flags(
+        self,
+        user_id: int
+    ) -> dict:
+        """
+        Obtiene todos los flags narrativos del usuario.
+
+        Args:
+            user_id: ID del usuario
+
+        Returns:
+            Dict con todos los flags {flag_key: value, ...}
+            Retorna dict vacío si no hay flags
+
+        Example:
+            >>> flags = await progress_service.get_all_flags(user_id)
+            >>> print(flags)
+            {'curious': True, 'reaction_time': 45, 'first_reaction_fast': True}
+        """
+        progress = await self.get_progress(user_id)
+
+        if not progress or not progress.narrative_flags:
+            return {}
+
+        return dict(progress.narrative_flags)
+
+    async def clear_flag(
+        self,
+        user_id: int,
+        flag_key: str
+    ) -> bool:
+        """
+        Elimina un flag específico del usuario.
+
+        Args:
+            user_id: ID del usuario
+            flag_key: Clave del flag a eliminar
+
+        Returns:
+            True si se eliminó, False si no existía
+
+        Example:
+            >>> await progress_service.clear_flag(user_id, "curious")
+        """
+        progress = await self.get_progress(user_id)
+
+        if not progress or not progress.narrative_flags:
+            return False
+
+        if flag_key not in progress.narrative_flags:
+            return False
+
+        del progress.narrative_flags[flag_key]
+        await self._session.flush()
+
+        logger.debug(f"🗑️ Flag '{flag_key}' eliminado para usuario {user_id}")
+
+        return True
