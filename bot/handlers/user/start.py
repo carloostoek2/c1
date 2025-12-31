@@ -1235,7 +1235,7 @@ async def callback_shop_browse(callback: CallbackQuery, session: AsyncSession):
 
             # Listar categorías
             for category in categories:
-                category_emoji = category.button_emoji or "📦"
+                category_emoji = category.emoji or "📦"
                 text += f"\n{category_emoji} <b>{category.name}</b>\n"
                 text += f"{category.description}\n"
 
@@ -1243,7 +1243,7 @@ async def callback_shop_browse(callback: CallbackQuery, session: AsyncSession):
             keyboard_buttons = []
             for category in categories:
                 keyboard_buttons.append([
-                    {"text": f"{category.button_emoji or '📦'} {category.name}", "callback_data": f"shop:category:{category.id}"}
+                    {"text": f"{category.emoji or '📦'} {category.name}", "callback_data": f"shop:category:{category.id}"}
                 ])
             keyboard_buttons.append([{"text": "🔙 Volver al menú", "callback_data": "start:menu"}])
 
@@ -1293,14 +1293,14 @@ async def callback_shop_category(callback: CallbackQuery, session: AsyncSession)
             keyboard = create_inline_keyboard([[{"text": "🔙 Volver", "callback_data": "shop:browse"}]])
         else:
             # Construir mensaje
-            text = f"{category.button_emoji or '📦'} <b>{category.name}</b>\n\n"
+            text = f"{category.emoji or '📦'} <b>{category.name}</b>\n\n"
             text += f"{category.description}\n\n"
             text += f"Sus Favores: <b>{favors}</b>\n\n"
             text += "━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
             # Listar items
             for item in items:
-                emoji = item.button_emoji or "🎁"
+                emoji = item.icon or "🎁"
                 price = item.price
                 can_afford = favors >= price
 
@@ -1317,7 +1317,7 @@ async def callback_shop_category(callback: CallbackQuery, session: AsyncSession)
                 can_afford = favors >= item.price
                 status = "" if can_afford else "(No disponible)"
                 keyboard_buttons.append([
-                    {"text": f"{item.button_emoji or '🎁'} {item.name} {status}", "callback_data": f"shop:item:{item.id}"}
+                    {"text": f"{item.icon or '🎁'} {item.name} {status}", "callback_data": f"shop:item:{item.id}"}
                 ])
             keyboard_buttons.append([{"text": "🔙 Volver al Gabinete", "callback_data": "shop:browse"}])
 

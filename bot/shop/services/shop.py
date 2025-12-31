@@ -128,6 +128,50 @@ class ShopService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_categories_with_items(
+        self,
+        active_only: bool = True
+    ) -> List[ItemCategory]:
+        """
+        Obtiene categorías que tienen items activos.
+
+        Args:
+            active_only: Si True, solo retorna categorías activas con items activos
+
+        Returns:
+            Lista de categorías con items, ordenadas
+        """
+        # Subquery para contar items por categoría
+        stmt = (
+            select(ItemCategory)
+            .join(ShopItem, ShopItem.category_id == ItemCategory.id)
+            .where(ShopItem.is_active == True)
+            .group_by(ItemCategory.id)
+            .order_by(ItemCategory.order)
+        )
+
+        if active_only:
+            stmt = stmt.where(ItemCategory.is_active == True)
+
+        result = await self.session.execute(stmt)
+        categories = list(result.scalars().all())
+
+        # Cargar relación items para cada categoría
+        for category in categories:
+            stmt = (
+                select(ShopItem)
+                .where(
+                    ShopItem.category_id == category.id,
+                    ShopItem.is_active == True
+                )
+                .order_by(ShopItem.order, ShopItem.name)
+            )
+            items_result = await self.session.execute(stmt)
+            # Agregar items como atributo temporal
+            category.items = list(items_result.scalars().all())
+
+        return categories
+
     async def update_category(
         self,
         category_id: int,
