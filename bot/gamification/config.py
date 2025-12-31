@@ -54,6 +54,17 @@ class GamificationConfig:
     BATCH_SIZE: int = int(os.getenv("GAMIFICATION_BATCH_SIZE", "100"))
 
     # ========================================
+    # PAYMENT INFORMATION
+    # ========================================
+    PAYMENT_INFO = {
+        "bank_name": os.getenv("BANK_NAME", "Banco de Crédito del Perú"),
+        "account_number": os.getenv("BANK_ACCOUNT_NUMBER", "191-234567890-01-23"),
+        "account_holder": os.getenv("BANK_ACCOUNT_HOLDER", "Diana Kinky"),
+        "account_type": os.getenv("BANK_ACCOUNT_TYPE", "Cuenta de Ahorros en Dólares"),
+        "additional_info": os.getenv("BANK_ADDITIONAL_INFO", "Solo transferencias en Dólares (USD)")
+    }
+
+    # ========================================
     # DATABASE CONFIG (dinámica, cacheada)
     # ========================================
 

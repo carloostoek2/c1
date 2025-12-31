@@ -571,3 +571,48 @@ class MenuConfig(Base):
     def __repr__(self):
         return f"<MenuConfig(role={self.role})>"
 
+
+class PendingPayment(Base):
+    """
+    Pagos pendientes de aprobación por admin.
+
+    Almacena información sobre los pagos manuales que los usuarios
+    realizan y que deben ser aprobados por un administrador.
+
+    Attributes:
+        id: ID único del registro (PK)
+        user_id: ID del usuario que realizó el pago
+        product_type: Tipo de producto adquirido (vip, premium, mapa_del_deseo, etc.)
+        product_id: ID del producto específico (si aplica)
+        amount: Monto del pago
+        currency: Moneda del pago (ej: USD)
+        screenshot_file_id: File ID de la captura de pago en Telegram
+        screenshot_message_id: ID del mensaje con la captura
+        status: Estado del pago (pending, approved, rejected)
+        created_at: Fecha de creación del registro
+        processed_at: Fecha de procesamiento (aprobación/rechazo)
+        processed_by: ID del admin que procesó el pago
+        admin_notes: Notas adicionales del admin (en caso de rechazo)
+    """
+    __tablename__ = "pending_payments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False, index=True)
+    product_type = Column(String(50), nullable=False)  # "vip", "premium", "mapa_del_deseo", etc.
+    product_id = Column(Integer, nullable=True)  # ID del producto específico, si aplica
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default="USD")  # Moneda del pago
+    screenshot_file_id = Column(String(200), nullable=False)  # File ID de la captura
+    screenshot_message_id = Column(Integer, nullable=False)  # ID del mensaje con captura
+    status = Column(String(20), default="pending", nullable=False, index=True)  # "pending", "approved", "rejected"
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime, nullable=True)  # Fecha cuando fue aprobado/rechazado
+    processed_by = Column(BigInteger, nullable=True)  # ID del admin que procesó
+    admin_notes = Column(String(500), nullable=True)  # Notas del admin, ej: motivo de rechazo
+
+    # Relación con usuario
+    user = relationship("User", uselist=False, lazy="selectin")
+
+    def __repr__(self):
+        return f"<PendingPayment(id={self.id}, user_id={self.user_id}, product='{self.product_type}', status='{self.status}')>"
+
