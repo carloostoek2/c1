@@ -3,6 +3,8 @@ Engine SQLAlchemy Async y factory de sesiones.
 Configuración optimizada para SQLite en Termux.
 """
 import logging
+import sys
+import os
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -14,7 +16,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 from sqlalchemy import text
 
+# Add the project root to sys.path temporarily to ensure the correct config.py is imported
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
 from config import Config
+sys.path.pop(0) # Remove it after import to avoid interfering with other imports
 from bot.database.base import Base
 from bot.database.models import BotConfig
 

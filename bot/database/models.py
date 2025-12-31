@@ -570,3 +570,4 @@ class MenuConfig(Base):
 
     def __repr__(self):
         return f"<MenuConfig(role={self.role})>"
+
