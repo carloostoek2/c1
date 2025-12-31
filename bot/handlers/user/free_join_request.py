@@ -104,17 +104,19 @@ async def handle_free_join_request(
                 await join_request.bot.send_message(
                     chat_id=user_id,
                     text=(
-                        f"ℹ️ <b>Ya Tienes Una Solicitud Pendiente</b>\n\n"
-                        f"📺 Canal: <b>{channel_name}</b>\n\n"
-                        f"No es necesario solicitar de nuevo. Tu solicitud anterior sigue activa:\n\n"
-                        f"<b>Progreso de Aprobación:</b>\n"
+                        f"<b>🎭 Lucien:</b>\n\n"
+                        f"Ah, {user_name}... veo que eres de los impacientes.\n\n"
+                        f"Diana adora cuando la gente repite acciones como si eso "
+                        f"hiciera que las cosas pasen más rápido. Es adorable, realmente.\n\n"
+                        f"Tu solicitud sigue activa. No necesitas insistir:\n\n"
                         f"{progress_bar}\n\n"
-                        f"⏰ <b>Tiempo Estimado:</b>\n"
-                        f"• Tiempo transcurrido: <b>{minutes_since} min</b>\n"
-                        f"• Tiempo restante: <b>{minutes_remaining} min</b>\n"
-                        f"• Total configurado: <b>{wait_time} min</b>\n\n"
-                        f"✅ Serás aprobado <b>automáticamente</b> en {minutes_remaining} minutos.\n"
-                        f"No es necesario hacer nada, solo espera. 🎯"
+                        f"⏰ <b>Tu situación actual:</b>\n"
+                        f"• Tiempo transcurrido: {minutes_since} minutos\n"
+                        f"• Tiempo restante: {minutes_remaining} minutos\n\n"
+                        f"Entre {minutes_remaining} minutos recibirás acceso. "
+                        f"Mientras tanto, podrías intentar... ¿cómo se dice? "
+                        f"<i>Paciencia</i>. Es una virtud, dicen.\n\n"
+                        f"Yo estaré aquí esperando. Siempre estoy aquí."
                     ),
                     parse_mode="HTML"
                 )
@@ -131,25 +133,30 @@ async def handle_free_join_request(
     # Obtener tiempo de espera
     wait_time = await container.config.get_wait_time()
 
-    # Enviar notificación automática mejorada
+    # Enviar notificación con voz de Lucien
     try:
         await join_request.bot.send_message(
             chat_id=user_id,
             text=(
-                f"👋 <b>¡Solicitud de Acceso Free Registrada!</b>\n\n"
-                f"📺 Canal: <b>{channel_name}</b>\n\n"
-                f"✅ Tu solicitud ha sido registrada en el sistema.\n\n"
-                f"⏰ <b>Tiempo de Espera:</b> {wait_time} minutos\n\n"
-                f"<b>¿Qué sucede ahora?</b>\n"
-                f"1. Tu solicitud está en la cola de aprobación\n"
-                f"2. En aproximadamente {wait_time} minutos serás aprobado automáticamente\n"
-                f"3. Recibirás una notificación cuando sea aprobada\n"
-                f"4. Entonces podrás acceder al canal Free\n\n"
-                f"💡 <b>Tips:</b>\n"
-                f"• Mantén el chat abierto para recibir notificaciones\n"
-                f"• No necesitas hacer nada más, es automático\n"
-                f"• Si hay problema, contacta al soporte\n\n"
-                f"¡Gracias por tu paciencia! ⏳"
+                f"<b>🎭 Lucien:</b>\n\n"
+                f"Ahh, {user_name}... otro viajero buscando cruzar el umbral.\n\n"
+                f"Soy Lucien, mayordomo digital y guardián de las puertas. "
+                f"Veo que has solicitado acceso al canal de Diana.\n\n"
+                f"Ahora... debo explicarte cómo funcionan las cosas aquí. "
+                f"No es tan simple como tocar y entrar. Diana valora la "
+                f"<i>anticipación</i>. Y yo... bueno, yo valoro no tener "
+                f"que explicar lo obvio múltiples veces.\n\n"
+                f"<b>⏳ Tu situación:</b>\n"
+                f"• Tu solicitud está en la cola\n"
+                f"• Tiempo de espera: <b>{wait_time} minutos</b>\n"
+                f"• Aprobación: Automática (yo no decido, Diana no decide, "
+                f"el sistema simplemente... <i>hace</i>)\n\n"
+                f"En {wait_time} minutos recibirás acceso. "
+                f"Hasta entonces, te sugiero encontrar algo productivo que hacer. "
+                f"Contar ovejas, quizás. Observar pintura secarse. "
+                f"Cualquier cosa que no involucre solicitar de nuevo.\n\n"
+                f"<i>La paciencia, mi querido {user_name}, es el primer "
+                f"paso de este viaje. Apréndela bien.</i>"
             ),
             parse_mode="HTML"
         )
