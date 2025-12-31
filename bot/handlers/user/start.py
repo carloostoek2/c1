@@ -1411,16 +1411,16 @@ async def callback_shop_buy(callback: CallbackQuery, session: AsyncSession):
             return
 
         # Procesar compra (deducir favores y otorgar item)
-        # Usar deduct_besitos en lugar de grant_besitos con cantidad negativa
+        # deduct_besitos retorna (success, message, new_balance)
         from bot.gamification.database.enums import TransactionType
-        new_balance = await gamification.besito.deduct_besitos(
+        success, message, new_balance = await gamification.besito.deduct_besitos(
             user_id=user_id,
             amount=item.price_besitos,
             transaction_type=TransactionType.PURCHASE,
             description=f"Compra: {item.name}"
         )
 
-        if new_balance is not None:
+        if success:
             # Agregar item al inventario del usuario (aquí se necesitaría implementar el inventario)
             # Por ahora, solo confirmamos la compra
             text = Lucien.format(
