@@ -24,6 +24,21 @@ from bot.utils.keyboards import create_inline_keyboard
 logger = logging.getLogger(__name__)
 
 
+@narrative_router.callback_query(F.data == "story:continue")
+async def callback_continue_story(
+    callback: CallbackQuery,
+    session: AsyncSession
+):
+    """
+    Continúa la historia del usuario (alias de narr:start).
+
+    Este handler es un alias para el botón "📖 Continuar Historia"
+    del menú principal.
+    """
+    # Redirigir al handler principal
+    await callback_start_story(callback, session)
+
+
 @narrative_router.callback_query(F.data == "narr:start")
 async def callback_start_story(
     callback: CallbackQuery,
@@ -80,16 +95,22 @@ async def callback_start_story(
             load_decisions=True
         )
         if not fragment:
-            # Error: fragmento no existe, resetear progreso
-            logger.error(
-                f"⚠️ Fragmento '{progress.current_fragment_key}' no existe para usuario {user_id}"
+            # Auto-reset: fragmento no existe, resetear progreso y empezar de cero
+            logger.warning(
+                f"⚠️ Fragmento '{progress.current_fragment_key}' no existe para usuario {user_id}, "
+                f"reseteando progreso automáticamente"
             )
-            await callback.message.edit_text(
-                "❌ <b>Error en el progreso</b>\n\n"
-                "Tu progreso está desincronizado. Contacta al administrador.",
-                parse_mode="HTML"
-            )
-            return
+            await narrative.progress.reset_progress(user_id)
+
+            # Obtener entry point después del reset
+            fragment = await narrative.fragment.get_entry_point_by_type(ChapterType.FREE)
+            if not fragment:
+                await callback.message.edit_text(
+                    "❌ <b>Historia no disponible</b>\n\n"
+                    "La historia aún no ha sido configurada. Vuelve más tarde.",
+                    parse_mode="HTML"
+                )
+                return
     else:
         # Primera vez: iniciar con entry point del primer capítulo FREE
         fragment = await narrative.fragment.get_entry_point_by_type(ChapterType.FREE)

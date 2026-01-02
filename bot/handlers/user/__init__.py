@@ -10,5 +10,6 @@ from bot.handlers.user.favors import favors_router
 import bot.handlers.user.vip_flow
 import bot.handlers.user.vip_menu
 import bot.handlers.user.free_join_request
+import bot.handlers.user.conversion
 
 __all__ = ["user_router", "favors_router"]

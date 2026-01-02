@@ -370,12 +370,13 @@ def _build_completed_keyboard() -> InlineKeyboardMarkup:
     """
     Construye keyboard para onboarding completado.
 
+    Lleva al menú principal donde el usuario puede acceder a todas las opciones.
+
     Returns:
         InlineKeyboardMarkup con opciones post-onboarding
     """
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="📖 Comenzar Historia", callback_data="narr:start")
-    keyboard.button(text="📚 Ver Diario", callback_data="journal:view")
+    keyboard.button(text="🚀 Ir al Menú Principal", callback_data="start:menu")
     keyboard.adjust(1)
     return keyboard.as_markup()
 

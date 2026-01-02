@@ -203,6 +203,21 @@ class RequirementsService:
                     )
                 return True, None
 
+            # PREMIUM_ACCESS: Compró contenido Premium individual
+            elif req_type == RequirementType.PREMIUM_ACCESS:
+                item_slug = value  # slug del item premium requerido
+                has_premium_access, item_name = await self._check_premium_access(
+                    user_id,
+                    item_slug
+                )
+                if not has_premium_access:
+                    return False, (
+                        requirement.rejection_message or
+                        f"📹 Este contenido Premium '{item_name or item_slug}' debe ser adquirido individualmente.\n\n"
+                        f"Visita el catálogo Premium para adquirirlo."
+                    )
+                return True, None
+
             else:
                 logger.warning(f"⚠️ Tipo de requisito desconocido: {req_type}")
                 return False, "Requisito no válido"
@@ -417,6 +432,54 @@ class RequirementsService:
 
         except Exception as e:
             logger.error(f"❌ Error verificando posesión de item: {e}")
+            return False, None
+
+    async def _check_premium_access(
+        self,
+        user_id: int,
+        item_slug: str
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Verifica si usuario tiene acceso a contenido Premium.
+
+        Args:
+            user_id: ID del usuario
+            item_slug: Slug del item premium requerido
+
+        Returns:
+            Tupla (tiene_acceso, nombre_item)
+        """
+        try:
+            from bot.gamification.services.premium_catalog_service import PremiumCatalogService
+
+            # Check if bot instance is available
+            if not self._bot:
+                logger.error("Bot instance is not available in RequirementsService, cannot check premium access.")
+                return False, None
+
+            service = PremiumCatalogService(self._session, self._bot)
+
+            # Get the premium item by slug
+            # We might need to adapt this since the premium catalog service uses IDs
+            # Let's fetch the item from the database directly
+            from bot.shop.database.models import ShopItem
+            from sqlalchemy import select
+
+            stmt = select(ShopItem).where(ShopItem.slug == item_slug)
+            result = await self._session.execute(stmt)
+            item = result.scalar_one_or_none()
+
+            if not item:
+                return False, None
+
+            # Check if user has purchased this item
+            has_purchased = await service.has_purchased_content(user_id, item.id)
+
+            item_name = item.name if item else None
+            return has_purchased, item_name
+
+        except Exception as e:
+            logger.error(f"❌ Error verificando acceso a contenido premium: {e}")
             return False, None
 
     async def get_accessible_fragments(
