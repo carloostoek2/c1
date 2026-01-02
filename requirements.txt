@@ -1,6 +1,6 @@
 # Bot Framework
 aiogram==3.15.0
-pydantic==2.10.6
+pydantic
 
 # Database
 sqlalchemy==2.0.36
