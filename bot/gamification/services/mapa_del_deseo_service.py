@@ -8,6 +8,7 @@ Implements F6.4: Flujo VIP → Mapa del Deseo (3 tiers of packages)
 """
 
 import logging
+import json
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 from aiogram import Bot
@@ -132,7 +133,7 @@ class MapaDelDeseoService:
                     rarity="legendary",  # Premium packages
                     price_besitos=package_data["price_besitos"],
                     icon="🗝️" if package_data["tier"] == 1 else "💫" if package_data["tier"] == 2 else "👑",
-                    item_metadata=str({
+                    item_metadata=json.dumps({
                         "tier": package_data["tier"],
                         "benefits": package_data["benefits"],
                         "valor_separado": valor_separado,

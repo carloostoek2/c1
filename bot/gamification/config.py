@@ -56,13 +56,23 @@ class GamificationConfig:
     # ========================================
     # PAYMENT INFORMATION
     # ========================================
+    # SECURITY: No default values - must be configured via environment variables
     PAYMENT_INFO = {
-        "bank_name": os.getenv("BANK_NAME", "Banco de Crédito del Perú"),
-        "account_number": os.getenv("BANK_ACCOUNT_NUMBER", "191-234567890-01-23"),
-        "account_holder": os.getenv("BANK_ACCOUNT_HOLDER", "Diana Kinky"),
-        "account_type": os.getenv("BANK_ACCOUNT_TYPE", "Cuenta de Ahorros en Dólares"),
-        "additional_info": os.getenv("BANK_ADDITIONAL_INFO", "Solo transferencias en Dólares (USD)")
+        "bank_name": os.getenv("BANK_NAME"),
+        "account_number": os.getenv("BANK_ACCOUNT_NUMBER"),
+        "account_holder": os.getenv("BANK_ACCOUNT_HOLDER"),
+        "account_type": os.getenv("BANK_ACCOUNT_TYPE"),
+        "additional_info": os.getenv("BANK_ADDITIONAL_INFO")
     }
+
+    @classmethod
+    def is_payment_configured(cls) -> bool:
+        """Check if all required payment information is configured."""
+        return all([
+            cls.PAYMENT_INFO.get("bank_name"),
+            cls.PAYMENT_INFO.get("account_number"),
+            cls.PAYMENT_INFO.get("account_holder")
+        ])
 
     # ========================================
     # DATABASE CONFIG (dinámica, cacheada)

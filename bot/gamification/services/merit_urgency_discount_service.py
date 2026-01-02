@@ -303,7 +303,7 @@ Esta oferta no se repetirá pronto."
 
         # Apply additional product-specific discount based on user tier
         # Higher Mapa del Deseo tiers could get additional percentage off certain products
-        from bot.gamification.services.mapa_del_desire_service import MapaDelDeseoService
+        from bot.gamification.services.mapa_del_deseo_service import MapaDelDeseoService
         mapa_service = MapaDelDeseoService(self.session, self.bot)
         mapa_status = await mapa_service.get_user_mapa_status(user_id)
 

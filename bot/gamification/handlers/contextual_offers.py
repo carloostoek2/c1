@@ -17,48 +17,50 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 
-@router.message(F.text)  # This will catch all text messages to check for activity
-async def check_contextual_offers(
-    message: Message,
-    session: AsyncSession,
-    bot: Bot
-):
-    """
-    Check if we should show a contextual offer based on user activity.
-    
-    Triggers for F6.2: High activity Free users
-    """
-    user_id = message.from_user.id
-    user = await session.get(User, user_id)
-    
-    if not user or user.is_vip:
-        # Only for free users
-        return
-
-    # Check if user meets criteria for contextual offer (high activity, etc.)
-    offer_service = ContextualOfferService(session, bot)
-    
-    # Only show offer if user hasn't seen it recently (to prevent spam)
-    if not await offer_service.has_seen_offer_recently(user_id):
-        should_show = await offer_service.should_show_contextual_vip_offer(user_id)
-        
-        if should_show:
-            # Use ArchetypeConversionService to determine if this is the right time
-            archetype_service = ArchetypeConversionService()
-            
-            # For this trigger, we'll use a general "high_activity" event
-            should_trigger = archetype_service.should_show_offer(
-                user.archetype if user.archetype else None,
-                "high_activity",
-                {"message_text": message.text}
-            )
-            
-            if should_trigger:
-                await offer_service.show_contextual_vip_offer(user_id)
-                await offer_service.track_offer_shown(user_id, "contextual_vip_offer", {
-                    "trigger": "high_activity",
-                    "message_text": message.text
-                })
+# NOTE: Commented out due to performance concerns - this handler runs on EVERY text message
+# Consider moving to a background task or using more specific filters
+# @router.message(F.text)
+# async def check_contextual_offers(
+#     message: Message,
+#     session: AsyncSession,
+#     bot: Bot
+# ):
+#     """
+#     Check if we should show a contextual offer based on user activity.
+#
+#     Triggers for F6.2: High activity Free users
+#     """
+#     user_id = message.from_user.id
+#     user = await session.get(User, user_id)
+#
+#     if not user or user.is_vip:
+#         # Only for free users
+#         return
+#
+#     # Check if user meets criteria for contextual offer (high activity, etc.)
+#     offer_service = ContextualOfferService(session, bot)
+#
+#     # Only show offer if user hasn't seen it recently (to prevent spam)
+#     if not await offer_service.has_seen_offer_recently(user_id):
+#         should_show = await offer_service.should_show_contextual_vip_offer(user_id)
+#
+#         if should_show:
+#             # Use ArchetypeConversionService to determine if this is the right time
+#             archetype_service = ArchetypeConversionService()
+#
+#             # For this trigger, we'll use a general "high_activity" event
+#             should_trigger = archetype_service.should_show_offer(
+#                 user.archetype if user.archetype else None,
+#                 "high_activity",
+#                 {"message_text": message.text}
+#             )
+#
+#             if should_trigger:
+#                 await offer_service.show_contextual_vip_offer(user_id)
+#                 await offer_service.track_offer_shown(user_id, "contextual_vip_offer", {
+#                     "trigger": "high_activity",
+#                     "message_text": message.text
+#                 })
 
 
 @router.callback_query(F.data == "dismiss_content_offer")
@@ -66,42 +68,6 @@ async def dismiss_content_offer(call: CallbackQuery):
     """Handle when user dismisses a content offer."""
     await call.answer("Gracias. Puede continuar explorando el contenido gratuito.")
     await call.message.delete()
-
-
-@router.callback_query(F.data.startswith("show_premium_content:"))
-async def show_premium_content_details(call: CallbackQuery, session: AsyncSession, bot: Bot):
-    """
-    Handle showing premium content details (part of F6.3 flow).
-    """
-    content_id = call.data.split(":")[1]
-    
-    # In a real implementation, you would fetch the premium content details
-    # For now, we'll just send a placeholder message
-    message = f"""
-Speaker: LUCIEN
-
-"Este es el contenido Premium '#{content_id}' que seleccionó.
-
-Características:
-- Duración: 15 minutos
-- Categoría: Premium
-- Calidad: Alta definición
-
-¿Desea adquirir este contenido individual?"
-    """.strip()
-    
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    from aiogram.types import InlineKeyboardButton
-    
-    keyboard = InlineKeyboardBuilder()
-    keyboard.row(
-        InlineKeyboardButton(text="Adquirir ahora", callback_data=f"purchase_premium:{content_id}"),
-        InlineKeyboardButton(text="Ver catálogo", callback_data="show_premium_catalog"),
-        InlineKeyboardButton(text="Cancelar", callback_data="cancel_premium_view")
-    )
-    
-    await call.message.edit_text(message, reply_markup=keyboard.as_markup())
-    await call.answer()
 
 
 @router.callback_query(F.data.startswith("show_vip_for_content:"))

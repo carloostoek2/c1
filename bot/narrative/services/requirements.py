@@ -452,9 +452,11 @@ class RequirementsService:
         try:
             from bot.gamification.services.premium_catalog_service import PremiumCatalogService
 
-            # We need to create a bot instance or pass the existing one
-            # For now we'll create a dummy bot, but in real implementation,
-            # the bot should be passed from the service initialization
+            # Check if bot instance is available
+            if not self._bot:
+                logger.error("Bot instance is not available in RequirementsService, cannot check premium access.")
+                return False, None
+
             service = PremiumCatalogService(self._session, self._bot)
 
             # Get the premium item by slug

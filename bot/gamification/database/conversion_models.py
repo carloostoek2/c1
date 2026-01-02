@@ -6,6 +6,7 @@ Free → VIP → Premium → Mapa del Deseo.
 """
 
 import json
+import enum
 from typing import Optional, List
 from datetime import datetime, UTC
 
@@ -15,6 +16,22 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from bot.database.base import Base
+
+
+class QualificationLevel(str, enum.Enum):
+    """Enum para niveles de calificación de leads."""
+    HOT = "hot"
+    WARM = "warm"
+    COLD = "cold"
+    NONE = "none"
+
+
+class BudgetIndicator(str, enum.Enum):
+    """Enum para indicadores de capacidad de pago."""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    UNKNOWN = "unknown"
 
 
 class ConversionEvent(Base):
@@ -213,11 +230,15 @@ class LeadQualification(Base):
         BigInteger, ForeignKey("users.user_id"), primary_key=True
     )
     conversion_score: Mapped[float] = mapped_column(Float, default=0.0)  # 0.0-1.0
-    qualification_level: Mapped[str] = mapped_column(String(20), default="none")  # hot, warm, cold, none
+    qualification_level: Mapped[QualificationLevel] = mapped_column(
+        Enum(QualificationLevel), default=QualificationLevel.NONE, nullable=False
+    )
     last_scored_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     engagement_score: Mapped[float] = mapped_column(Float, default=0.0)  # 0.0-1.0
     intent_score: Mapped[float] = mapped_column(Float, default=0.0)  # 0.0-1.0
-    budget_indicator: Mapped[str] = mapped_column(String(20), default="unknown")  # low, medium, high, unknown
+    budget_indicator: Mapped[BudgetIndicator] = mapped_column(
+        Enum(BudgetIndicator), default=BudgetIndicator.UNKNOWN, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC), nullable=False
     )
@@ -234,17 +255,17 @@ class LeadQualification(Base):
     @property
     def is_hot_lead(self) -> bool:
         """Verifica si es un lead caliente."""
-        return self.qualification_level == "hot"
+        return self.qualification_level == QualificationLevel.HOT
 
     @property
     def is_warm_lead(self) -> bool:
         """Verifica si es un lead tibio."""
-        return self.qualification_level == "warm"
+        return self.qualification_level == QualificationLevel.WARM
 
     @property
     def is_cold_lead(self) -> bool:
         """Verifica si es un lead frío."""
-        return self.qualification_level == "cold"
+        return self.qualification_level == QualificationLevel.COLD
 
     def __repr__(self):
         return (

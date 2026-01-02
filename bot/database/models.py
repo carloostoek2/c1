@@ -606,7 +606,7 @@ class PendingPayment(Base):
     product_id = Column(Integer, nullable=True)  # ID del producto específico, si aplica
     amount = Column(Float, nullable=False)
     currency = Column(String(10), default="USD")  # Moneda del pago
-    screenshot_file_id = Column(String(200), nullable=False)  # File ID de la captura
+    screenshot_file_id = Column(Text, nullable=False)  # File ID de la captura (Text para mayor seguridad)
     screenshot_message_id = Column(Integer, nullable=False)  # ID del mensaje con captura
     status = Column(String(20), default="pending", nullable=False, index=True)  # "pending", "approved", "rejected"
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

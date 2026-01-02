@@ -9,7 +9,7 @@ from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from bot.gamification.services.mapa_del_desire_service import MapaDelDeseoService
+from bot.gamification.services.mapa_del_deseo_service import MapaDelDeseoService
 from bot.gamification.services.merit_urgency_discount_service import MeritUrgencyDiscountService
 
 logger = logging.getLogger(__name__)
