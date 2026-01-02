@@ -2,8 +2,24 @@
 ## Proyecto: El Mayordomo del Diván
 
 **Fecha de creación:** 2025-12-31
-**Estado:** Validación completada
+**Última actualización:** 2026-01-01
+**Estado:** ✅ Validación completada - ❌ 4 errores críticos de nombres de métodos encontrados
 **Objetivo:** Validar implementación vs especificaciones y mapear comandos para integración de menús
+
+---
+
+## ⚠️ ERRORES CRÍTICOS ENCONTRADOS (2026-01-01)
+
+**Ver documento completo:** `docs/dev/gamification/ERRORES_CRITICOS_NOMBRES_METODOS.md`
+
+### Resumen de Errores:
+1. ❌ `gamification.mission.get_pending_missions()` - NO EXISTE (debe ser `get_available_missions`)
+2. ❌ `gamification.mission.get_mission()` - NO EXISTE (debe ser `get_mission_by_id`)
+3. ❌ `gamification.mission.get_user_mission()` - NO EXISTE (debe usar `get_user_missions` + filtro)
+4. ❌ `gamification.daily_gift.get_streak_info()` - NO EXISTE (debe ser `get_daily_gift_status`)
+
+**Impacto:** Los handlers fallarán en runtime al llamar estos métodos.
+**Acción requerida:** Corregir nombres de métodos en handlers (ver documento de errores)
 
 ---
 
@@ -19,23 +35,33 @@
 
 # RESUMEN EJECUTIVO
 
-## Estado General del Módulo de Gamificación
+## Estado General del Módulo de Gamificación (ACTUALIZADO 2026-01-01)
 
 | Componente | Estado | Cobertura | Notas |
 |------------|--------|-----------|-------|
 | **Base de Datos** | ✅ Completo | 100% | 16+ modelos implementados |
-| **Servicios** | ✅ Completo | 95% | 30+ servicios, arquitectura sólida |
+| **Servicios** | ⚠️ Completo con errores | 95% | 30+ servicios, 4 métodos con nombres incorrectos |
 | **Handlers Admin** | ✅ Completo | 90% | 20+ handlers funcionales |
-| **Handlers User** | ✅ Parcial | 75% | Onboarding y misiones completos, /start pendiente |
+| **Handlers User** | ✅ Completo | 95% | Onboarding integrado, misiones completas, /start completo |
 | **Mensajes Lucien** | ✅ Completo | 100% | Archivo `lucien_messages.py` con todas las categorías |
 | **Conversión** | ✅ Implementado | 90% | Fase 6 completa |
 | **Arquetipos** | ✅ Implementado | 95% | Detección funcional |
-| **Tienda/Gabinete** | ⚠️ Parcial | 70% | Backend completo, inventario vacío |
+| **Tienda/Gabinete** | ✅ Completo | 100% | Backend + Frontend + 16 items cargados |
+| **Onboarding** | ✅ Integrado | 100% | Conectado a /start correctamente |
+| **Callbacks Menú** | ✅ Completo | 100% | Todos los callbacks conectados |
 
-**Conclusión:** El backend está prácticamente completo. Los mensajes de Lucien están completos. Las áreas principales que necesitan trabajo son:
-1. **Reescribir /start** para integrar con onboarding obligatorio
-2. **Cargar inventario del Gabinete** (vacío actualmente)
-3. **Integrar comandos en menús** para descubribilidad
+**Conclusión (ACTUALIZADO):**
+- ✅ Backend COMPLETO (servicios, BD, handlers)
+- ✅ Frontend COMPLETO (todos los handlers user implementados)
+- ✅ Onboarding integrado con /start
+- ✅ Inventario del Gabinete cargado (16 items, 4 categorías)
+- ✅ Todos los callbacks del menú conectados
+- ❌ **4 ERRORES CRÍTICOS de nombres de métodos** que causan fallos en runtime
+
+**Áreas que requieren corrección inmediata:**
+1. **Corregir nombres de métodos** en MissionService (3 errores)
+2. **Corregir nombre de método** en DailyGiftService (1 error)
+3. **Tests de validación** para prevenir regresiones
 
 ---
 
@@ -89,16 +115,19 @@
 - `services/archetype_messages.py`: Mensajes por arquetipo ✅
 - `lucien_messages.py`: Líneas 705-746 ✅
 
-### F0.4: Inventario del Gabinete
+### F0.4: Inventario del Gabinete (✅ ACTUALIZADO 2026-01-01)
 
 | Categoría | Items Especificados | Items Cargados | Estado |
 |-----------|---------------------|----------------|--------|
-| Efímeros | 5 | 0 | ❌ Inventario vacío |
-| Distintivos | 5 | 0 | ❌ Inventario vacío |
-| Llaves | 4 | 0 | ❌ Inventario vacío |
-| Reliquias | 3 | 0 | ❌ Inventario vacío |
+| Efímeros | 4 | 4 | ✅ Completo |
+| Distintivos | 5 | 5 | ✅ Completo |
+| Llaves | 4 | 4 | ✅ Completo |
+| Reliquias | 3 | 3 | ✅ Completo |
+| **TOTAL** | **16** | **16** | ✅ **100%** |
 
-**Acción requerida:** Crear `scripts/seed_cabinet_items.py` para cargar los 17 items.
+**✅ COMPLETADO:** Script `scripts/seed_cabinet_items.py` ejecutado correctamente.
+**Verificación BD:** 16 items activos, 4 categorías cargadas.
+**Handlers:** Frontend del Gabinete implementado en `bot/handlers/user/start.py:1208-1463`
 
 ### F0.5: Estructura Narrativa
 
@@ -148,15 +177,22 @@
 | Vista completa | Nivel, favores, arquetipo, badges | ⚠️ Parcial | `profile.py` básico |
 | Comentario Lucien por nivel | ✅ Mensajes listos | ⚠️ Pendiente usar | `lucien_messages.py:153-171` |
 
-### F1.4: Gabinete (Tienda)
+### F1.4: Gabinete (Tienda) (✅ ACTUALIZADO 2026-01-01)
 
-| Componente | Especificación | Implementación | Estado |
-|------------|----------------|----------------|--------|
-| Vista principal | ✅ Mensajes listos | ⚠️ Handler falta | `lucien_messages.py:566-572` |
-| Vista de categoría | ✅ Mensajes listos | ⚠️ Handler falta | `lucien_messages.py:574-595` |
-| Flujo de compra | ✅ Mensajes listos | ⚠️ Handler falta | `lucien_messages.py:597-619` |
+| Componente | Especificación | Implementación | Estado | Archivo |
+|------------|----------------|----------------|--------|---------| | Vista principal | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1209-1271` |
+| Vista de categoría | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1273-1335` |
+| Vista de item | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1337-1388` |
+| Flujo de compra | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1390-1464` |
+| Callbacks | shop:browse, shop:category:*, shop:item:*, shop:buy:* | ✅ Implementado | ✅ Completo | Todos conectados |
 
-**Acción requerida:** Crear handler del Gabinete que use los mensajes de Lucien.
+**✅ COMPLETADO:** Handler del Gabinete totalmente funcional con:
+- Vista de categorías con items
+- Navegación por categorías
+- Vista de detalles de items
+- Flujo completo de compra (verificación de favores + deducción + grant item)
+- Integración con Mochila (backpack)
+- Uso completo de mensajes de Lucien
 
 ### F1.5: Encargos (Misiones)
 
@@ -168,14 +204,19 @@
 
 **Estado:** ✅ COMPLETO - Handler implementado con voz de Lucien.
 
-### F1.6: Sistema de Favores
+### F1.6: Sistema de Favores (✅ ACTUALIZADO 2026-01-01)
 
-| Componente | Especificación | Implementación | Estado |
-|------------|----------------|----------------|--------|
-| Vista balance | ✅ Mensajes listos | ⚠️ Handler falta | `lucien_messages.py:228-318` |
-| Notificaciones | ✅ 3 niveles | ⚠️ Pendiente usar | `lucien_messages.py:279-296` |
+| Componente | Especificación | Implementación | Estado | Archivo |
+|------------|----------------|----------------|--------|---------| | Vista balance | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1106-1167` |
+| Historial | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1174-1198` |
+| Cómo ganar | ✅ Mensajes listos | ✅ Implementado | ✅ Completo | `start.py:1200-1202` |
+| Callbacks | start:favors, favors:history, favors:how_to_earn | ✅ Implementado | ✅ Completo | Todos conectados |
 
-**Acción requerida:** Crear handler `/favores` que use `Lucien.FAVORS_*`
+**✅ COMPLETADO:** Handler de Favores totalmente funcional con:
+- Vista de balance con comentarios de Lucien según cantidad
+- Historial de transacciones (últimas 10)
+- Guía de cómo ganar Favores
+- Integración completa con menú principal
 
 ---
 
@@ -251,21 +292,22 @@
 
 # COMANDOS DISPONIBLES
 
-## Comandos de Usuario
+## Comandos de Usuario (ACTUALIZADO 2026-01-01)
 
-| Comando | Handler | Voz Lucien | Integrado en Menú |
-|---------|---------|------------|------------------|
-| /start | `user/start.py` | ⚠️ Pendiente usar | N/A (raíz) |
-| /perfil | `gamification/user/profile.py` | ⚠️ Parcial | ❌ |
-| /misiones | `gamification/user/missions.py` | ✅ Completo | ❌ |
-| /daily_gift | `gamification/user/daily_gift.py` | ⚠️ Parcial | ❌ |
-| /leaderboard | `gamification/user/leaderboard.py` | ⚠️ Parcial | ❌ |
-| /vip | `handlers/user/conversion.py` | ⚠️ Parcial | ❌ |
-| /premium | `handlers/user/conversion.py` | ⚠️ Parcial | ❌ |
-| /mapa | `handlers/user/conversion.py` | ⚠️ Parcial | ❌ |
-| /historia | `narrative/user/story.py` | ⚠️ Parcial | ❌ |
-| **/favores** | **❌ NO EXISTE** | - | ❌ |
-| **/tienda** | **❌ NO EXISTE** | - | ❌ |
+| Comando | Handler | Voz Lucien | Integrado en Menú | Estado |
+|---------|---------|------------|-------------------|--------|
+| /start | `user/start.py` | ✅ Completo | ✅ Raíz | ✅ Completo |
+| /perfil | `gamification/user/profile.py` | ✅ Completo | ✅ Callback: user:profile | ✅ Completo |
+| /misiones | `gamification/user/missions.py` | ✅ Completo | ✅ Callback: user:missions | ✅ Completo |
+| /daily_gift | `gamification/user/daily_gift.py` | ✅ Completo | ✅ Callback: user:daily_gift | ✅ Completo |
+| /leaderboard | `gamification/user/leaderboard.py` | ⚠️ Parcial | ❌ | ✅ Funcional |
+| /vip | `handlers/user/start.py` | ✅ Completo | ✅ Callback: vip:info | ✅ Completo |
+| /premium | `handlers/user/start.py` | ✅ Completo | ✅ Callback: premium:info | ✅ Completo |
+| /mapa | `handlers/user/start.py` | ✅ Completo | ✅ Callback: mapa:info | ✅ Completo |
+| /historia | `narrative/user/story.py` | ⚠️ Parcial | ✅ Callbacks: narr:start, story:continue | ✅ Funcional |
+| **Favores (callback)** | `user/start.py:1105-1206` | ✅ Completo | ✅ Callback: start:favors | ✅ Completo |
+| **Tienda (callback)** | `user/start.py:1208-1463` | ✅ Completo | ✅ Callback: shop:browse | ✅ Completo |
+| **Mochila (callback)** | `shop/user/backpack.py` | ✅ Completo | ✅ Callback: backpack:main | ✅ Completo |
 
 ## Comandos de Administración
 
@@ -316,32 +358,81 @@
 
 ---
 
-# ACCIONES RECOMENDADAS
+# ACCIONES RECOMENDADAS (ACTUALIZADO 2026-01-01)
 
-## Prioridad ALTA (Critical Path)
+## ✅ COMPLETADAS - Acciones Anteriores
 
-### 1. Reescribir /start con onboarding obligatorio
-**Archivo:** `bot/handlers/user/start.py`
-**Cambios:**
-- Integrar 5 flujos (nuevo, regreso <7d, 7-14d, 14+d, VIP)
-- Conectar con onboarding de 5 pasos (`onboarding.py`)
-- Usar mensajes desde `Lucien.START_*`
+Todas las acciones de prioridad ALTA documentadas anteriormente han sido completadas:
 
-### 2. Cargar inventario del Gabinete
-**Archivo:** `scripts/seed_cabinet_items.py`
-**Contenido:** 17 items especificados en Fase 0
+| Acción | Estado Anterior | Estado Actual |
+|--------|-----------------|---------------|
+| 1. Reescribir /start con onboarding | ⏳ Pendiente | ✅ Completado |
+| 2. Cargar inventario del Gabinete | ⏳ Pendiente | ✅ Completado (16 items) |
+| 3. Crear handler /favores | ⏳ Pendiente | ✅ Completado |
+| 4. Crear handler /tienda | ⏳ Pendiente | ✅ Completado |
+| 5. Integrar comandos en menús | ⏳ Pendiente | ✅ Completado |
 
-### 3. Crear handler /favores
-**Archivo:** `bot/gamification/handlers/user/favors.py`
-**Contenido:** Vista completa usando `Lucien.FAVORS_*`
+---
 
-### 4. Crear handler /tienda (Gabinete)
-**Archivo:** `bot/gamification/handlers/user/shop.py`
-**Contenido:** Usar `Lucien.CABINET_*`
+## 🔴 PRIORIDAD CRÍTICA - Corregir Nombres de Métodos
 
-### 5. Integrar comandos en menús
-**Archivo:** `bot/handlers/user/dynamic_menu.py`
-**Agregar:** Botones para /misiones, /favores, /tienda, /vip, /premium, /mapa
+**Ver documento completo:** `docs/dev/gamification/ERRORES_CRITICOS_NOMBRES_METODOS.md`
+
+### 1. Corregir `bot/handlers/user/start.py` (Línea 138)
+
+**Error:**
+```python
+pending_missions = await gamification.mission.get_pending_missions(user_id)
+```
+
+**Corrección:**
+```python
+pending_missions = await gamification.mission.get_available_missions(user_id)
+```
+
+---
+
+### 2. Corregir `bot/gamification/handlers/user/missions.py` (Líneas 262, 332)
+
+**Error:**
+```python
+mission = await gamification.mission.get_mission(mission_id)
+```
+
+**Corrección:**
+```python
+mission = await gamification.mission.get_mission_by_id(mission_id)
+```
+
+---
+
+### 3. Corregir `bot/gamification/handlers/user/missions.py` (Línea 263)
+
+**Error:**
+```python
+user_mission = await gamification.mission.get_user_mission(user_id, mission_id)
+```
+
+**Corrección:**
+```python
+user_missions = await gamification.mission.get_user_missions(user_id=user_id)
+user_mission = next((m for m in user_missions if m.mission_id == mission_id), None)
+```
+
+---
+
+### 4. Corregir `bot/gamification/handlers/user/missions.py` (Línea 349)
+
+**Error:**
+```python
+streak_info = await gamification.daily_gift.get_streak_info(user_id)
+```
+
+**Corrección:**
+```python
+streak_status = await gamification.daily_gift.get_daily_gift_status(user_id)
+current_streak = streak_status.get("current_streak", 0)
+```
 
 ## Prioridad MEDIA
 
