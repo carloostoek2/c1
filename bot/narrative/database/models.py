@@ -41,6 +41,24 @@ class NarrativeChapter(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # Fase 5: Sistema de niveles (1-6)
+    level: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 1-6
+
+    # Fase 5: Requisitos de acceso
+    requires_level: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    requires_chapter_completed: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("narrative_chapters.id"), nullable=True
+    )
+    requires_archetype: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
+    # Fase 5: Metadata del capítulo
+    estimated_duration_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Fase 5: Recompensas al completar
+    favor_reward: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    badge_reward: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    item_reward: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
     # Relationships
     fragments: Mapped[List["NarrativeFragment"]] = relationship(
         back_populates="chapter",
@@ -48,7 +66,7 @@ class NarrativeChapter(Base):
     )
 
     def __repr__(self):
-        return f"<NarrativeChapter(id={self.id}, name='{self.name}', slug='{self.slug}')>"
+        return f"<NarrativeChapter(id={self.id}, name='{self.name}', slug='{self.slug}', level={self.level})>"
 
 
 class NarrativeFragment(Base):
@@ -84,6 +102,15 @@ class NarrativeFragment(Base):
     order: Mapped[int] = mapped_column(default=0)
     is_entry_point: Mapped[bool] = mapped_column(default=False)  # Inicio de capítulo
     is_ending: Mapped[bool] = mapped_column(default=False)  # Fin de capítulo
+
+    # Fase 5: Navegación y flujo
+    delay_seconds: Mapped[int] = mapped_column(Integer, default=0)  # Pausa dramática antes de mostrar
+    is_decision_point: Mapped[bool] = mapped_column(default=False)  # Tiene decisiones del usuario
+    next_fragment_key: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Siguiente si lineal
+
+    # Fase 5: Condiciones dinámicas
+    condition_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # "archetype", "response_time", etc.
+    condition_value: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Valor a evaluar
 
     # Estado
     is_active: Mapped[bool] = mapped_column(default=True)
@@ -133,6 +160,9 @@ class FragmentDecision(Base):
     button_emoji: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     order: Mapped[int] = mapped_column(default=0)
 
+    # Fase 5: Texto adicional
+    subtext: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # Texto pequeño debajo del botón
+
     # Destino
     target_fragment_key: Mapped[str] = mapped_column(String(50))  # "scene_2"
 
@@ -144,6 +174,11 @@ class FragmentDecision(Base):
     affects_archetype: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True
     )  # "impulsive"
+
+    # Fase 5: Sistema de favores/flags
+    favor_change: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # Puede ser negativo
+    sets_flag: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Flag a setear
+    requires_flag: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Flag requerido para ver opción
 
     # Estado
     is_active: Mapped[bool] = mapped_column(default=True)
@@ -210,6 +245,9 @@ class UserNarrativeProgress(Base):
         String(50), nullable=True
     )
 
+    # Fase 5: Sistema de niveles (1-6)
+    current_level: Mapped[int] = mapped_column(Integer, default=1)
+
     # Arquetipo detectado (sistema expandido de 6 arquetipos)
     detected_archetype: Mapped[ArchetypeType] = mapped_column(
         default=ArchetypeType.UNKNOWN
@@ -220,7 +258,20 @@ class UserNarrativeProgress(Base):
 
     # Estadísticas
     total_decisions: Mapped[int] = mapped_column(default=0)
-    chapters_completed: Mapped[int] = mapped_column(default=0)
+    chapters_completed: Mapped[int] = mapped_column(default=0)  # Legacy: contador simple
+
+    # Fase 5: Historial detallado (JSON)
+    chapters_completed_list: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Array de chapter_ids
+    fragments_seen: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Array de fragment_keys
+    decisions_made: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # {fragment_key: decision_key, ...}
+
+    # Fase 5: Sistema de flags narrativos
+    narrative_flags: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # {flag_key: value, ...}
+
+    # Fase 5: Misiones narrativas activas
+    active_mission_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    mission_started_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    mission_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Datos de misión en curso
 
     # Timestamps
     started_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
@@ -229,11 +280,19 @@ class UserNarrativeProgress(Base):
         onupdate=datetime.utcnow
     )
 
+    # Fase 5: Timestamps por nivel completado
+    level_1_completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    level_2_completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    level_3_completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    level_4_completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    level_5_completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    level_6_completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
     # Índice único por usuario
     __table_args__ = (Index("idx_user_narrative", "user_id", unique=True),)
 
     def __repr__(self):
-        return f"<UserNarrativeProgress(user_id={self.user_id}, archetype='{self.detected_archetype.value}', decisions={self.total_decisions})>"
+        return f"<UserNarrativeProgress(user_id={self.user_id}, level={self.current_level}, archetype='{self.detected_archetype.value}', decisions={self.total_decisions})>"
 
 
 class UserDecisionHistory(Base):

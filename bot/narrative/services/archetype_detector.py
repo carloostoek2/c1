@@ -331,6 +331,118 @@ class ArchetypeDetector:
         text_lower = text.lower()
         return any(ind in text_lower for ind in indicators)
 
+    def detect_from_narrative_flags(
+        self,
+        narrative_flags: Dict[str, any]
+    ) -> Tuple[Optional[ArchetypeType], float]:
+        """
+        Detecta arquetipo basándose en flags narrativos del cuestionario Nivel 3.
+
+        Analiza las respuestas del cuestionario de Perfil de Deseo para determinar
+        el arquetipo dominante del usuario.
+
+        Args:
+            narrative_flags: Diccionario con flags seteados durante el cuestionario
+                           (curious, attracted, seeking, visual, verbal, etc.)
+
+        Returns:
+            Tupla (arquetipo, confianza)
+            - arquetipo: None si no hay suficientes datos
+            - confianza: 0.0-1.0
+
+        Flags por arquetipo:
+        - EXPLORER: curious + mystery (búsqueda, exploración)
+        - ROMANTIC: connection + personal (conexión emocional)
+        - ANALYTICAL: understanding + perceptive (comprensión profunda)
+        - DIRECT: pleasure + visual (directo, lo que ve)
+        - PATIENT: open + cautious (abierto, paciente)
+        - PERSISTENT: (fallback si no hay match claro)
+        """
+        if not narrative_flags:
+            logger.debug("No hay flags narrativos para analizar")
+            return None, 0.0
+
+        # Contar flags por arquetipo
+        archetype_scores: Dict[ArchetypeType, int] = {
+            ArchetypeType.EXPLORER: 0,
+            ArchetypeType.ROMANTIC: 0,
+            ArchetypeType.ANALYTICAL: 0,
+            ArchetypeType.DIRECT: 0,
+            ArchetypeType.PATIENT: 0,
+            ArchetypeType.PERSISTENT: 0,
+        }
+
+        # EXPLORER: curious, mystery, seeking (exploración)
+        if narrative_flags.get("curious"):
+            archetype_scores[ArchetypeType.EXPLORER] += 2
+        if narrative_flags.get("mystery"):
+            archetype_scores[ArchetypeType.EXPLORER] += 2
+        if narrative_flags.get("seeking"):
+            archetype_scores[ArchetypeType.EXPLORER] += 1
+
+        # ROMANTIC: connection, personal, attracted (conexión emocional)
+        if narrative_flags.get("connection"):
+            archetype_scores[ArchetypeType.ROMANTIC] += 2
+        if narrative_flags.get("personal"):
+            archetype_scores[ArchetypeType.ROMANTIC] += 2
+        if narrative_flags.get("attracted"):
+            archetype_scores[ArchetypeType.ROMANTIC] += 1
+
+        # ANALYTICAL: understanding, perceptive, verbal (comprensión)
+        if narrative_flags.get("understanding"):
+            archetype_scores[ArchetypeType.ANALYTICAL] += 2
+        if narrative_flags.get("perceptive"):
+            archetype_scores[ArchetypeType.ANALYTICAL] += 2
+        if narrative_flags.get("verbal"):
+            archetype_scores[ArchetypeType.ANALYTICAL] += 1
+
+        # DIRECT: pleasure, visual, surface (directo)
+        if narrative_flags.get("pleasure"):
+            archetype_scores[ArchetypeType.DIRECT] += 2
+        if narrative_flags.get("visual"):
+            archetype_scores[ArchetypeType.DIRECT] += 2
+        if narrative_flags.get("surface"):
+            archetype_scores[ArchetypeType.DIRECT] += 1
+
+        # PATIENT: open, cautious, depth (paciente, reflexivo)
+        if narrative_flags.get("open"):
+            archetype_scores[ArchetypeType.PATIENT] += 2
+        if narrative_flags.get("cautious"):
+            archetype_scores[ArchetypeType.PATIENT] += 2
+        if narrative_flags.get("depth"):
+            archetype_scores[ArchetypeType.PATIENT] += 1
+
+        # PERSISTENT: intuitive (fallback, no específico)
+        if narrative_flags.get("intuitive"):
+            archetype_scores[ArchetypeType.PERSISTENT] += 1
+
+        # Encontrar mejor match
+        best_archetype = None
+        best_score = 0
+
+        for archetype, score in archetype_scores.items():
+            if score > best_score:
+                best_score = score
+                best_archetype = archetype
+
+        # Si ninguno tiene score, es PERSISTENT (default)
+        if best_score == 0:
+            logger.debug("No hay flags suficientes, asignando PERSISTENT como default")
+            return ArchetypeType.PERSISTENT, 0.3
+
+        # Calcular confianza (score/max_score_posible)
+        # Max score posible es 5 (2+2+1 para un arquetipo)
+        confidence = min(best_score / 5.0, 1.0)
+
+        logger.info(
+            f"Arquetipo detectado desde flags narrativos: "
+            f"{best_archetype.value} (score={best_score}, confidence={confidence:.2f})"
+        )
+        logger.debug(f"Scores por arquetipo: {archetype_scores}")
+        logger.debug(f"Flags analizados: {narrative_flags}")
+
+        return best_archetype, confidence
+
 
 # ================================================================
 # FUNCIONES DE UTILIDAD
