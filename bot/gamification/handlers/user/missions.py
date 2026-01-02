@@ -259,8 +259,9 @@ async def view_mission_progress(callback: CallbackQuery, gamification: Gamificat
         user_id = callback.from_user.id
 
         # Obtener misión y progreso
-        mission = await gamification.mission.get_mission(mission_id)
-        user_mission = await gamification.mission.get_user_mission(user_id, mission_id)
+        mission = await gamification.mission.get_mission_by_id(mission_id)
+        user_missions = await gamification.mission.get_user_missions(user_id=user_id)
+        user_mission = next((m for m in user_missions if m.mission_id == mission_id), None)
 
         if not mission or not user_mission:
             await callback.answer("Encargo no encontrado", show_alert=True)
@@ -329,7 +330,7 @@ async def claim_mission_reward(callback: CallbackQuery, gamification: Gamificati
         user_id = callback.from_user.id
 
         # Obtener misión para datos
-        mission = await gamification.mission.get_mission(mission_id)
+        mission = await gamification.mission.get_mission_by_id(mission_id)
         if not mission:
             await callback.answer("Encargo no encontrado", show_alert=True)
             return
@@ -346,8 +347,8 @@ async def claim_mission_reward(callback: CallbackQuery, gamification: Gamificati
             # Obtener racha actual para el comentario
             current_streak = 0
             try:
-                streak_info = await gamification.daily_gift.get_streak_info(user_id)
-                current_streak = streak_info.get('current_streak', 0) if streak_info else 0
+                streak_status = await gamification.daily_gift.get_daily_gift_status(user_id)
+                current_streak = streak_status.get('current_streak', 0) if streak_status else 0
             except Exception as e:
                 logger.warning(f"⚠️ Error obteniendo racha del usuario {user_id}: {e}")
 

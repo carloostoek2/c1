@@ -135,7 +135,7 @@ async def _get_context_message(session: AsyncSession, user_id: int, bot) -> str:
 
         # Verificar misión pendiente
         try:
-            pending_missions = await gamification.mission.get_pending_missions(user_id)
+            pending_missions = await gamification.mission.get_available_missions(user_id)
             if pending_missions:
                 return Lucien.MENU_CONTEXT_MISSION_PENDING
         except Exception as e:
