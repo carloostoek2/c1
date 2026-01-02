@@ -44,6 +44,8 @@ class GamificationContainer:
         self._behavior_tracking_service = None
         self._archetype_detection_service = None
         self._archetype_notification_service = None
+        self._conversion_tracking_service = None
+        self._lucien_objection_service = None
 
         # Orchestrators (lazy loaded)
         self._mission_orchestrator = None
@@ -203,6 +205,22 @@ class GamificationContainer:
         return self._archetype_notification_service
 
     @property
+    def conversion_tracking(self):
+        """Servicio de tracking de conversiones y ventas."""
+        if self._conversion_tracking_service is None:
+            from bot.gamification.services.conversion_tracking_service import ConversionTrackingService
+            self._conversion_tracking_service = ConversionTrackingService(self._session)
+        return self._conversion_tracking_service
+
+    @property
+    def lucien_objection(self):
+        """Servicio de manejo de objeciones de Lucien."""
+        if self._lucien_objection_service is None:
+            from bot.gamification.services.lucien_objection_service import LucienObjectionService
+            self._lucien_objection_service = LucienObjectionService(self._session)
+        return self._lucien_objection_service
+
+    @property
     def mission_orchestrator(self):
         """Orquestador de creación de misiones."""
         if self._mission_orchestrator is None:
@@ -267,6 +285,10 @@ class GamificationContainer:
             loaded.append('archetype_detection')
         if self._archetype_notification_service is not None:
             loaded.append('archetype_notification')
+        if self._conversion_tracking_service is not None:
+            loaded.append('conversion_tracking')
+        if self._lucien_objection_service is not None:
+            loaded.append('lucien_objection')
         if self._mission_orchestrator is not None:
             loaded.append('mission_orchestrator')
         if self._reward_orchestrator is not None:
@@ -294,6 +316,8 @@ class GamificationContainer:
         self._behavior_tracking_service = None
         self._archetype_detection_service = None
         self._archetype_notification_service = None
+        self._conversion_tracking_service = None
+        self._lucien_objection_service = None
         self._mission_orchestrator = None
         self._reward_orchestrator = None
         self._configuration_orchestrator = None

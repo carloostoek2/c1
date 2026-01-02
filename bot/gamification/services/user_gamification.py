@@ -12,6 +12,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, UTC
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 import logging
 import json
 
@@ -42,9 +43,16 @@ class UserGamificationService:
             user_id: ID del usuario
 
         Returns:
-            UserGamification del usuario
+            UserGamification del usuario con current_level cargado
         """
-        user = await self.session.get(UserGamification, user_id)
+        # Usar selectinload para cargar la relación current_level y evitar greenlet_spawn
+        stmt = (
+            select(UserGamification)
+            .options(selectinload(UserGamification.current_level))
+            .where(UserGamification.user_id == user_id)
+        )
+        result = await self.session.execute(stmt)
+        user = result.scalar_one_or_none()
 
         if not user:
             # Obtener nivel inicial (order=1)
@@ -66,6 +74,10 @@ class UserGamificationService:
             await self.session.refresh(user)
 
             logger.info(f"Created UserGamification for user {user_id}")
+        else:
+            # Asegurar que la relación está cargada (para usuarios existentes)
+            if not user.current_level and user.current_level_id:
+                user.current_level = await self.session.get(Level, user.current_level_id)
 
         return user
 

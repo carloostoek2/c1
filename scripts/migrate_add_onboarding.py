@@ -15,7 +15,11 @@ import json
 import logging
 import sys
 from datetime import datetime
+from pathlib import Path
 from sqlalchemy import text
+
+# Agregar el directorio raíz al path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Configurar logging
 logging.basicConfig(

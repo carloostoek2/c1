@@ -31,6 +31,7 @@ class RequirementType(str, Enum):
     COOLDOWN_PASSED = "cooldown" # Ha pasado el cooldown desde última interacción
     TIME_WINDOW = "time_window"  # Dentro de ventana horaria
     CHAPTER_COMPLETE = "chapter" # Completó capítulo específico
+    PREMIUM_ACCESS = "premium"   # Compró contenido Premium individual
 
 
 class VariantConditionType(str, Enum):

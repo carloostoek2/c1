@@ -6,6 +6,7 @@ Proporciona fixtures comunes para todos los tests:
 - session: Sesión async de SQLAlchemy
 """
 import pytest
+import pytest_asyncio
 import asyncio
 import os
 from unittest.mock import AsyncMock, Mock
@@ -69,6 +70,7 @@ def mock_bot():
     """
     bot = Mock()
     bot.id = 123456789
+    bot.username = "test_bot"
 
     # Mock de métodos necesarios (retornan AsyncMock)
     bot.get_chat = AsyncMock()
@@ -83,7 +85,7 @@ def mock_bot():
     return bot
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def session():
     """
     Fixture: Sesión async de SQLAlchemy.

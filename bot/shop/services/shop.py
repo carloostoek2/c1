@@ -128,6 +128,43 @@ class ShopService:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_categories_with_items(
+        self,
+        active_only: bool = True
+    ) -> List[ItemCategory]:
+        """
+        Obtiene categorías que tienen items activos.
+
+        Args:
+            active_only: Si True, solo retorna categorías activas con items activos
+
+        Returns:
+            Lista de categorías con items, ordenadas
+        """
+        from sqlalchemy.orm import selectinload
+
+        # Obtener categorías con items precargados
+        stmt = (
+            select(ItemCategory)
+            .options(selectinload(ItemCategory.items))
+            .join(ShopItem, ShopItem.category_id == ItemCategory.id)
+            .where(ShopItem.is_active == True)
+            .group_by(ItemCategory.id)
+            .order_by(ItemCategory.order)
+        )
+
+        if active_only:
+            stmt = stmt.where(ItemCategory.is_active == True)
+
+        result = await self.session.execute(stmt)
+        categories = list(result.scalars().all())
+
+        # Filtrar items activos para cada categoría
+        for category in categories:
+            category.items = [item for item in category.items if item.is_active]
+
+        return categories
+
     async def update_category(
         self,
         category_id: int,

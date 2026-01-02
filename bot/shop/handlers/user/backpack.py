@@ -89,10 +89,7 @@ def _build_backpack_main_keyboard(clues_count: int = 0, rewards_count: int = 0) 
         ],
         [InlineKeyboardButton(text="✨ Cosméticos", callback_data="backpack:type:cosmetic")],
         [InlineKeyboardButton(text="📊 Historial", callback_data="backpack:history")],
-        [
-            InlineKeyboardButton(text="🏪 Tienda", callback_data="shop:main"),
-            InlineKeyboardButton(text="🔙 Volver", callback_data="menu:main"),
-        ],
+        [InlineKeyboardButton(text="🔙 Volver", callback_data="start:menu")],
     ])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -362,10 +359,8 @@ async def callback_backpack_type(callback: CallbackQuery, session: AsyncSession)
         text = (
             f"🎒 <b>{type_emojis.get(type_name, 'Items')}</b>\n\n"
             "No tienes items de este tipo.\n\n"
-            "¡Visita la tienda para conseguir algunos!"
         )
         buttons = [
-            [InlineKeyboardButton(text="🏪 Ir a Tienda", callback_data="shop:main")],
             [InlineKeyboardButton(text="🔙 Volver", callback_data="backpack:main")],
         ]
         await callback.message.edit_text(
@@ -600,7 +595,6 @@ async def callback_purchase_history(callback: CallbackQuery, session: AsyncSessi
             )
 
     buttons = [
-        [InlineKeyboardButton(text="🏪 Ir a Tienda", callback_data="shop:main")],
         [InlineKeyboardButton(text="🔙 Volver", callback_data="backpack:main")],
     ]
 
