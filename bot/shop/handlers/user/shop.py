@@ -38,7 +38,7 @@ def _build_shop_main_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="✨ Cosméticos", callback_data="shop:cat:cosmeticos")],
         [InlineKeyboardButton(text="⭐ Destacados", callback_data="shop:featured")],
         [InlineKeyboardButton(text="🎒 Mi Mochila", callback_data="backpack:main")],
-        [InlineKeyboardButton(text="🔙 Volver", callback_data="menu:main")],
+        [InlineKeyboardButton(text="🔙 Volver al Menú", callback_data="profile:back")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

@@ -40,7 +40,7 @@ def _build_backpack_main_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="✨ Cosméticos", callback_data="backpack:type:cosmetic")],
         [InlineKeyboardButton(text="📊 Historial de Compras", callback_data="backpack:history")],
         [InlineKeyboardButton(text="🏪 Ir a Tienda", callback_data="shop:main")],
-        [InlineKeyboardButton(text="🔙 Volver", callback_data="menu:main")],
+        [InlineKeyboardButton(text="🔙 Volver al Menú", callback_data="profile:back")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
