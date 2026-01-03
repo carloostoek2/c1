@@ -27,54 +27,28 @@ async def build_start_menu(
     """
     Construye el menú principal de /start para un usuario.
 
-    Función auxiliar reutilizable que detecta el rol del usuario (VIP/FREE),
-    calcula días restantes si es VIP, obtiene el mensaje de bienvenida
-    configurado y genera el keyboard dinámico.
+    Menú simplificado único para todos los usuarios.
 
     Args:
         session: Sesión de BD
         bot: Bot de Telegram
         user_id: ID del usuario de Telegram
         user_name: Nombre del usuario
-        container: ServiceContainer opcional (se crea si no se provee)
+        container: ServiceContainer opcional (no usado)
 
     Returns:
         Tuple de (welcome_message, keyboard)
     """
-    # Crear container si no se provee
-    if container is None:
-        container = ServiceContainer(session, bot)
+    from bot.utils.keyboards import dynamic_user_menu_keyboard
 
-    # Verificar si es VIP
-    is_vip = await container.subscription.is_vip_active(user_id)
-    role = "vip" if is_vip else "free"
-    subscription_type = "VIP" if is_vip else "FREE"
-
-    # Calcular días restantes (solo VIP)
-    days_remaining = 0
-    if is_vip:
-        subscriber = await container.subscription.get_vip_subscriber(user_id)
-        if subscriber and hasattr(subscriber, 'expiry_date') and subscriber.expiry_date:
-            # Asegurar que expiry_date tiene timezone
-            expiry = subscriber.expiry_date
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-
-            now = datetime.now(timezone.utc)
-            days_remaining = max(0, (expiry - now).days)
-
-    # Obtener configuración de menú dinámico para el rol
-    menu_config = await container.menu.get_or_create_menu_config(role)
-
-    # Interpolar variables en el mensaje de bienvenida
-    welcome_message = menu_config.welcome_message.format(
-        user_name=user_name,
-        days_remaining=days_remaining,
-        subscription_type=subscription_type
+    # Mensaje de bienvenida simple
+    welcome_message = (
+        f"¡Hola <b>{user_name}</b>! 👋\n\n"
+        f"Bienvenido/a al bot. Selecciona una opción del menú:"
     )
 
-    # Obtener keyboard dinámico
-    keyboard = await dynamic_user_menu_keyboard(session, role)
+    # Keyboard simple único para todos
+    keyboard = await dynamic_user_menu_keyboard(session, "free")
 
     return welcome_message, keyboard
 
@@ -89,7 +63,7 @@ async def build_profile_menu(
 
     Función auxiliar reutilizable que obtiene el resumen del perfil,
     verifica el estado del regalo diario y construye el keyboard
-    con botones de gamificación + botones dinámicos configurados.
+    con botones de gamificación.
 
     Args:
         session: Sesión de BD
@@ -102,7 +76,6 @@ async def build_profile_menu(
     from bot.gamification.services.container import GamificationContainer
     from bot.utils.keyboards import create_inline_keyboard
 
-    container = ServiceContainer(session, bot)
     gamification = GamificationContainer(session, bot)
 
     # Obtener resumen de perfil
@@ -124,16 +97,9 @@ async def build_profile_menu(
             {"text": "📋 Mis Misiones", "callback_data": "user:missions"},
             {"text": "🎁 Recompensas", "callback_data": "user:rewards"}
         ],
-        [{"text": "🏆 Leaderboard", "callback_data": "user:leaderboard"}]
+        [{"text": "🏆 Leaderboard", "callback_data": "user:leaderboard"}],
+        [{"text": "🔙 Volver al Menú", "callback_data": "profile:back"}]
     ]
-
-    # Obtener botones dinámicos configurados para "profile"
-    profile_buttons = await container.menu.build_keyboard_for_role("profile")
-    if profile_buttons:
-        keyboard_buttons.extend(profile_buttons)
-
-    # Agregar botón de volver al menú
-    keyboard_buttons.append([{"text": "🔙 Volver al Menú", "callback_data": "profile:back"}])
 
     keyboard = create_inline_keyboard(keyboard_buttons)
 

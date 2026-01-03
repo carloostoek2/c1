@@ -176,6 +176,8 @@ def vip_user_menu_keyboard() -> InlineKeyboardMarkup:
     - Acceder al Canal VIP
     - Ver Mi Suscripción
     - Renovar Suscripción
+    - Historia
+    - Juego Kinky
 
     Returns:
         InlineKeyboardMarkup con menú VIP
@@ -184,6 +186,31 @@ def vip_user_menu_keyboard() -> InlineKeyboardMarkup:
         [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
         [{"text": "⏱️ Ver Mi Suscripción", "callback_data": "user:vip_status"}],
         [{"text": "🎁 Renovar Suscripción", "callback_data": "user:vip_renew"}],
+        [{"text": "📖 Historia", "callback_data": "narr:start"}],
+        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
+    ])
+
+
+def free_user_menu_keyboard() -> InlineKeyboardMarkup:
+    """
+    Keyboard del menú para usuarios FREE.
+
+    Opciones:
+    - Unirse al Canal Free
+    - Ver Planes VIP
+    - Canjear Token VIP
+    - Historia
+    - Juego Kinky
+
+    Returns:
+        InlineKeyboardMarkup con menú FREE
+    """
+    return create_inline_keyboard([
+        [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
+        [{"text": "⭐ Ver Planes VIP", "callback_data": "user:vip_info"}],
+        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
+        [{"text": "📖 Historia", "callback_data": "narr:start"}],
+        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
     ])
 
 
@@ -192,43 +219,22 @@ async def dynamic_user_menu_keyboard(
     role: str
 ) -> InlineKeyboardMarkup:
     """
-    Genera keyboard dinámico para usuarios basado en configuración.
+    Genera keyboard simple para usuarios.
 
-    Obtiene los botones configurados por administradores para el rol
-    especificado y genera un keyboard inline.
-
-    IMPORTANTE: Siempre agrega los botones fijos al final:
-    - "📖 Historia" (penúltimo)
-    - "🎮 Juego Kinky" (último)
+    Menú único para todos los usuarios (VIP y FREE).
+    Simplificado para desarrollo.
 
     Args:
-        session: Sesión de BD
-        role: 'vip' o 'free'
+        session: Sesión de BD (no usado)
+        role: 'vip' o 'free' (no usado por ahora)
 
     Returns:
-        InlineKeyboardMarkup con botones configurados + botones fijos
+        InlineKeyboardMarkup con menú básico
     """
-    from bot.services.menu_service import MenuService
-
-    menu_service = MenuService(session)
-    keyboard_structure = await menu_service.build_keyboard_for_role(role)
-
-    if not keyboard_structure:
-        # Fallback a menú por defecto si no hay configuración
-        if role == 'vip':
-            keyboard_structure = [
-                [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
-                [{"text": "⏱️ Ver Mi Suscripción", "callback_data": "user:vip_status"}],
-                [{"text": "🎁 Renovar Suscripción", "callback_data": "user:vip_renew"}],
-            ]
-        else:
-            keyboard_structure = [
-                [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
-                [{"text": "⭐ Ver Planes VIP", "callback_data": "user:vip_info"}],
-            ]
-
-    # Agregar botones fijos al final
-    keyboard_structure.append([{"text": "📖 Historia", "callback_data": "narr:start"}])
-    keyboard_structure.append([{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}])
-
-    return create_inline_keyboard(keyboard_structure)
+    return create_inline_keyboard([
+        [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
+        [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
+        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
+        [{"text": "📖 Historia", "callback_data": "narr:start"}],
+        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
+    ])
