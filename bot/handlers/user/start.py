@@ -19,7 +19,7 @@ from bot.middlewares import DatabaseMiddleware
 from bot.services.container import ServiceContainer
 from bot.utils.formatters import format_currency
 from bot.utils.keyboards import create_inline_keyboard
-from bot.utils.menu_helpers import build_start_menu, build_profile_menu
+from bot.utils.menu_helpers import build_start_menu
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -293,41 +293,6 @@ async def _send_welcome_message(
         reply_markup=keyboard,
         parse_mode="HTML"
     )
-
-
-@user_router.callback_query(F.data == "start:profile")
-async def callback_show_profile(callback: CallbackQuery, session: AsyncSession):
-    """
-    Muestra el menú de Juego Kinky (perfil de gamificación).
-
-    Activado desde: Botón "🎮 Juego Kinky" en menú /start
-
-    Args:
-        callback: CallbackQuery del usuario
-        session: Sesión de BD
-    """
-    try:
-        # Usar helper para construir el perfil
-        summary, keyboard = await build_profile_menu(
-            session=session,
-            bot=callback.bot,
-            user_id=callback.from_user.id
-        )
-
-        # Editar mensaje existente
-        await callback.message.edit_text(
-            text=summary,
-            reply_markup=keyboard,
-            parse_mode="HTML"
-        )
-        await callback.answer()
-
-    except Exception as e:
-        logger.error(f"❌ Error mostrando profile: {e}", exc_info=True)
-        await callback.answer(
-            f"❌ Error al cargar perfil: {str(e)}",
-            show_alert=True
-        )
 
 
 @user_router.callback_query(F.data == "profile:back")

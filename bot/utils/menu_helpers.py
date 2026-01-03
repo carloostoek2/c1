@@ -52,61 +52,7 @@ async def build_start_menu(
         [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
         [{"text": "🏪 Tienda", "callback_data": "shop:main"}],
         [{"text": "📖 Historia", "callback_data": "narr:start"}],
-        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
+        [{"text": "🎮 Juego Kinky", "callback_data": "user:profile"}],
     ])
 
     return welcome_message, keyboard
-
-
-async def build_profile_menu(
-    session: AsyncSession,
-    bot,
-    user_id: int
-) -> Tuple[str, InlineKeyboardMarkup]:
-    """
-    Construye el menú de perfil de gamificación (Juego Kinky).
-
-    Función auxiliar reutilizable que obtiene el resumen del perfil,
-    verifica el estado del regalo diario y construye el keyboard
-    con botones de gamificación.
-
-    Args:
-        session: Sesión de BD
-        bot: Bot de Telegram
-        user_id: ID del usuario de Telegram
-
-    Returns:
-        Tuple de (summary_text, keyboard)
-    """
-    from bot.gamification.services.container import GamificationContainer
-    from bot.utils.keyboards import create_inline_keyboard
-
-    gamification = GamificationContainer(session, bot)
-
-    # Obtener resumen de perfil
-    summary = await gamification.user_gamification.get_profile_summary(user_id)
-
-    # Verificar estado del regalo diario
-    daily_gift_status = await gamification.daily_gift.get_daily_gift_status(user_id)
-
-    # Texto del botón de regalo diario con indicador visual
-    if daily_gift_status['can_claim'] and daily_gift_status['system_enabled']:
-        daily_gift_text = "🎁 Regalo Diario ⭐"
-    else:
-        daily_gift_text = "🎁 Regalo Diario ✅"
-
-    # Construir keyboard con botones de gamificación
-    keyboard_buttons = [
-        [{"text": daily_gift_text, "callback_data": "user:daily_gift"}],
-        [
-            {"text": "📋 Mis Misiones", "callback_data": "user:missions"},
-            {"text": "🎁 Recompensas", "callback_data": "user:rewards"}
-        ],
-        [{"text": "🏆 Leaderboard", "callback_data": "user:leaderboard"}],
-        [{"text": "🎒 Mi Mochila", "callback_data": "backpack:main"}],
-        [{"text": "🔙 Volver al Menú", "callback_data": "profile:back"}]
-    ]
-
-    keyboard = create_inline_keyboard(keyboard_buttons)
-
-    return summary, keyboard

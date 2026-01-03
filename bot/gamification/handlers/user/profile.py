@@ -65,6 +65,9 @@ async def show_profile(message: Message, gamification: GamificationContainer):
                 InlineKeyboardButton(text="🏆 Leaderboard", callback_data="user:leaderboard")
             ],
             [
+                InlineKeyboardButton(text="🎒 Mi Mochila", callback_data="backpack:main")
+            ],
+            [
                 InlineKeyboardButton(text="🔙 Volver al Menú", callback_data="profile:back")
             ]
         ])
@@ -113,6 +116,9 @@ async def show_profile_callback(callback: CallbackQuery, gamification: Gamificat
             ],
             [
                 InlineKeyboardButton(text="🏆 Leaderboard", callback_data="user:leaderboard")
+            ],
+            [
+                InlineKeyboardButton(text="🎒 Mi Mochila", callback_data="backpack:main")
             ],
             [
                 InlineKeyboardButton(text="🔙 Volver al Menú", callback_data="profile:back")

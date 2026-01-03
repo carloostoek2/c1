@@ -170,49 +170,5 @@ def config_menu_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
-def vip_user_menu_keyboard() -> InlineKeyboardMarkup:
-    """
-    Keyboard del menú para usuarios VIP.
-
-    Opciones:
-    - Acceder al Canal VIP
-    - Ver Mi Suscripción
-    - Renovar Suscripción
-    - Historia
-    - Juego Kinky
-
-    Returns:
-        InlineKeyboardMarkup con menú VIP
-    """
-    return create_inline_keyboard([
-        [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
-        [{"text": "⏱️ Ver Mi Suscripción", "callback_data": "user:vip_status"}],
-        [{"text": "🎁 Renovar Suscripción", "callback_data": "user:vip_renew"}],
-        [{"text": "📖 Historia", "callback_data": "narr:start"}],
-        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
-    ])
-
-
-def free_user_menu_keyboard() -> InlineKeyboardMarkup:
-    """
-    Keyboard del menú para usuarios FREE.
-
-    Opciones:
-    - Unirse al Canal Free
-    - Ver Planes VIP
-    - Canjear Token VIP
-    - Historia
-    - Juego Kinky
-
-    Returns:
-        InlineKeyboardMarkup con menú FREE
-    """
-    return create_inline_keyboard([
-        [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
-        [{"text": "⭐ Ver Planes VIP", "callback_data": "user:vip_info"}],
-        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
-        [{"text": "📖 Historia", "callback_data": "narr:start"}],
-        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
-    ])
 
 
