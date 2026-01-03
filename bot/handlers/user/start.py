@@ -347,4 +347,3 @@ async def callback_back_to_start(callback: CallbackQuery, session: AsyncSession)
             "❌ Error al regresar al menú",
             show_alert=True
         )
->>>>>>> e07eb2f (feat: FASE N3 - Integración narrativa con orquestadores de gamificación)
