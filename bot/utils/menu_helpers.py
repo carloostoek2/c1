@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.database.enums import UserRole
 from bot.services.container import ServiceContainer
-from bot.utils.keyboards import dynamic_user_menu_keyboard
+from bot.utils.keyboards import create_inline_keyboard
 
 logger = logging.getLogger(__name__)
 
@@ -39,16 +39,21 @@ async def build_start_menu(
     Returns:
         Tuple de (welcome_message, keyboard)
     """
-    from bot.utils.keyboards import dynamic_user_menu_keyboard
-
     # Mensaje de bienvenida simple
     welcome_message = (
         f"¡Hola <b>{user_name}</b>! 👋\n\n"
         f"Bienvenido/a al bot. Selecciona una opción del menú:"
     )
 
-    # Keyboard simple único para todos
-    keyboard = await dynamic_user_menu_keyboard(session, "free")
+    # Keyboard simple y directo con botones principales
+    keyboard = create_inline_keyboard([
+        [{"text": "📺 Acceder al Canal VIP", "callback_data": "user:vip_access"}],
+        [{"text": "📢 Unirse al Canal Free", "callback_data": "user:free_access"}],
+        [{"text": "🎟️ Canjear Token VIP", "callback_data": "user:redeem_token"}],
+        [{"text": "🏪 Tienda", "callback_data": "shop:main"}],
+        [{"text": "📖 Historia", "callback_data": "narr:start"}],
+        [{"text": "🎮 Juego Kinky", "callback_data": "start:profile"}],
+    ])
 
     return welcome_message, keyboard
 
