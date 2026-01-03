@@ -166,7 +166,7 @@ async def callback_admin_gamification(callback: CallbackQuery, session: AsyncSes
     """
     Handler para acceder al menú de gamificación.
 
-    Muestra directamente el menú principal de gamificación.
+    Muestra directamente el menú principal de gamificación con todas las opciones.
 
     Args:
         callback: Callback query
@@ -186,6 +186,10 @@ async def callback_admin_gamification(callback: CallbackQuery, session: AsyncSes
         [
             {"text": "💰 Transacciones", "callback_data": "gamif:admin:transactions"},
             {"text": "🔧 Configuración", "callback_data": "gamif:admin:config"}
+        ],
+        [
+            {"text": "🎨 Wizard Creación", "callback_data": "unified:wizard:menu"},
+            {"text": "📊 Panel Central", "callback_data": "config_panel:main"}
         ],
         [
             {"text": "🔙 Volver al Menú Principal", "callback_data": "admin:main"}

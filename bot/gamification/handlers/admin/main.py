@@ -44,6 +44,9 @@ async def gamification_menu(message: Message):
         [
             InlineKeyboardButton(text="🎨 Wizard Creación", callback_data="unified:wizard:menu"),
             InlineKeyboardButton(text="📊 Panel Central", callback_data="config_panel:main")
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Volver al Menú Principal", callback_data="admin:main")
         ]
     ])
 
