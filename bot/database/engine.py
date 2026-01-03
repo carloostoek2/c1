@@ -30,6 +30,12 @@ try:
 except ImportError:
     pass
 
+# Importar modelos de tienda para registrarlos en metadata
+try:
+    import bot.shop.database.models  # noqa: F401
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # ===== ENGINE GLOBAL =====
