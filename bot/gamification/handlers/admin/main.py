@@ -10,6 +10,7 @@ from bot.filters.admin import IsAdmin
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
 from bot.gamification.database.enums import MissionType, RewardType
+from bot.utils.keyboards import gamification_menu_keyboard
 
 router = Router()
 router.message.filter(IsAdmin())
@@ -27,33 +28,15 @@ router.callback_query.middleware(DatabaseMiddleware())
 @router.message(Command("gamification"))
 @router.message(Command("gamif"))
 async def gamification_menu(message: Message):
-    """Muestra menú principal de gamificación."""
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="📋 Misiones", callback_data="gamif:admin:missions"),
-            InlineKeyboardButton(text="🎁 Recompensas", callback_data="gamif:admin:rewards")
-        ],
-        [
-            InlineKeyboardButton(text="⭐ Niveles", callback_data="gamif:admin:levels"),
-            InlineKeyboardButton(text="📊 Estadísticas", callback_data="gamif:admin:stats")
-        ],
-        [
-            InlineKeyboardButton(text="💰 Transacciones", callback_data="gamif:admin:transactions"),
-            InlineKeyboardButton(text="🔧 Configuración", callback_data="gamif:admin:config")
-        ],
-        [
-            InlineKeyboardButton(text="🎨 Wizard Creación", callback_data="unified:wizard:menu"),
-            InlineKeyboardButton(text="📊 Panel Central", callback_data="config_panel:main")
-        ],
-        [
-            InlineKeyboardButton(text="🔙 Volver al Menú Principal", callback_data="admin:main")
-        ]
-    ])
+    """
+    Muestra menú principal de gamificación.
 
+    Usa gamification_menu_keyboard() como única fuente de verdad.
+    """
     await message.answer(
         "🎮 <b>Panel de Gamificación</b>\n\n"
         "Gestiona misiones, recompensas y niveles del sistema.",
-        reply_markup=keyboard,
+        reply_markup=gamification_menu_keyboard(),
         parse_mode="HTML"
     )
 
@@ -64,33 +47,15 @@ async def gamification_menu(message: Message):
 
 @router.callback_query(F.data == "gamif:menu")
 async def show_main_menu(callback: CallbackQuery):
-    """Volver al menú principal."""
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="📋 Misiones", callback_data="gamif:admin:missions"),
-            InlineKeyboardButton(text="🎁 Recompensas", callback_data="gamif:admin:rewards")
-        ],
-        [
-            InlineKeyboardButton(text="⭐ Niveles", callback_data="gamif:admin:levels"),
-            InlineKeyboardButton(text="📊 Estadísticas", callback_data="gamif:admin:stats")
-        ],
-        [
-            InlineKeyboardButton(text="💰 Transacciones", callback_data="gamif:admin:transactions"),
-            InlineKeyboardButton(text="🔧 Configuración", callback_data="gamif:admin:config")
-        ],
-        [
-            InlineKeyboardButton(text="🎨 Wizard Creación", callback_data="unified:wizard:menu"),
-            InlineKeyboardButton(text="📊 Panel Central", callback_data="config_panel:main")
-        ],
-        [
-            InlineKeyboardButton(text="🔙 Volver al Menú Principal", callback_data="admin:main")
-        ]
-    ])
+    """
+    Volver al menú principal de gamificación.
 
+    Usa gamification_menu_keyboard() como única fuente de verdad.
+    """
     await callback.message.edit_text(
         "🎮 <b>Panel de Gamificación</b>\n\n"
         "Gestiona misiones, recompensas y niveles del sistema.",
-        reply_markup=keyboard,
+        reply_markup=gamification_menu_keyboard(),
         parse_mode="HTML"
     )
     await callback.answer()

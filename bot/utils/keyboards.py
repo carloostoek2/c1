@@ -170,5 +170,52 @@ def config_menu_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
+def gamification_menu_keyboard() -> InlineKeyboardMarkup:
+    """
+    Keyboard del menú de gamificación.
+
+    ÚNICA FUENTE DE VERDAD para el menú de gamificación.
+    Usado por:
+    - admin:gamification (desde menú admin)
+    - /gamif (comando directo)
+    - gamif:menu (callback de regreso)
+
+    Opciones:
+    - Misiones
+    - Recompensas
+    - Niveles
+    - Estadísticas
+    - Transacciones
+    - Configuración
+    - Wizard Creación
+    - Panel Central
+    - Volver al Menú Principal
+
+    Returns:
+        InlineKeyboardMarkup con menú completo de gamificación
+    """
+    return create_inline_keyboard([
+        [
+            {"text": "📋 Misiones", "callback_data": "gamif:admin:missions"},
+            {"text": "🎁 Recompensas", "callback_data": "gamif:admin:rewards"}
+        ],
+        [
+            {"text": "⭐ Niveles", "callback_data": "gamif:admin:levels"},
+            {"text": "📊 Estadísticas", "callback_data": "gamif:admin:stats"}
+        ],
+        [
+            {"text": "💰 Transacciones", "callback_data": "gamif:admin:transactions"},
+            {"text": "🔧 Configuración", "callback_data": "gamif:admin:config"}
+        ],
+        [
+            {"text": "🎨 Wizard Creación", "callback_data": "unified:wizard:menu"},
+            {"text": "📊 Panel Central", "callback_data": "config_panel:main"}
+        ],
+        [
+            {"text": "🔙 Volver al Menú Principal", "callback_data": "admin:main"}
+        ]
+    ])
+
+
 
 
