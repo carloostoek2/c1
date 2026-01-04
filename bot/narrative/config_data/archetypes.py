@@ -16,7 +16,7 @@ Mapeo de compatibilidad:
 - SILENT → Requiere más datos para clasificar
 
 Uso:
-    from bot.narrative.config.archetypes import (
+    from bot.narrative.config_data.archetypes import (
         ExpandedArchetype,
         ArchetypeDetectionRules,
         calculate_archetype_scores

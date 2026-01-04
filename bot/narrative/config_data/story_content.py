@@ -8,7 +8,7 @@ Por ahora, esta estructura define el esqueleto de la historia con los
 primeros fragmentos del Nivel 1 como ejemplo.
 
 Uso:
-    from bot.narrative.config.story_content import (
+    from bot.narrative.config_data.story_content import (
         get_chapter_by_level,
         get_fragments_for_chapter
     )

@@ -84,9 +84,9 @@
 ## 📋 F0.3: MAPEO DE ARQUETIPOS EXPANDIDO ✅
 
 **Archivos creados/modificados:**
-- `bot/narrative/config/archetypes.py` (NUEVO)
+- `bot/narrative/config_data/archetypes.py` (NUEVO)
 - `bot/narrative/database/enums.py` (MODIFICADO)
-- `bot/narrative/config/__init__.py` (ACTUALIZADO)
+- `bot/narrative/config_data/__init__.py` (CREADO)
 
 ### Tareas
 
@@ -156,8 +156,8 @@
 ## 📋 F0.5: ESTRUCTURA DE CONTENIDO NARRATIVO ✅
 
 **Archivos creados:**
-- `bot/narrative/config/story_content.py`
-- `bot/narrative/config/__init__.py`
+- `bot/narrative/config_data/story_content.py`
+- `bot/narrative/config_data/__init__.py`
 
 ### Tareas
 

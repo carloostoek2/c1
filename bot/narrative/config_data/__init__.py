@@ -1,6 +1,6 @@
 """Configuración del módulo narrativo."""
 
-from bot.narrative.config.story_content import (
+from bot.narrative.config_data.story_content import (
     SPEAKERS,
     CHALLENGE_TYPES,
     CHAPTERS_FREE,
@@ -17,7 +17,7 @@ from bot.narrative.config.story_content import (
     get_content_summary
 )
 
-from bot.narrative.config.archetypes import (
+from bot.narrative.config_data.archetypes import (
     ExpandedArchetype,
     ArchetypeDetectionRules,
     ARCHETYPE_COMPATIBILITY_MAPPING,
