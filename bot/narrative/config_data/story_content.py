@@ -17,6 +17,7 @@ Uso:
     fragments = get_fragments_for_chapter(chapter["id"])
 """
 
+import re
 from typing import List, Dict, Any, Optional
 
 
@@ -481,6 +482,25 @@ CHAPTERS_VIP = [
 
 
 # ============================================================
+# 4. DICCIONARIOS DE BÚSQUEDA (OPTIMIZACIÓN O(1))
+# ============================================================
+
+# Pre-construir diccionarios de búsqueda para operaciones O(1)
+ALL_CHAPTERS_BY_ID: Dict[str, Dict[str, Any]] = {
+    ch["id"]: ch for ch in CHAPTERS_FREE + CHAPTERS_VIP
+}
+
+ALL_CHAPTERS_BY_SLUG: Dict[str, Dict[str, Any]] = {
+    ch["slug"]: ch for ch in CHAPTERS_FREE + CHAPTERS_VIP
+}
+
+ALL_FRAGMENTS_BY_KEY: Dict[str, Dict[str, Any]] = {}
+for chapter in CHAPTERS_FREE + CHAPTERS_VIP:
+    for fragment in chapter.get("fragments", []):
+        ALL_FRAGMENTS_BY_KEY[fragment["fragment_key"]] = fragment
+
+
+# ============================================================
 # 5. FUNCIONES HELPER
 # ============================================================
 
@@ -512,17 +532,8 @@ def get_fragments_for_chapter(chapter_id: str) -> List[Dict[str, Any]]:
     Returns:
         Lista de fragmentos ordenados por order
     """
-    # Buscar en FREE
-    for chapter in CHAPTERS_FREE:
-        if chapter["id"] == chapter_id:
-            return chapter.get("fragments", [])
-
-    # Buscar en VIP
-    for chapter in CHAPTERS_VIP:
-        if chapter["id"] == chapter_id:
-            return chapter.get("fragments", [])
-
-    return []
+    chapter = ALL_CHAPTERS_BY_ID.get(chapter_id)
+    return chapter.get("fragments", []) if chapter else []
 
 
 def get_next_chapter(
@@ -538,7 +549,11 @@ def get_next_chapter(
     Returns:
         Dict con datos del siguiente capítulo o None si no hay más
     """
-    chapters = CHAPTERS_VIP if user_is_vip else CHAPTERS_FREE
+    # Ordenar explícitamente por 'order' para evitar depender del orden en la lista
+    chapters = sorted(
+        CHAPTERS_VIP if user_is_vip else CHAPTERS_FREE,
+        key=lambda c: c.get("order", 0)
+    )
 
     # Buscar capítulo actual
     current_index = None
@@ -593,13 +608,7 @@ def get_chapter_by_slug(slug: str) -> Optional[Dict[str, Any]]:
     Returns:
         Dict con datos del capítulo o None
     """
-    all_chapters = CHAPTERS_FREE + CHAPTERS_VIP
-
-    for chapter in all_chapters:
-        if chapter["slug"] == slug:
-            return chapter
-
-    return None
+    return ALL_CHAPTERS_BY_SLUG.get(slug)
 
 
 def get_fragment_by_key(fragment_key: str) -> Optional[Dict[str, Any]]:
@@ -611,14 +620,7 @@ def get_fragment_by_key(fragment_key: str) -> Optional[Dict[str, Any]]:
     Returns:
         Dict con datos del fragmento o None
     """
-    all_chapters = CHAPTERS_FREE + CHAPTERS_VIP
-
-    for chapter in all_chapters:
-        for fragment in chapter.get("fragments", []):
-            if fragment["fragment_key"] == fragment_key:
-                return fragment
-
-    return None
+    return ALL_FRAGMENTS_BY_KEY.get(fragment_key)
 
 
 def validate_chapter(chapter: Dict[str, Any]) -> tuple[bool, str]:
@@ -647,7 +649,7 @@ def validate_chapter(chapter: Dict[str, Any]) -> tuple[bool, str]:
 
     # Validar slug formato
     slug = chapter["slug"]
-    if not slug.replace("-", "").isalnum():
+    if not re.match(r"^[a-z0-9-]+$", slug):
         return False, f"Invalid slug format: {slug}"
 
     return True, "OK"

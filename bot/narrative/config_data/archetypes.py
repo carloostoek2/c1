@@ -28,7 +28,6 @@ Uso:
 
 from enum import Enum
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
 
 
 # ============================================================
@@ -463,8 +462,7 @@ class ArchetypeScorer:
 
     @staticmethod
     def calculate_archetype_scores(
-        user_data: Dict[str, Any],
-        confidence_threshold: float = 60.0
+        user_data: Dict[str, Any]
     ) -> Dict[str, float]:
         """Calcula puntajes completos de arquetipo.
 
@@ -481,8 +479,6 @@ class ArchetypeScorer:
                 - consistent_daily_activity: Actividad diaria consistente
                 - total_sessions: Total de sesiones
                 - avg_sessions_per_week: Sesiones promedio por semana
-
-            confidence_threshold: Umbral para considerar arquetipo dominante (default: 60)
 
         Returns:
             Dict mapeando nombre de arquetipo a puntaje 0-100
@@ -588,10 +584,12 @@ class ArchetypeScorer:
         second_highest = sorted_scores[1]
 
         # Si el primero es mucho más alto que el segundo, mayor confianza
-        if second_highest == 0:
-            return 1.0
+        # Verificar denominador para evitar división por cero
+        denominator = arch_score + second_highest
+        if denominator == 0.0:
+            return 0.0
 
-        confidence = arch_score / (arch_score + second_highest)
+        confidence = arch_score / denominator
 
         return min(max(confidence, 0.0), 1.0)
 

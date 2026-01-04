@@ -451,7 +451,7 @@ class LucienMessages:
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "<i>Dos semanas.</i>\n\n"
         "Ha pasado bastante tiempo. "
-        "Demasiado para que alguien que seemedecía comprometido.\n\n"
+        "Demasiado para alguien que se decía comprometido.\n\n"
         "Diana se pregunta si algo sucedió. "
         "O si simplemente perdió interés.\n\n"
         "Lo que construyó sigue aquí. "
@@ -531,7 +531,7 @@ class LucienMessages:
         "Solo se puede experimentar.\n\n"
         "<b>{button_text}</b>\n\n"
         "<i>Espero que decida bien. "
-        "Las oportunidades como esta no aparecen twice.</i>"
+        "Las oportunidades como esta no aparecen dos veces.</i>"
     )
 
     VIP_DECLINED_GRACEFUL = (
@@ -543,7 +543,7 @@ class LucienMessages:
         "La decisión de dar el siguiente paso es personal. "
         "No se puede forzar.\n\n"
         "Lo que ha construido hasta aquí sigue siendo suyo. "
-        "Ningo quito nada.\n\n"
+        "Nadie le quita nada.\n\n"
         "Diana respeta su decisión. "
         "Y la puerta permanecerá abierta si cambia de idea.\n\n"
         "<i>Por ahora, continue como está. "

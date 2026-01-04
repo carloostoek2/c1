@@ -12,6 +12,7 @@ Uso:
         session.add(shop_item)
 """
 
+import re
 from typing import List, Dict, Any
 
 
@@ -333,7 +334,7 @@ def validate_item(item: Dict[str, Any]) -> tuple[bool, str]:
 
     # Validar slug formato
     slug = item["slug"]
-    if not slug.replace("-", "").replace("_", "").isalnum():
+    if not re.match(r"^[a-z0-9_-]+$", slug):
         return False, f"Invalid slug format: {slug}"
 
     # Validar stock si existe
