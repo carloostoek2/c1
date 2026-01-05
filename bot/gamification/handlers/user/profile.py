@@ -59,13 +59,14 @@ async def show_profile(message: Message, gamification: GamificationContainer):
                 InlineKeyboardButton(text=daily_gift_text, callback_data="user:daily_gift")
             ],
             [
-                InlineKeyboardButton(text="📋 Mis Misiones", callback_data="user:missions"),
+                InlineKeyboardButton(text="📋 Encargos", callback_data="user:missions"),
                 InlineKeyboardButton(text="🎁 Recompensas", callback_data="user:rewards")
             ],
             [
                 InlineKeyboardButton(text="🏆 Leaderboard", callback_data="user:leaderboard")
             ],
             [
+                InlineKeyboardButton(text="💰 Mis Besitos", callback_data="user:besitos"),
                 InlineKeyboardButton(text="🎒 Mi Mochila", callback_data="backpack:main")
             ],
             [
@@ -114,13 +115,14 @@ async def show_profile_callback(callback: CallbackQuery, gamification: Gamificat
                 InlineKeyboardButton(text=daily_gift_text, callback_data="user:daily_gift")
             ],
             [
-                InlineKeyboardButton(text="📋 Mis Misiones", callback_data="user:missions"),
+                InlineKeyboardButton(text="📋 Encargos", callback_data="user:missions"),
                 InlineKeyboardButton(text="🎁 Recompensas", callback_data="user:rewards")
             ],
             [
                 InlineKeyboardButton(text="🏆 Leaderboard", callback_data="user:leaderboard")
             ],
             [
+                InlineKeyboardButton(text="💰 Mis Besitos", callback_data="user:besitos"),
                 InlineKeyboardButton(text="🎒 Mi Mochila", callback_data="backpack:main")
             ],
             [

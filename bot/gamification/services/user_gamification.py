@@ -332,7 +332,7 @@ class UserGamificationService:
     # ========================================
 
     async def get_profile_summary(self, user_id: int) -> str:
-        """Genera resumen formateado para Telegram.
+        """Genera resumen formateado para Telegram con voz de Lucien.
 
         Args:
             user_id: ID del usuario
@@ -340,16 +340,30 @@ class UserGamificationService:
         Returns:
             Texto HTML formateado para Telegram
         """
+        from bot.services.lucien_voice import LucienVoiceService
+
         profile = await self.get_user_profile(user_id)
 
         # Formatear nivel
         level_name = profile['level']['current'].name if profile['level']['current'] else 'Sin nivel'
+        level_order = profile['level']['current'].order if profile['level']['current'] else 0
         progress = profile['level']['progress_percentage']
+        besitos = profile['besitos']['total']
 
-        summary = f"""👤 <b>Perfil de Usuario</b>
+        # Barra de progreso visual
+        progress_bar = self._format_progress_bar(progress)
 
-💰 Besitos: <b>{profile['besitos']['total']:,}</b>
-⭐ Nivel: <b>{level_name}</b> ({progress:.0f}% al siguiente)
+        # Obtener comentario de Lucien según nivel
+        lucien = LucienVoiceService()
+        level_comment = await lucien.get_profile_message(level_order, besitos)
+
+        # Armar summary con voz de Lucien
+        summary = f"""{level_comment}
+
+{progress_bar} {progress:.0f}%
+
+💋 Besitos: <b>{besitos:,}</b>
+⭐ Nivel: <b>{level_name}</b>
 🔥 Racha: <b>{profile['streak']['current']}</b> días (récord: {profile['streak']['longest']})
 
 📋 Misiones: {len(profile['missions']['in_progress'])} activas, {len(profile['missions']['completed'])} completadas
@@ -359,7 +373,7 @@ class UserGamificationService:
         # Badges mostrados
         if profile['rewards']['displayed_badges']:
             from bot.gamification.database.models import Reward
-            summary += "\n<b>Badges mostrados:</b>\n"
+            summary += "\n<b>Distintivos:</b>\n"
             for badge in profile['rewards']['displayed_badges']:
                 # Badge solo tiene icon, necesitamos el Reward para el nombre
                 reward = await self.session.get(Reward, badge.id)
@@ -367,6 +381,24 @@ class UserGamificationService:
                 summary += f"{badge.icon} {reward_name}\n"
 
         return summary
+
+    def _format_progress_bar(self, percentage: float, width: int = 10) -> str:
+        """Genera una barra de progreso visual.
+
+        Args:
+            percentage: Porcentaje de progreso (0-100)
+            width: Ancho de la barra en caracteres (default: 10)
+
+        Returns:
+            Barra de progreso con caracteres ▓ (lleno) y ░ (vacío)
+        """
+        if percentage < 0:
+            percentage = 0
+        elif percentage > 100:
+            percentage = 100
+
+        filled = int(width * percentage / 100)
+        return "▓" * filled + "░" * (width - filled)
 
     async def get_leaderboard_position(self, user_id: int) -> dict:
         """Obtiene posición del usuario en leaderboards.

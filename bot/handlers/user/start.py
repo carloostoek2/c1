@@ -313,3 +313,173 @@ async def callback_back_to_start(callback: CallbackQuery, session: AsyncSession)
             error_msg,
             show_alert=True
         )
+
+
+# ========================================
+# COMANDO /BESITOS
+# ========================================
+
+@user_router.message(Command("besitos", "favor", "balance"))
+async def cmd_besitos(message: Message, session: AsyncSession):
+    """
+    Muestra el balance de Besitos con comentario contextual de Lucien.
+
+    Comandos disponibles:
+    - /besitos
+    - /favor
+    - /balance
+
+    Args:
+        message: Mensaje del usuario
+        session: Sesión de BD
+    """
+    try:
+        from bot.gamification.database.models import Level
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        lucien = LucienVoiceService()
+        user_id = message.from_user.id
+
+        # Obtener balance de Besitos con eager loading
+        from bot.gamification.database.models import UserGamification
+        stmt = (
+            select(UserGamification)
+            .options(selectinload(UserGamification.current_level))
+            .where(UserGamification.user_id == user_id)
+        )
+        result = await session.execute(stmt)
+        user_gamif = result.scalar_one_or_none()
+
+        if not user_gamif:
+            total = 0
+            level_name = "Sin nivel"
+            besitos_needed = 0
+        else:
+            total = user_gamif.total_besitos
+
+            # Obtener nivel actual (ya cargado por eager loading)
+            if user_gamif.current_level:
+                level = user_gamif.current_level
+                level_name = level.name
+                next_level_besitos = level.min_besitos
+                besitos_needed = max(0, next_level_besitos - total) if next_level_besitos else 0
+            else:
+                level_name = "Sin nivel"
+                besitos_needed = 0
+
+        # Determinar tipo de mensaje según cantidad
+        if total <= 10:
+            message_type = "balance_low"
+        elif total <= 50:
+            message_type = "balance_growing"
+        elif total <= 100:
+            message_type = "balance_good"
+        elif total <= 200:
+            message_type = "balance_high"
+        else:
+            message_type = "balance_hoarder"
+
+        # Obtener mensaje contextual según cantidad
+        balance_message = await lucien.get_besitos_message(message_type, details={"total": total})
+
+        # Armar texto completo
+        text = (
+            f"{balance_message}\n\n"
+            f"⭐ Nivel: <b>{level_name}</b>\n"
+        )
+
+        if besitos_needed > 0:
+            text += f"Para siguiente nivel: <b>{besitos_needed}</b> más\n"
+
+        # Keyboard con acciones rápidas
+        keyboard = create_inline_keyboard([
+            [{"text": "🏛️ Ir al Gabinete", "callback_data": "shop:main"}],
+            [{"text": "📊 Mi Perfil", "callback_data": "user:profile"}],
+            [{"text": "🔙 Volver al Menú", "callback_data": "profile:back"}],
+        ])
+
+        await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
+
+    except Exception as e:
+        logger.error(f"Error en /besitos: {e}", exc_info=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await message.answer(error_msg, parse_mode="HTML")
+
+
+@user_router.callback_query(F.data == "user:besitos")
+async def callback_besitos(callback: CallbackQuery, session: AsyncSession):
+    """
+    Callback para ver Besitos (desde navegación).
+
+    Args:
+        callback: Callback query del usuario
+        session: Sesión de BD
+    """
+    try:
+        from bot.gamification.database.models import Level, UserGamification
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        lucien = LucienVoiceService()
+        user_id = callback.from_user.id
+
+        # Obtener balance de Besitos con eager loading
+        stmt = (
+            select(UserGamification)
+            .options(selectinload(UserGamification.current_level))
+            .where(UserGamification.user_id == user_id)
+        )
+        result = await session.execute(stmt)
+        user_gamif = result.scalar_one_or_none()
+
+        if not user_gamif:
+            total = 0
+            level_name = "Sin nivel"
+        else:
+            total = user_gamif.total_besitos
+
+            # Obtener nivel actual (ya cargado por eager loading)
+            if user_gamif.current_level:
+                level = user_gamif.current_level
+                level_name = level.name if level else "Sin nivel"
+            else:
+                level_name = "Sin nivel"
+
+        # Determinar tipo de mensaje según cantidad
+        if total <= 10:
+            message_type = "balance_low"
+        elif total <= 50:
+            message_type = "balance_growing"
+        elif total <= 100:
+            message_type = "balance_good"
+        elif total <= 200:
+            message_type = "balance_high"
+        else:
+            message_type = "balance_hoarder"
+
+        # Obtener mensaje contextual según cantidad
+        balance_message = await lucien.get_besitos_message(message_type, details={"total": total})
+
+        # Armar texto completo
+        text = (
+            f"{balance_message}\n\n"
+            f"⭐ Nivel: <b>{level_name}</b>\n"
+            f"💋 Balance actual: <b>{total}</b>"
+        )
+
+        # Keyboard con acciones rápidas
+        keyboard = create_inline_keyboard([
+            [{"text": "🏛️ Ir al Gabinete", "callback_data": "shop:main"}],
+            [{"text": "🔙 Volver al Perfil", "callback_data": "user:profile"}],
+        ])
+
+        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"Error en callback besitos: {e}", exc_info=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)

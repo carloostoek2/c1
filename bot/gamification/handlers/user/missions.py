@@ -1,11 +1,11 @@
 """
-Handler para visualización y gestión de misiones del usuario.
+Handler para visualización y gestión de Encargos del usuario.
 
 Funcionalidades:
-- Ver misiones en progreso
-- Ver misiones completadas
-- Reclamar recompensas de misiones
-- Ver misiones disponibles para iniciar
+- Ver encargos en progreso
+- Ver encargos completados
+- Reclamar recompensas de encargos
+- Ver encargos disponibles para iniciar
 """
 
 from aiogram import Router, F
@@ -25,18 +25,19 @@ router.callback_query.middleware(DatabaseMiddleware())
 @router.callback_query(F.data == "user:missions")
 async def show_missions(callback: CallbackQuery, gamification: GamificationContainer):
     """
-    Lista misiones del usuario agrupadas por estado.
+    Lista encargos del usuario agrupados por estado.
 
     Estados mostrados:
     - En progreso: con botón para ver progreso
-    - Completadas: con botón para reclamar
+    - Completados: con botón para reclamar
     - Disponibles: con información básica
 
     Args:
         callback: Callback query del usuario
-        gamification: Container de servicios de gamificación
+        gamification: Container de servicios de gamification
     """
     try:
+        lucien = LucienVoiceService()
         user_id = callback.from_user.id
 
         # Obtener misiones del usuario
@@ -52,7 +53,10 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
         user_mission_ids = {um.mission_id for um in (in_progress + completed)}
         available = [m for m in all_missions if m.id not in user_mission_ids]
 
-        text = "📋 <b>Mis Misiones</b>\n\n"
+        # Mensaje de bienvenida a Encargos
+        encargos_welcome = await lucien.get_encargos_message("welcome")
+
+        text = f"📋 <b>Los Encargos</b>\n\n{encargos_welcome}\n\n"
         keyboard_buttons = []
 
         # Misiones en progreso
@@ -72,7 +76,7 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
 
         # Misiones completadas
         if completed:
-            text += "✅ <b>Completadas (Reclamar):</b>\n"
+            text += "✅ <b>Completados (Reclamar):</b>\n"
             for um in completed:
                 mission = um.mission
                 text += f"• {mission.name} - {mission.besitos_reward} besitos\n"
@@ -91,7 +95,9 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
                 text += f"• {mission.name} - {mission.besitos_reward} besitos\n"
 
         if not (in_progress or completed or available):
-            text += "No hay misiones disponibles en este momento."
+            # Mensaje de Lucien cuando no hay encargos
+            encargos_empty = await lucien.get_encargos_message("empty")
+            text += encargos_empty
 
         keyboard_buttons.append([
             InlineKeyboardButton(text="🔙 Perfil", callback_data="user:profile")
