@@ -801,12 +801,10 @@ async def confirm_mission(callback: CallbackQuery, state: FSMContext, gamificati
 # ========================================
 
 @router.callback_query(MissionWizardStates.choose_rewards, F.data == "wizard:shop:start")
-async def start_shop_item_selection(callback: CallbackQuery, state: FSMContext):
+async def start_shop_item_selection(callback: CallbackQuery, state: FSMContext, session):
     """Inicia selección de item de tienda."""
     from bot.shop.services.shop import ShopService
-    from sqlalchemy.ext.asyncio import AsyncSession
 
-    session: AsyncSession = callback.bot.get("session")
     shop_service = ShopService(session)
 
     # Obtener categorías
@@ -844,14 +842,12 @@ async def start_shop_item_selection(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(MissionWizardStates.select_shop_category, F.data.startswith("wizard:shop:cat:"))
-async def select_shop_category(callback: CallbackQuery, state: FSMContext):
+async def select_shop_category(callback: CallbackQuery, state: FSMContext, session):
     """Muestra items de la categoría seleccionada."""
     from bot.shop.services.shop import ShopService
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     category_id = int(callback.data.split(":")[-1])
 
-    session: AsyncSession = callback.bot.get("session")
     shop_service = ShopService(session)
 
     # Obtener items de la categoría
@@ -889,14 +885,12 @@ async def select_shop_category(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(MissionWizardStates.select_shop_item, F.data.startswith("wizard:shop:item:"))
-async def select_shop_item(callback: CallbackQuery, state: FSMContext):
+async def select_shop_item(callback: CallbackQuery, state: FSMContext, session):
     """Procesa selección de item y pide cantidad."""
     from bot.shop.services.shop import ShopService
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     item_id = int(callback.data.split(":")[-1])
 
-    session: AsyncSession = callback.bot.get("session")
     shop_service = ShopService(session)
 
     item = await shop_service.get_item(item_id)
@@ -1320,8 +1314,8 @@ def _format_criteria(criteria: dict) -> str:
     elif criteria_type == 'daily':
         return f"{criteria['count']} reacciones diarias"
     elif criteria_type == 'weekly':
-        return f"{criteria['count']} reacciones semanales"
+        return f"{criteria['target']} reacciones semanales"
     elif criteria_type == 'one_time':
-        return f"{criteria['count']} reacciones totales"
+        return "Completar una vez (manual)"
     else:
         return str(criteria)
