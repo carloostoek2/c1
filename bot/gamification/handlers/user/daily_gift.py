@@ -14,6 +14,7 @@ import logging
 
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
+from bot.services.lucien_voice import LucienVoiceService
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -58,8 +59,10 @@ async def cmd_daily_gift(message: Message, gamification: GamificationContainer):
 
     except Exception as e:
         logger.error(f"Error in cmd_daily_gift for user {user_id}: {e}", exc_info=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
         await message.answer(
-            "❌ Error al procesar el regalo diario. Intenta nuevamente.",
+            error_msg,
             parse_mode="HTML"
         )
 
