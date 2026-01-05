@@ -335,6 +335,7 @@ async def cmd_besitos(message: Message, session: AsyncSession):
     """
     try:
         from bot.gamification.database.models import Level
+        from sqlalchemy import select
         from sqlalchemy.orm import selectinload
 
         lucien = LucienVoiceService()
@@ -418,6 +419,7 @@ async def callback_besitos(callback: CallbackQuery, session: AsyncSession):
     """
     try:
         from bot.gamification.database.models import Level, UserGamification
+        from sqlalchemy import select
         from sqlalchemy.orm import selectinload
 
         lucien = LucienVoiceService()
