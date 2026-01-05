@@ -377,8 +377,6 @@ class LucienVoiceService:
         message = (
             f"{level_comment}\n\n"
             f"📊 <b>Su Expediente</b>\n\n"
-            f"Nivel: {level}\n"
-            f"Besitos: {besitos}"
         )
 
         if archetype:
