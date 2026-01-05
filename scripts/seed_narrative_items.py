@@ -372,7 +372,7 @@ async def seed_narrative_items():
     """Poblar la tienda con items narrativos."""
     # Crear engine
     engine = create_async_engine(
-        f"sqlite+aiosqlite:///{Config.DB_PATH}",
+        Config.DATABASE_URL,
         echo=False
     )
 

@@ -32,10 +32,10 @@ shop_user_router.callback_query.middleware(DatabaseMiddleware())
 def _build_shop_main_keyboard() -> InlineKeyboardMarkup:
     """Construye teclado principal de la tienda."""
     buttons = [
-        [InlineKeyboardButton(text="📜 Artefactos Narrativos", callback_data="shop:cat:artefactos-narrativos")],
-        [InlineKeyboardButton(text="💾 Contenido Digital", callback_data="shop:cat:contenido-digital")],
-        [InlineKeyboardButton(text="🧪 Consumibles", callback_data="shop:cat:consumibles")],
-        [InlineKeyboardButton(text="✨ Cosméticos", callback_data="shop:cat:cosmeticos")],
+        [InlineKeyboardButton(text="⏳ Efímeros", callback_data="shop:cat:efimeros")],
+        [InlineKeyboardButton(text="🎖️ Distintivos", callback_data="shop:cat:distintivos")],
+        [InlineKeyboardButton(text="🔑 Llaves", callback_data="shop:cat:llaves")],
+        [InlineKeyboardButton(text="💎 Reliquias", callback_data="shop:cat:reliquias")],
         [InlineKeyboardButton(text="⭐ Destacados", callback_data="shop:featured")],
         [InlineKeyboardButton(text="🎒 Mi Mochila", callback_data="backpack:main")],
         [InlineKeyboardButton(text="🔙 Volver al Menú", callback_data="profile:back")],
