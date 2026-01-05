@@ -335,13 +335,21 @@ async def cmd_besitos(message: Message, session: AsyncSession):
     """
     try:
         from bot.gamification.database.models import Level
+        from sqlalchemy import selectinload
 
         lucien = LucienVoiceService()
         user_id = message.from_user.id
 
-        # Obtener balance de Besitos
+        # Obtener balance de Besitos con eager loading
         from bot.gamification.database.models import UserGamification
-        user_gamif = await session.get(UserGamification, user_id)
+        stmt = (
+            select(UserGamification)
+            .options(selectinload(UserGamification.current_level))
+            .where(UserGamification.user_id == user_id)
+        )
+        result = await session.execute(stmt)
+        user_gamif = result.scalar_one_or_none()
+
         if not user_gamif:
             total = 0
             level_name = "Sin nivel"
@@ -349,16 +357,12 @@ async def cmd_besitos(message: Message, session: AsyncSession):
         else:
             total = user_gamif.total_besitos
 
-            # Obtener nivel actual
+            # Obtener nivel actual (ya cargado por eager loading)
             if user_gamif.current_level:
-                level = await session.get(Level, user_gamif.current_level_id)
-                if level:
-                    level_name = level.name
-                    next_level_besitos = level.min_besitos
-                    besitos_needed = max(0, next_level_besitos - total) if next_level_besitos else 0
-                else:
-                    level_name = "Sin nivel"
-                    besitos_needed = 0
+                level = user_gamif.current_level
+                level_name = level.name
+                next_level_besitos = level.min_besitos
+                besitos_needed = max(0, next_level_besitos - total) if next_level_besitos else 0
             else:
                 level_name = "Sin nivel"
                 besitos_needed = 0
@@ -414,21 +418,29 @@ async def callback_besitos(callback: CallbackQuery, session: AsyncSession):
     """
     try:
         from bot.gamification.database.models import Level, UserGamification
+        from sqlalchemy import selectinload
 
         lucien = LucienVoiceService()
         user_id = callback.from_user.id
 
-        # Obtener balance de Besitos
-        user_gamif = await session.get(UserGamification, user_id)
+        # Obtener balance de Besitos con eager loading
+        stmt = (
+            select(UserGamification)
+            .options(selectinload(UserGamification.current_level))
+            .where(UserGamification.user_id == user_id)
+        )
+        result = await session.execute(stmt)
+        user_gamif = result.scalar_one_or_none()
+
         if not user_gamif:
             total = 0
             level_name = "Sin nivel"
         else:
             total = user_gamif.total_besitos
 
-            # Obtener nivel actual
+            # Obtener nivel actual (ya cargado por eager loading)
             if user_gamif.current_level:
-                level = await session.get(Level, user_gamif.current_level_id)
+                level = user_gamif.current_level
                 level_name = level.name if level else "Sin nivel"
             else:
                 level_name = "Sin nivel"
