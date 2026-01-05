@@ -1,10 +1,10 @@
 """
-Handlers de usuario para la Tienda.
+Handlers de usuario para El Gabinete.
 
 Permite a los usuarios:
-- Ver catálogo de productos
-- Ver detalles de productos
-- Comprar productos
+- Ver catálogo de artículos del Gabinete
+- Ver detalles de artículos
+- Adquirir artículos con Besitos
 """
 
 import logging
@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.shop.services.container import ShopContainer
 from bot.shop.database.enums import ItemType, ItemRarity
+from bot.services.lucien_voice import LucienVoiceService
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ def _build_category_keyboard(
         buttons.append(nav_buttons)
 
     # Volver
-    buttons.append([InlineKeyboardButton(text="🔙 Volver a Tienda", callback_data="shop:main")])
+    buttons.append([InlineKeyboardButton(text="🔙 Volver al Gabinete", callback_data="shop:main")])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -91,12 +92,12 @@ def _build_item_detail_keyboard(
     can_purchase: bool,
     reason: str = ""
 ) -> InlineKeyboardMarkup:
-    """Construye teclado de detalle de producto."""
+    """Construye teclado de detalle de artículo."""
     buttons = []
 
     if can_purchase:
         buttons.append([
-            InlineKeyboardButton(text="🛒 Comprar", callback_data=f"shop:buy:{item_id}")
+            InlineKeyboardButton(text="🛒 Adquirir", callback_data=f"shop:buy:{item_id}")
         ])
     else:
         buttons.append([
@@ -108,10 +109,11 @@ def _build_item_detail_keyboard(
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-@shop_user_router.message(Command("tienda", "shop", "store"))
+@shop_user_router.message(Command("tienda", "shop", "store", "gabinete"))
 async def cmd_shop(message: Message, session: AsyncSession):
-    """Handler para /tienda - Muestra la tienda principal."""
+    """Handler para /tienda - Muestra El Gabinete de Lucien."""
     container = ShopContainer(session)
+    lucien = LucienVoiceService()
 
     # Obtener resumen
     summary = await container.shop.get_shop_summary()
@@ -124,12 +126,16 @@ async def cmd_shop(message: Message, session: AsyncSession):
     except Exception:
         user_besitos = 0
 
+    # Mensaje de bienvenida del Gabinete
+    cabinet_welcome = await lucien.get_cabinet_message("welcome")
+
     text = (
-        "🏪 <b>Tienda de Artefactos</b>\n\n"
-        f"💋 Tu saldo: <b>{user_besitos}</b> besitos\n\n"
-        f"📦 {summary['total_items']} productos disponibles\n"
+        f"🏛️ <b>El Gabinete</b>\n\n"
+        f"{cabinet_welcome}\n\n"
+        f"💋 Su saldo: <b>{user_besitos}</b> besitos\n\n"
+        f"📦 {summary['total_items']} artículos disponibles\n"
         f"📁 {summary['total_categories']} categorías\n\n"
-        "Selecciona una categoría para explorar:"
+        "Seleccione una categoría para explorar:"
     )
 
     await message.answer(
@@ -141,8 +147,9 @@ async def cmd_shop(message: Message, session: AsyncSession):
 
 @shop_user_router.callback_query(F.data == "shop:main")
 async def callback_shop_main(callback: CallbackQuery, session: AsyncSession):
-    """Callback para volver al menú principal de tienda."""
+    """Callback para volver al menú principal del Gabinete."""
     container = ShopContainer(session)
+    lucien = LucienVoiceService()
 
     summary = await container.shop.get_shop_summary()
 
@@ -153,12 +160,16 @@ async def callback_shop_main(callback: CallbackQuery, session: AsyncSession):
     except Exception:
         user_besitos = 0
 
+    # Mensaje de bienvenida del Gabinete
+    cabinet_welcome = await lucien.get_cabinet_message("welcome")
+
     text = (
-        "🏪 <b>Tienda de Artefactos</b>\n\n"
-        f"💋 Tu saldo: <b>{user_besitos}</b> besitos\n\n"
-        f"📦 {summary['total_items']} productos disponibles\n"
+        f"🏛️ <b>El Gabinete</b>\n\n"
+        f"{cabinet_welcome}\n\n"
+        f"💋 Su saldo: <b>{user_besitos}</b> besitos\n\n"
+        f"📦 {summary['total_items']} artículos disponibles\n"
         f"📁 {summary['total_categories']} categorías\n\n"
-        "Selecciona una categoría para explorar:"
+        "Seleccione una categoría para explorar:"
     )
 
     await callback.message.edit_text(
