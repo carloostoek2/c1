@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.narrative.services.container import NarrativeContainer
 from bot.narrative.database.enums import CooldownType
 from bot.narrative.config import NarrativeConfig
+from bot.services.lucien_voice import LucienVoiceService
 
 logger = logging.getLogger(__name__)
 
@@ -271,16 +272,20 @@ async def callback_select_chapter(callback: CallbackQuery, session: AsyncSession
     user_id = callback.from_user.id
     container = NarrativeContainer(session)
 
+    lucien = LucienVoiceService()
+
     # Obtener capítulo
     chapter = await container.fragment.get_chapter_by_slug(chapter_slug)
     if not chapter:
-        await callback.answer("Capítulo no encontrado", show_alert=True)
+        error_msg = await lucien.format_error("permission_denied")
+        await callback.answer(error_msg, show_alert=True)
         return
 
     # Obtener entry point del capítulo
     entry_point = await container.fragment.get_entry_point(chapter.id)
     if not entry_point:
-        await callback.answer("Este capítulo no tiene fragmento inicial", show_alert=True)
+        error_msg = await lucien.format_error("not_configured", {"element": "fragmento inicial"})
+        await callback.answer(error_msg, show_alert=True)
         return
 
     # Avanzar usuario al entry point
@@ -309,15 +314,16 @@ async def callback_process_decision(callback: CallbackQuery, session: AsyncSessi
     decision_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
     container = NarrativeContainer(session)
+    lucien = LucienVoiceService()
 
     # Verificar límite diario de decisiones
     can_continue, used, max_limit = await container.engagement.check_daily_limit(
         user_id, "decisions"
     )
     if not can_continue:
+        error_msg = await lucien.format_error("limit_reached", {"limit_type": "decisiones diarias"})
         await callback.answer(
-            f"📊 Has alcanzado tu límite diario de decisiones ({max_limit}). "
-            "Vuelve mañana para continuar.",
+            error_msg,
             show_alert=True
         )
         return
@@ -325,9 +331,9 @@ async def callback_process_decision(callback: CallbackQuery, session: AsyncSessi
     # Verificar cooldown de decisiones
     can_decide, remaining = await container.cooldown.can_take_decision(user_id)
     if not can_decide:
-        cooldown_msg = NarrativeConfig.get_cooldown_message("decision")
+        error_msg = await lucien.format_error("cooldown_active", {"time_seconds": remaining})
         await callback.answer(
-            f"⏳ {cooldown_msg}\n({remaining} segundos)",
+            error_msg,
             show_alert=True
         )
         return
@@ -339,7 +345,8 @@ async def callback_process_decision(callback: CallbackQuery, session: AsyncSessi
     )
 
     if not success:
-        await callback.answer(message_text, show_alert=True)
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)
         return
 
     # Incrementar contador diario de decisiones
@@ -386,13 +393,16 @@ async def callback_goto_fragment(callback: CallbackQuery, session: AsyncSession)
         )
         return
 
+    lucien = LucienVoiceService()
+
     # Verificar requisitos del fragmento
     fragment = await container.fragment.get_fragment(
         fragment_key,
         load_requirements=True
     )
     if not fragment:
-        await callback.answer("Fragmento no encontrado", show_alert=True)
+        error_msg = await lucien.format_error("permission_denied")
+        await callback.answer(error_msg, show_alert=True)
         return
 
     # Verificar requisitos si tiene
@@ -402,7 +412,8 @@ async def callback_goto_fragment(callback: CallbackQuery, session: AsyncSession)
             fragment=fragment
         )
         if not is_met:
-            await callback.answer(f"🔒 {block_message}", show_alert=True)
+            error_msg = await lucien.format_error("permission_denied")
+            await callback.answer(error_msg, show_alert=True)
             return
 
     # Actualizar progreso

@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.database.enums import UserRole
 from bot.middlewares import DatabaseMiddleware
 from bot.services.container import ServiceContainer
+from bot.services.lucien_voice import LucienVoiceService
 from bot.utils.formatters import format_currency
 from bot.utils.keyboards import create_inline_keyboard
 from bot.utils.menu_helpers import build_start_menu
@@ -66,9 +67,10 @@ async def cmd_start(message: Message, session: AsyncSession):
 
     # Verificar si es admin PRIMERO
     if Config.is_admin(user_id):
+        lucien = LucienVoiceService()
+        welcome_msg = await lucien.get_welcome_message("admin")
         await message.answer(
-            f"👋 Hola <b>{user_name}</b>!\n\n"
-            f"Eres administrador. Usa /admin para gestionar los canales.",
+            welcome_msg,
             parse_mode="HTML"
         )
         return
@@ -115,22 +117,16 @@ async def _activate_token_from_deeplink(
         user: Usuario del sistema
         token_string: String del token a activar
     """
-    # Los middlewares globales se encargan de:
-    # - Typing indicator (TypingIndicatorMiddleware)
-    # - Auto-reacción con ❤️ (AutoReactionMiddleware)
+    lucien = LucienVoiceService()
 
     try:
         # Validar token
         is_valid, msg_result, token = await container.subscription.validate_token(token_string)
 
         if not is_valid:
+            error_msg = await lucien.format_error("token_invalid")
             await message.answer(
-                "❌ <b>Token Inválido</b>\n\n"
-                "El token que intentas usar no es válido.\n\n"
-                "Posibles causas:\n"
-                "• Token incorrecto\n"
-                "• Token ya usado\n"
-                "• Token expirado",
+                error_msg,
                 parse_mode="HTML"
             )
             return
@@ -140,9 +136,9 @@ async def _activate_token_from_deeplink(
 
         if not plan:
             # Token antiguo sin plan asociado (compatibilidad)
+            error_msg = await lucien.format_error("not_configured", {"element": "plan de suscripción"})
             await message.answer(
-                "❌ <b>Token Sin Plan Asociado</b>\n\n"
-                "Este token no tiene un plan de suscripción válido.",
+                error_msg,
                 parse_mode="HTML"
             )
             return
@@ -175,10 +171,9 @@ async def _activate_token_from_deeplink(
         vip_channel_id = await container.channel.get_vip_channel_id()
 
         if not vip_channel_id:
+            error_msg = await lucien.format_error("vip_not_configured")
             await message.answer(
-                "⚠️ <b>Canal VIP No Configurado</b>\n\n"
-                "Tu suscripción fue activada pero el canal VIP no está configurado.\n"
-                "Contacta al administrador.",
+                error_msg,
                 parse_mode="HTML"
             )
             return
@@ -252,10 +247,9 @@ Haz click en el botón para acceder al canal VIP exclusivo con contenido premium
     except Exception as e:
         logger.error(f"❌ Error activando token desde deep link: {e}", exc_info=True)
 
+        error_msg = await lucien.format_error("token_invalid")
         await message.answer(
-            "❌ <b>Error al Activar Token</b>\n\n"
-            "Ocurrió un error al procesar tu suscripción.\n"
-            "Contacta al administrador.",
+            error_msg,
             parse_mode="HTML"
         )
 

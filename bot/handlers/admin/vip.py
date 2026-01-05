@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.admin.main import admin_router
 from bot.services.container import ServiceContainer
+from bot.services.lucien_voice import LucienVoiceService
 from bot.states.admin import ChannelSetupStates
 from bot.utils.formatters import format_currency, format_datetime
 from bot.utils.keyboards import create_inline_keyboard
@@ -167,11 +168,13 @@ async def process_vip_channel_forward(
         session: Sesión de BD
         state: FSM context
     """
+    lucien = LucienVoiceService()
+
     # Verificar que es un forward de un canal
     if not message.forward_from_chat:
+        error_msg = await lucien.format_error("invalid_input")
         await message.answer(
-            "❌ Debes <b>reenviar</b> un mensaje del canal VIP.\n\n"
-            "No me envíes el ID manualmente, reenvía un mensaje.",
+            error_msg,
             parse_mode="HTML"
         )
         return
@@ -180,9 +183,9 @@ async def process_vip_channel_forward(
 
     # Verificar que es un canal (no grupo ni usuario)
     if forward_chat.type not in ["channel", "supergroup"]:
+        error_msg = await lucien.format_error("invalid_input")
         await message.answer(
-            "❌ El mensaje debe ser de un <b>canal</b> o <b>supergrupo</b>.\n\n"
-            "Reenvía un mensaje del canal VIP.",
+            error_msg,
             parse_mode="HTML"
         )
         return
@@ -199,11 +202,12 @@ async def process_vip_channel_forward(
 
     if success:
         # Configuración exitosa
+        success_msg = await lucien.format_confirmation(
+            "channel_configured",
+            {"channel_type": "VIP", "channel_name": channel_title}
+        )
         await message.answer(
-            f"✅ <b>Canal VIP Configurado</b>\n\n"
-            f"Canal: <b>{channel_title}</b>\n"
-            f"ID: <code>{channel_id}</code>\n\n"
-            f"Ya puedes generar tokens de invitación.",
+            success_msg,
             parse_mode="HTML",
             reply_markup=vip_menu_keyboard(True)
         )
@@ -211,13 +215,10 @@ async def process_vip_channel_forward(
         # Limpiar estado FSM
         await state.clear()
     else:
-        # Error en configuración
+        # Error en configuración - usar mensaje de Lucien
+        error_msg = await lucien.format_error("not_configured", {"element": "el canal VIP"})
         await message.answer(
-            f"{msg}\n\n"
-            f"Verifica que:\n"
-            f"• El bot es administrador del canal\n"
-            f"• El bot tiene permiso para invitar usuarios\n\n"
-            f"Intenta nuevamente reenviando un mensaje del canal.",
+            error_msg,
             parse_mode="HTML"
         )
         # Mantener estado FSM para reintentar

@@ -15,6 +15,7 @@ from aiogram import F
 
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
+from bot.services.lucien_voice import LucienVoiceService
 
 router = Router()
 
@@ -75,8 +76,10 @@ async def show_profile(message: Message, gamification: GamificationContainer):
         await message.answer(summary, reply_markup=keyboard, parse_mode="HTML")
 
     except Exception as e:
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
         await message.answer(
-            f"❌ Error al cargar perfil: {str(e)}",
+            error_msg,
             parse_mode="HTML"
         )
 
@@ -129,4 +132,6 @@ async def show_profile_callback(callback: CallbackQuery, gamification: Gamificat
         await callback.answer()
 
     except Exception as e:
-        await callback.answer(f"❌ Error: {str(e)}", show_alert=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)

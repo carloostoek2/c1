@@ -14,6 +14,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 from bot.middlewares import DatabaseMiddleware
 from bot.gamification.services.container import GamificationContainer
 from bot.gamification.database.enums import MissionStatus
+from bot.services.lucien_voice import LucienVoiceService
 
 router = Router()
 
@@ -101,7 +102,9 @@ async def show_missions(callback: CallbackQuery, gamification: GamificationConta
         await callback.answer()
 
     except Exception as e:
-        await callback.answer(f"❌ Error: {str(e)}", show_alert=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)
 
 
 @router.callback_query(F.data.startswith("user:mission:claim:"))
@@ -133,10 +136,14 @@ async def claim_mission_reward(callback: CallbackQuery, gamification: Gamificati
             # Recargar lista de misiones
             await show_missions(callback, gamification)
         else:
-            await callback.answer(f"❌ {message}", show_alert=True)
+            lucien = LucienVoiceService()
+            error_msg = await lucien.format_error("permission_denied")
+            await callback.answer(error_msg, show_alert=True)
 
     except Exception as e:
-        await callback.answer(f"❌ Error: {str(e)}", show_alert=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)
 
 
 @router.callback_query(F.data.startswith("user:mission:view:"))
@@ -161,8 +168,11 @@ async def view_mission_progress(callback: CallbackQuery, gamification: Gamificat
         mission = await gamification.mission.get_mission(mission_id)
         user_mission = await gamification.mission.get_user_mission(user_id, mission_id)
 
+        lucien = LucienVoiceService()
+
         if not mission or not user_mission:
-            await callback.answer("❌ Misión no encontrada", show_alert=True)
+            error_msg = await lucien.format_error("permission_denied")
+            await callback.answer(error_msg, show_alert=True)
             return
 
         # Construir mensaje de progreso
@@ -192,4 +202,6 @@ async def view_mission_progress(callback: CallbackQuery, gamification: Gamificat
         await callback.answer()
 
     except Exception as e:
-        await callback.answer(f"❌ Error: {str(e)}", show_alert=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)

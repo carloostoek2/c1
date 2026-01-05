@@ -10,13 +10,14 @@ from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.middlewares import AdminAuthMiddleware, DatabaseMiddleware
+from bot.services.container import ServiceContainer
+from bot.services.lucien_voice import LucienVoiceService
 from bot.utils.keyboards import (
     admin_main_menu_keyboard,
     back_to_main_menu_keyboard,
     config_menu_keyboard,
     gamification_menu_keyboard
 )
-from bot.services.container import ServiceContainer
 
 logger = logging.getLogger(__name__)
 
@@ -45,25 +46,25 @@ async def cmd_admin(message: Message, session: AsyncSession):
 
     # Crear container de services
     container = ServiceContainer(session, message.bot)
+    lucien = LucienVoiceService()
 
     # Verificar estado de configuración
     config_status = await container.config.get_config_status()
 
-    # Construir texto del menú
+    # Obtener bienvenida de Lucien para admin
+    welcome = await lucien.get_welcome_message("admin")
+
+    # Agregar estado de configuración
     if config_status["is_configured"]:
-        text = (
-            "🤖 <b>Panel de Administración</b>\n\n"
-            "✅ Bot configurado correctamente\n\n"
-            "Selecciona una opción:"
-        )
+        status_text = "✅ Bot configurado correctamente\n\n"
     else:
         missing_items = ", ".join(config_status["missing"])
-        text = (
-            "🤖 <b>Panel de Administración</b>\n\n"
+        status_text = (
             f"⚠️ <b>Configuración incompleta</b>\n"
             f"Faltante: {missing_items}\n\n"
-            "Selecciona una opción para configurar:"
         )
+
+    text = f"{welcome}\n\n{status_text}Selecciona una opción:"
 
     await message.answer(
         text=text,

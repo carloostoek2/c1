@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.handlers.admin.main import admin_router
 from bot.states.admin import ChannelSetupStates, WaitTimeSetupStates, FreeMessageSetupStates
 from bot.services.container import ServiceContainer
+from bot.services.lucien_voice import LucienVoiceService
 from bot.utils.keyboards import create_inline_keyboard
 
 logger = logging.getLogger(__name__)
@@ -157,11 +158,13 @@ async def process_free_channel_forward(
         session: Sesión de BD
         state: FSM context
     """
+    lucien = LucienVoiceService()
+
     # Validaciones idénticas a VIP
     if not message.forward_from_chat:
+        error_msg = await lucien.format_error("invalid_input")
         await message.answer(
-            "❌ Debes <b>reenviar</b> un mensaje del canal Free.\n\n"
-            "No me envíes el ID manualmente, reenvía un mensaje.",
+            error_msg,
             parse_mode="HTML"
         )
         return
@@ -169,9 +172,9 @@ async def process_free_channel_forward(
     forward_chat = message.forward_from_chat
 
     if forward_chat.type not in ["channel", "supergroup"]:
+        error_msg = await lucien.format_error("invalid_input")
         await message.answer(
-            "❌ El mensaje debe ser de un <b>canal</b> o <b>supergrupo</b>.\n\n"
-            "Reenvía un mensaje del canal Free.",
+            error_msg,
             parse_mode="HTML"
         )
         return
@@ -187,20 +190,21 @@ async def process_free_channel_forward(
     success, msg = await container.channel.setup_free_channel(channel_id)
 
     if success:
+        success_msg = await lucien.format_confirmation(
+            "channel_configured",
+            {"channel_type": "Free", "channel_name": channel_title}
+        )
         await message.answer(
-            f"✅ <b>Canal Free Configurado</b>\n\n"
-            f"Canal: <b>{channel_title}</b>\n"
-            f"ID: <code>{channel_id}</code>\n\n"
-            f"Los usuarios ya pueden solicitar acceso.",
+            success_msg,
             parse_mode="HTML",
             reply_markup=free_menu_keyboard(True)
         )
 
         await state.clear()
     else:
+        error_msg = await lucien.format_error("not_configured", {"element": "el canal Free"})
         await message.answer(
-            f"{msg}\n\n"
-            f"Verifica permisos del bot e intenta nuevamente.",
+            error_msg,
             parse_mode="HTML"
         )
 
