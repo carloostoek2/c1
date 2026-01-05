@@ -110,7 +110,8 @@ class User(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relaciones (se definen después en VIPSubscriber y FreeChannelRequest)
+    # Relaciones (se definen después en VIPSubscriber, FreeChannelRequest, ConversionEvent)
+    conversion_events = relationship("ConversionEvent", back_populates="user", lazy="selectin")
 
     @property
     def full_name(self) -> str:
@@ -395,3 +396,114 @@ class BroadcastMessage(Base):
             f"<BroadcastMessage(id={self.id}, chat_id={self.chat_id}, "
             f"message_id={self.message_id}, gamification={self.gamification_enabled})>"
         )
+
+
+class ConversionEvent(Base):
+    """
+    Registro de eventos de conversión para análisis y rate limiting.
+
+    Almacena:
+    - Ofertas mostradas a usuarios
+    - Ofertas aceptadas o rechazadas
+    - Descuentos aplicados
+    - Timestamps para análisis de comportamiento
+    """
+    __tablename__ = "conversion_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Usuario
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
+
+    # Evento
+    event_type = Column(
+        String(50),
+        nullable=False
+    )  # "offer_shown", "offer_accepted", "offer_declined"
+
+    offer_type = Column(
+        String(50),
+        nullable=False
+    )  # "free_to_vip", "vip_renewal", "shop_item", etc.
+
+    # Detalles de la oferta (JSON flexible)
+    offer_details = Column(JSON, default=dict, nullable=False)
+
+    # Descuento aplicado
+    discount_applied = Column(Float, default=0.0, nullable=False)
+
+    # Auditoría
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relación
+    user = relationship("User", back_populates="conversion_events", lazy="selectin")
+
+    # Índices para queries comunes
+    __table_args__ = (
+        Index('idx_user_offer_type', 'user_id', 'offer_type'),
+        Index('idx_event_type', 'event_type'),
+        Index('idx_created_at', 'created_at'),
+    )
+
+    def __repr__(self):
+        return (
+            f"<ConversionEvent(id={self.id}, user_id={self.user_id}, "
+            f"event_type={self.event_type}, offer_type={self.offer_type})>"
+        )
+
+
+class LimitedStock(Base):
+    """
+    Gestión de ítems con stock limitado para crear escasez y urgencia.
+
+    Permite:
+    - Definir cantidad limitada de un item
+    - Reservar temporalmente mientras usuario completa compra
+    - Liberar reservas expiradas
+    - Eventos de tiempo limitado
+    """
+    __tablename__ = "limited_stock"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Item del shop
+    item_id = Column(Integer, nullable=False)  # FK a shop_items (gamification)
+
+    # Cantidades
+    initial_quantity = Column(Integer, nullable=False)
+    remaining_quantity = Column(Integer, nullable=False)
+
+    # Ventana de tiempo
+    start_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    end_date = Column(DateTime, nullable=True)  # None = permanente
+
+    # Auditoría
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Índices
+    __table_args__ = (
+        Index('idx_item_id', 'item_id', unique=True),
+        Index('idx_active_items', 'start_date', 'end_date'),
+    )
+
+    def __repr__(self):
+        return (
+            f"<LimitedStock(id={self.id}, item_id={self.item_id}, "
+            f"remaining={self.remaining_quantity}/{self.initial_quantity})>"
+        )
+
+    @property
+    def is_active(self) -> bool:
+        """Verifica si el item está activo (dentro de ventana de tiempo)."""
+        now = datetime.utcnow()
+        if self.start_date > now:
+            return False
+        if self.end_date and self.end_date < now:
+            return False
+        return True
+
+    @property
+    def is_sold_out(self) -> bool:
+        """Verifica si el stock se agotó."""
+        return self.remaining_quantity <= 0
