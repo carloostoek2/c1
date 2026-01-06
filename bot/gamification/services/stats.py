@@ -9,7 +9,7 @@ from typing import Dict, List
 
 from bot.gamification.database.models import (
     UserGamification, UserMission, UserReward, UserReaction,
-    UserStreak, Mission, Level, Reaction, CustomReaction
+    UserStreak, Mission, Level, Reaction, CustomReaction, GamificationConfig
 )
 from bot.gamification.database.enums import MissionStatus
 from bot.database.models import BroadcastMessage, User
@@ -358,3 +358,143 @@ class StatsService:
         logger.info(f"Retrieved top {len(top_broadcasts)} performing broadcasts")
 
         return top_broadcasts
+
+    # ========================================
+    # ECONOMÍA - ESTADÍSTICAS GLOBALES
+    # ========================================
+
+    async def get_economy_overview(self) -> dict:
+        """
+        Obtiene resumen global de economía de besitos.
+
+        Returns:
+            {
+                'total_in_circulation': int,      # Sum de total_besitos
+                'average_per_user': float,        # Avg de total_besitos
+                'total_earned_historical': int,   # Sum de besitos_earned
+                'total_spent_historical': int,    # Sum de besitos_spent
+                'total_users_with_besitos': int,  # Count con total_besitos > 0
+                'top_holders': List[Dict],        # Top 5 usuarios
+                'by_level': Dict[str, int]        # {level_name: total_besitos}
+            }
+        """
+        # Query 1: Agregaciones principales (optimizado en una sola query)
+        stmt = select(
+            func.sum(UserGamification.total_besitos).label('total_circulation'),
+            func.avg(UserGamification.total_besitos).label('avg_besitos'),
+            func.sum(UserGamification.besitos_earned).label('total_earned'),
+            func.sum(UserGamification.besitos_spent).label('total_spent'),
+            func.count().filter(UserGamification.total_besitos > 0).label('users_with_besitos')
+        )
+        result = await self.session.execute(stmt)
+        row = result.one()
+
+        # Query 2: Top 5 holders (requiere ordenamiento)
+        top_stmt = select(UserGamification).order_by(
+            UserGamification.total_besitos.desc()
+        ).limit(5)
+        top_result = await self.session.execute(top_stmt)
+        top_users = top_result.scalars().all()
+
+        # Query 3: Distribución por nivel (requiere join y agrupación)
+        by_level_stmt = select(
+            Level.name,
+            func.sum(UserGamification.total_besitos).label('total')
+        ).join(
+            UserGamification, UserGamification.current_level_id == Level.id
+        ).group_by(Level.name)
+
+        by_level_result = await self.session.execute(by_level_stmt)
+        by_level = {name: total for name, total in by_level_result}
+
+        logger.info(
+            f"Economy overview: {row.total_circulation or 0} besitos in circulation, "
+            f"{row.users_with_besitos or 0} users with besitos"
+        )
+
+        return {
+            'total_in_circulation': row.total_circulation or 0,
+            'average_per_user': float(row.avg_besitos or 0),
+            'total_earned_historical': row.total_earned or 0,
+            'total_spent_historical': row.total_spent or 0,
+            'total_users_with_besitos': row.users_with_besitos or 0,
+            'top_holders': [
+                {
+                    'user_id': u.user_id,
+                    'total_besitos': u.total_besitos
+                }
+                for u in top_users
+            ],
+            'by_level': by_level
+        }
+
+    async def get_besitos_sources_config(self) -> dict:
+        """
+        Obtiene configuración de fuentes que otorgan besitos.
+
+        Returns:
+            {
+                'reactions': List[Dict],  # [{emoji, name, besitos_value}, ...]
+                'missions': List[Dict],   # [{id, title, besitos_reward}, ...]
+                'daily_gift': Dict,       # {enabled, amount}
+                'levels': List[Dict]      # [{level_number, name, besitos_bonus}, ...]
+            }
+        """
+        # 1. Reacciones activas (ordenadas por valor DESC)
+        reactions_stmt = select(Reaction).where(
+            Reaction.active == True
+        ).order_by(Reaction.besitos_value.desc())
+        reactions_result = await self.session.execute(reactions_stmt)
+        reactions = reactions_result.scalars().all()
+
+        reactions_list = [
+            {
+                'emoji': r.emoji,
+                'name': r.name,
+                'besitos_value': r.besitos_value
+            }
+            for r in reactions
+        ]
+
+        # 2. Misiones activas con recompensa > 0
+        missions_stmt = select(Mission).where(
+            Mission.active == True,
+            Mission.besitos_reward > 0
+        ).order_by(Mission.besitos_reward.desc())
+        missions_result = await self.session.execute(missions_stmt)
+        missions = missions_result.scalars().all()
+
+        missions_list = [
+            {
+                'id': m.id,
+                'name': m.name,
+                'besitos_reward': m.besitos_reward
+            }
+            for m in missions
+        ]
+
+        # 3. Daily Gift (desde GamificationConfig singleton id=1)
+        config = await self.session.get(GamificationConfig, 1)
+        daily_gift = {
+            'enabled': config.daily_gift_enabled if config else False,
+            'amount': config.daily_gift_besitos if config else 0
+        }
+
+        # 4. Niveles con bonificación
+        # NOTA: El modelo Level actualmente no tiene campo besitos_bonus
+        # Los niveles no otorgan besitos automáticamente al subir
+        # Esta sección se mantiene para futura extensibilidad
+        levels_list = []
+
+        logger.info(
+            f"Besitos sources: {len(reactions_list)} reactions, "
+            f"{len(missions_list)} missions, {len(levels_list)} levels, "
+            f"daily_gift={'enabled' if daily_gift['enabled'] else 'disabled'}"
+        )
+
+        return {
+            'reactions': reactions_list,
+            'missions': missions_list,
+            'daily_gift': daily_gift,
+            'levels': levels_list
+        }

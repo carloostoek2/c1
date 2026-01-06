@@ -5,6 +5,8 @@ from bot.gamification.handlers.admin import (
     mission_wizard,
     reward_wizard,
     wizard_level,
+    stats,
+    economy,
     config,
     level_config,
     transaction_history,
@@ -29,6 +31,8 @@ gamification_admin_router = main.router
 gamification_mission_wizard_router = mission_wizard.router
 gamification_reward_wizard_router = reward_wizard.router
 gamification_level_wizard_router = wizard_level.router
+gamification_stats_router = stats.router
+gamification_economy_router = economy.router
 gamification_config_router = config.router
 gamification_level_config_router = level_config.router
 gamification_transaction_history_router = transaction_history.router
@@ -52,6 +56,8 @@ __all__ = [
     "gamification_mission_wizard_router",
     "gamification_reward_wizard_router",
     "gamification_level_wizard_router",
+    "gamification_stats_router",
+    "gamification_economy_router",
     "gamification_config_router",
     "gamification_level_config_router",
     "gamification_transaction_history_router",
