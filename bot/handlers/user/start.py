@@ -23,6 +23,9 @@ from bot.utils.keyboards import create_inline_keyboard
 from bot.utils.menu_helpers import build_start_menu
 from config import Config
 
+from bot.gamification.database.models import BesitoTransaction
+from sqlalchemy import desc, select
+
 logger = logging.getLogger(__name__)
 
 # Router para handlers de usuario
@@ -472,6 +475,7 @@ async def callback_besitos(callback: CallbackQuery, session: AsyncSession):
         # Keyboard con acciones rápidas
         keyboard = create_inline_keyboard([
             [{"text": "🏛️ Ir al Gabinete", "callback_data": "shop:main"}],
+            [{"text": "📜 Historial de Besitos", "callback_data": "besitos:history"}],
             [{"text": "🔙 Volver al Perfil", "callback_data": "user:profile"}],
         ])
 
@@ -480,6 +484,56 @@ async def callback_besitos(callback: CallbackQuery, session: AsyncSession):
 
     except Exception as e:
         logger.error(f"Error en callback besitos: {e}", exc_info=True)
+        lucien = LucienVoiceService()
+        error_msg = await lucien.format_error("invalid_input")
+        await callback.answer(error_msg, show_alert=True)
+
+
+@user_router.callback_query(F.data == "besitos:history")
+async def callback_besitos_history(callback: CallbackQuery, session: AsyncSession):
+    """
+    Callback para ver el historial de transacciones de Besitos.
+
+    Args:
+        callback: Callback query del usuario
+        session: Sesión de BD
+    """
+    try:
+        lucien = LucienVoiceService()
+        user_id = callback.from_user.id
+
+        # Obtener las últimas 10 transacciones
+        stmt = (
+            select(BesitoTransaction)
+            .where(BesitoTransaction.user_id == user_id)
+            .order_by(desc(BesitoTransaction.created_at))
+            .limit(10)
+        )
+        result = await session.execute(stmt)
+        transactions = result.scalars().all()
+
+        message_text = await lucien.get_besitos_message("history_header")
+
+        if not transactions:
+            message_text += "\n\n" + await lucien.get_besitos_message("history_empty")
+        else:
+            for tx in transactions:
+                # Formatear cada transacción
+                sign = "+" if tx.amount > 0 else ""
+                # Asegurar timezone para strftime
+                created_at_utc = tx.created_at.replace(tzinfo=timezone.utc)
+                date = created_at_utc.strftime("%d/%m")
+                message_text += f"\n• {sign}{tx.amount} - {tx.description} ({date})"
+
+        keyboard = create_inline_keyboard([
+            [{"text": "🔙 Volver a Mis Besitos", "callback_data": "user:besitos"}],
+        ])
+
+        await callback.message.edit_text(message_text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"Error en callback_besitos_history: {e}", exc_info=True)
         lucien = LucienVoiceService()
         error_msg = await lucien.format_error("invalid_input")
         await callback.answer(error_msg, show_alert=True)
