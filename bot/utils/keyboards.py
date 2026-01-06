@@ -185,6 +185,7 @@ def gamification_menu_keyboard() -> InlineKeyboardMarkup:
     - Recompensas
     - Niveles
     - Estadísticas
+    - Economía (NUEVO)
     - Transacciones
     - Configuración
     - Wizard Creación
@@ -204,7 +205,10 @@ def gamification_menu_keyboard() -> InlineKeyboardMarkup:
             {"text": "📊 Estadísticas", "callback_data": "gamif:admin:stats"}
         ],
         [
-            {"text": "💰 Transacciones", "callback_data": "gamif:admin:transactions"},
+            {"text": "💰 Economía", "callback_data": "gamif:admin:economy"},
+            {"text": "💳 Transacciones", "callback_data": "gamif:admin:transactions"}
+        ],
+        [
             {"text": "🔧 Configuración", "callback_data": "gamif:admin:config"}
         ],
         [

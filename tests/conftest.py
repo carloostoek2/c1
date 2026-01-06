@@ -70,12 +70,9 @@ def mock_bot():
 
 
 @pytest.fixture
-async def session():
+async def session_maker():
     """
-    Fixture: Sesión async de SQLAlchemy.
-
-    Proporciona una sesión de BD para tests que manipulan datos.
-    La sesión se cierra automáticamente al final del test.
+    Fixture: Proporciona un session_maker para crear sesiones async de SQLAlchemy.
     """
-    async with get_session() as session:
-        yield session
+    # init_db is run by db_setup fixture, so no need to run it here
+    yield get_session # yield the async context manager for sessions

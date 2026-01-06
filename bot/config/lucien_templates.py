@@ -430,4 +430,12 @@ BESITOS_MESSAGES = {
         "Necesita {required} y tiene {current}. "
         "Diana no otorga crédito. Vuelva cuando tenga los medios."
     ),
+    "history_header": (
+        "Historial reciente de sus Besitos:\n"
+        "<i>(Últimas 10 transacciones)</i>"
+    ),
+    "history_empty": (
+        "Aún no hay transacciones en su historial. "
+        "Comience a ganar Besitos interactuando con Diana."
+    ),
 }
