@@ -464,7 +464,8 @@ class ShopService:
         self,
         user_id: int,
         item_id: int,
-        quantity: int = 1
+        quantity: int = 1,
+        bot=None
     ) -> Tuple[bool, str, Optional[ItemPurchase]]:
         """
         Procesa la compra de un item.
@@ -473,6 +474,7 @@ class ShopService:
             user_id: ID del usuario
             item_id: ID del item
             quantity: Cantidad a comprar
+            bot: Instancia del bot (requerido para items con content_set)
 
         Returns:
             (success, message, purchase)
@@ -524,7 +526,50 @@ class ShopService:
             f"User {user_id} purchased {item.name} x{quantity} for {total_price} besitos"
         )
 
+        # Entregar content set si el item tiene uno asociado
+        if item.content_set_id and bot:
+            await self._deliver_content_set(bot, user_id, item)
+
         return True, f"¡Compraste {item.name}!", purchase
+
+    async def _deliver_content_set(
+        self,
+        bot,
+        user_id: int,
+        item: ShopItem
+    ) -> bool:
+        """
+        Entrega contenido multimedia asociado a un item de tienda.
+
+        Args:
+            bot: Instancia del bot de Telegram
+            user_id: ID del usuario
+            item: Item de tienda con content_set_id
+
+        Returns:
+            True si se entregó correctamente
+        """
+        if not item.content_set_id:
+            return False
+
+        from bot.shop.services.content_service import ContentService
+
+        content_service = ContentService(self.session, bot)
+        success, message = await content_service.send_content_set(
+            user_id=user_id,
+            content_set_id=item.content_set_id,
+            context_message=f"🎁 <b>¡Gracias por tu compra de {item.name}!</b>\n\nAquí tienes tu contenido:",
+            delivery_context="shop_purchase",
+            trigger_type="automatic"
+        )
+
+        if success:
+            logger.info(
+                f"Content Set {item.content_set_id} delivered "
+                f"to user {user_id} for shop item {item.id}"
+            )
+
+        return success
 
     async def refund_purchase(
         self,
