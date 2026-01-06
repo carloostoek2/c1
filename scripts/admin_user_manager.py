@@ -47,6 +47,7 @@ from bot.narrative.database.models import (
     UserNarrativeProgress,
     UserDecisionHistory,
 )
+from bot.narrative.database.enums import ArchetypeType
 
 
 class UserManager:
@@ -122,7 +123,7 @@ class UserManager:
         if progress:
             progress.current_chapter_id = None
             progress.current_fragment_key = None
-            progress.detected_archetype = None
+            progress.detected_archetype = ArchetypeType.UNKNOWN
             progress.archetype_confidence = 0.0
             progress.total_decisions = 0
             progress.chapters_completed = 0
