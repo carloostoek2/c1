@@ -13,6 +13,7 @@ class ItemType(str, Enum):
     DIGITAL = "digital"          # Paquetes de contenido digital
     CONSUMABLE = "consumable"    # Items de uso único (boost, etc.)
     COSMETIC = "cosmetic"        # Items cosméticos (títulos, badges extra)
+    CONTENT_SET = "content_set"  # Content multimedia (photos, videos, audio)
 
     def __str__(self) -> str:
         return self.value
@@ -25,6 +26,7 @@ class ItemType(str, Enum):
             "digital": "💾",
             "consumable": "🧪",
             "cosmetic": "✨",
+            "content_set": "🎬",
         }
         return emojis.get(self.value, "📦")
 
@@ -36,6 +38,7 @@ class ItemType(str, Enum):
             "digital": "Contenido Digital",
             "consumable": "Consumible",
             "cosmetic": "Cosmético",
+            "content_set": "Contenido Multimedia",
         }
         return names.get(self.value, "Producto")
 
@@ -140,3 +143,76 @@ class CosmeticItemMetadata(TypedDict):
     cosmetic_type: str                    # "title", "badge", "emoji"
     cosmetic_value: str                   # Valor del cosmético
     is_animated: bool                     # Si es animado (para badges)
+
+
+# ============================================================
+# CMS CONTENT SET ENUMS
+# ============================================================
+
+
+class ContentType(str, Enum):
+    """Tipo de contenido multimedia en un ContentSet."""
+
+    PHOTO_SET = "photo_set"  # Galería de fotos
+    VIDEO = "video"          # Video individual
+    AUDIO = "audio"          # Audio individual
+    MIXED = "mixed"          # Combinación de tipos
+
+    def __str__(self) -> str:
+        return self.value
+
+    @property
+    def emoji(self) -> str:
+        """Emoji representativo del tipo de contenido."""
+        emojis = {
+            "photo_set": "🖼️",
+            "video": "🎬",
+            "audio": "🎵",
+            "mixed": "🎭",
+        }
+        return emojis.get(self.value, "📦")
+
+    @property
+    def display_name(self) -> str:
+        """Nombre para mostrar en UI."""
+        names = {
+            "photo_set": "Galería de Fotos",
+            "video": "Video",
+            "audio": "Audio",
+            "mixed": "Contenido Mixto",
+        }
+        return names.get(self.value, "Contenido")
+
+
+class ContentTier(str, Enum):
+    """Nivel de acceso de un ContentSet."""
+
+    FREE = "free"        # Disponible para todos
+    VIP = "vip"          # Solo suscriptores VIP
+    PREMIUM = "premium"  # Nivel premium especial
+    GIFT = "gift"        # Solo por regalo/recompensa
+
+    def __str__(self) -> str:
+        return self.value
+
+    @property
+    def emoji(self) -> str:
+        """Emoji representativo del tier."""
+        emojis = {
+            "free": "🆓",
+            "vip": "👑",
+            "premium": "💎",
+            "gift": "🎁",
+        }
+        return emojis.get(self.value, "📦")
+
+    @property
+    def display_name(self) -> str:
+        """Nombre para mostrar en UI."""
+        names = {
+            "free": "Gratuito",
+            "vip": "VIP Exclusivo",
+            "premium": "Premium",
+            "gift": "Regalo",
+        }
+        return names.get(self.value, "Contenido")

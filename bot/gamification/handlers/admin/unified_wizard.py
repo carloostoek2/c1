@@ -91,6 +91,12 @@ async def _show_unified_menu(message: Message, is_edit: bool = False):
         ],
         [
             InlineKeyboardButton(
+                text="🎬 Crear Content Set",
+                callback_data="unified:create:content"
+            )
+        ],
+        [
+            InlineKeyboardButton(
                 text="🔙 Volver al Panel",
                 callback_data="gamif:menu"
             )
@@ -103,7 +109,8 @@ async def _show_unified_menu(message: Message, is_edit: bool = False):
         "• <b>Misión:</b> Objetivos con recompensas de besitos\n"
         "• <b>Recompensa:</b> Badges, permisos, items unlock\n"
         "• <b>Item Tienda:</b> Productos comprables con besitos\n"
-        "• <b>Capítulo:</b> Contenido narrativo interactivo\n\n"
+        "• <b>Capítulo:</b> Contenido narrativo interactivo\n"
+        "• <b>Content Set:</b> Contenido multimedia (photos, videos)\n\n"
         "<i>Selecciona qué deseas crear:</i>"
     )
 
@@ -743,6 +750,368 @@ async def chapter_confirm_creation(callback: CallbackQuery, state: FSMContext, s
         )
     except Exception as e:
         logger.error(f"Error creating chapter: {e}")
+        await callback.message.edit_text(
+            f"❌ <b>Error inesperado:</b>\n\n{str(e)}",
+            parse_mode="HTML"
+        )
+
+    await state.clear()
+    await callback.answer()
+
+
+# ========================================
+# WIZARD CONTENT SET (INLINE)
+# ========================================
+
+@router.callback_query(F.data == "unified:create:content")
+async def start_content_wizard(callback: CallbackQuery, state: FSMContext):
+    """Inicia wizard de creación de Content Set."""
+    await state.clear()
+
+    await callback.message.edit_text(
+        "🎬 <b>Wizard: Crear Content Set</b>\n\n"
+        "Paso 1/7: Ingresa un slug único (identificador URL-friendly)\n\n"
+        "<i>Ejemplo: <code>day-1-welcome</code></i>\n\n"
+        "<i>Solo minúsculas, números y guiones. Sin espacios.</i>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")]
+        ])
+    )
+    await state.set_state(UnifiedWizardStates.content_enter_slug)
+    await callback.answer()
+
+
+@router.message(UnifiedWizardStates.content_enter_slug)
+async def content_enter_slug(message: Message, state: FSMContext):
+    """Recibe slug del content set."""
+    if not message.text or len(message.text.strip()) < 2:
+        await message.answer("❌ El slug debe tener al menos 2 caracteres")
+        return
+
+    slug_input = slugify(message.text.strip())
+
+    # Verificar slug único
+    from bot.shop.services.content_service import ContentService
+    content_service = ContentService(state.key)  # Temporal, se reemplazará con sesión real
+    # Nota: En implementación real, aquí se verificaría contra la BD
+
+    await state.update_data(content_slug=slug_input)
+
+    await message.answer(
+        f"✅ Slug: <code>{slug_input}</code>\n\n"
+        f"Paso 2/7: Escribe el nombre del Content Set:\n\n"
+        f"Ejemplo: \"Bienvenida del Día 1\"",
+        parse_mode="HTML"
+    )
+    await state.set_state(UnifiedWizardStates.content_enter_name)
+
+
+@router.message(UnifiedWizardStates.content_enter_name)
+async def content_enter_name(message: Message, state: FSMContext):
+    """Recibe nombre del content set."""
+    if not message.text or len(message.text.strip()) < 3:
+        await message.answer("❌ El nombre debe tener al menos 3 caracteres")
+        return
+
+    await state.update_data(content_name=message.text.strip())
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="🖼️ Galería de Fotos", callback_data="unified:content:type:photo_set"),
+            InlineKeyboardButton(text="🎬 Video", callback_data="unified:content:type:video")
+        ],
+        [
+            InlineKeyboardButton(text="🎵 Audio", callback_data="unified:content:type:audio"),
+            InlineKeyboardButton(text="🎭 Mixto", callback_data="unified:content:type:mixed")
+        ],
+        [
+            InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")
+        ]
+    ])
+
+    await message.answer(
+        f"✅ Nombre guardado\n\n"
+        f"Paso 3/7: Selecciona el tipo de contenido:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(UnifiedWizardStates.content_select_type)
+
+
+@router.callback_query(
+    UnifiedWizardStates.content_enter_name,
+    F.data.startswith("unified:content:type:")
+)
+async def content_select_type(callback: CallbackQuery, state: FSMContext):
+    """Procesa selección de tipo de contenido."""
+    content_type = callback.data.split(":")[-1]
+    type_names = {
+        'photo_set': '🖼️ Galería de Fotos',
+        'video': '🎬 Video',
+        'audio': '🎵 Audio',
+        'mixed': '🎭 Mixto'
+    }
+
+    await state.update_data(content_type=content_type)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="🆓 GRATIS", callback_data="unified:content:tier:free"),
+            InlineKeyboardButton(text="👑 VIP", callback_data="unified:content:tier:vip")
+        ],
+        [
+            InlineKeyboardButton(text="💎 Premium", callback_data="unified:content:tier:premium"),
+            InlineKeyboardButton(text="🎁 Regalo", callback_data="unified:content:tier:gift")
+        ],
+        [
+            InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")
+        ]
+    ])
+
+    await callback.message.edit_text(
+        f"✅ Tipo: <b>{type_names.get(content_type, content_type)}</b>\n\n"
+        f"Paso 4/7: Selecciona el nivel de acceso (tier):",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(UnifiedWizardStates.content_select_tier)
+    await callback.answer()
+
+
+@router.callback_query(
+    UnifiedWizardStates.content_select_tier,
+    F.data.startswith("unified:content:tier:")
+)
+async def content_select_tier(callback: CallbackQuery, state: FSMContext):
+    """Procesa selección de tier."""
+    tier = callback.data.split(":")[-1]
+    tier_names = {
+        'free': '🆓 GRATIS',
+        'vip': '👑 VIP',
+        'premium': '💎 Premium',
+        'gift': '🎁 Regalo'
+    }
+
+    await state.update_data(content_tier=tier)
+
+    await callback.message.edit_text(
+        f"✅ Tier: <b>{tier_names.get(tier, tier)}</b>\n\n"
+        f"Paso 5/7: 📝 Escribe una descripción opcional:\n\n"
+        f"<i>Oprime 'Saltar' para no agregar descripción</i>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="⏭️ Saltar", callback_data="unified:content:skip_desc")],
+            [InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")]
+        ])
+    )
+    await state.set_state(UnifiedWizardStates.content_enter_description)
+    await callback.answer()
+
+
+@router.callback_query(UnifiedWizardStates.content_enter_description, F.data == "unified:content:skip_desc")
+async def content_skip_description(callback: CallbackQuery, state: FSMContext):
+    """Salta descripción y pide archivos."""
+    await state.update_data(content_description="")
+
+    await callback.message.edit_text(
+        "✅ Descripción omitida\n\n"
+        "Paso 6/7: 📎 Envía los archivos multimedia:\n\n"
+        "<i>Sube las fotos, videos o audio que quieras incluir.</i>\n\n"
+        "<b>Puedes enviar varios archivos seguidos.</b>\n\n"
+        "<i>Cuando termines, presiona 'Finalizar'.</i>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Finalizar Upload", callback_data="unified:content:finish_upload")],
+            [InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")]
+        ])
+    )
+    await state.set_state(UnifiedWizardStates.content_upload_files)
+    await callback.answer()
+
+
+@router.message(UnifiedWizardStates.content_enter_description)
+async def content_enter_description(message: Message, state: FSMContext):
+    """Recibe descripción del content set."""
+    await state.update_data(content_description=message.text.strip())
+
+    await message.answer(
+        "✅ Descripción guardada\n\n"
+        "Paso 6/7: 📎 Envía los archivos multimedia:\n\n"
+        "<i>Sube las fotos, videos o audio que quieras incluir.</i>\n\n"
+        "<b>Puedes enviar varios archivos seguidos.</b>\n\n"
+        "<i>Cuando termines, presiona 'Finalizar'.</i>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Finalizar Upload", callback_data="unified:content:finish_upload")],
+            [InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")]
+        ])
+    )
+    await state.set_state(UnifiedWizardStates.content_upload_files)
+
+
+@router.message(UnifiedWizardStates.content_upload_files)
+async def content_upload_file(message: Message, state: FSMContext):
+    """Procesa upload de archivos multimedia."""
+    data = await state.get_data()
+    file_ids = data.get('file_ids', [])
+
+    # Procesar según tipo de archivo recibido
+    if message.photo:
+        # Foto: usar la última (más grande)
+        file_id = message.photo[-1].file_id
+        file_ids.append(file_id)
+        await state.update_data(file_ids=file_ids)
+
+        await message.answer(
+            f"✅ Foto recibida ({len(file_ids)} archivo(s) total)\n\n"
+            f"<i>Envía más archivos o presiona 'Finalizar'.</i>",
+            parse_mode="HTML"
+        )
+
+    elif message.video:
+        file_id = message.video.file_id
+        file_ids.append(file_id)
+        await state.update_data(file_ids=file_ids)
+
+        await message.answer(
+            f"✅ Video recibido ({len(file_ids)} archivo(s) total)\n\n"
+            f"<i>Envía más archivos o presiona 'Finalizar'.</i>",
+            parse_mode="HTML"
+        )
+
+    elif message.audio:
+        file_id = message.audio.file_id
+        file_ids.append(file_id)
+        await state.update_data(file_ids=file_ids)
+
+        await message.answer(
+            f"✅ Audio recibido ({len(file_ids)} archivo(s) total)\n\n"
+            f"<i>Envía más archivos o presiona 'Finalizar'.</i>",
+            parse_mode="HTML"
+        )
+
+    elif message.document:
+        # Documento (podría ser video/audio comprimido)
+        file_id = message.document.file_id
+        file_ids.append(file_id)
+        await state.update_data(file_ids=file_ids)
+
+        await message.answer(
+            f"✅ Archivo recibido ({len(file_ids)} archivo(s) total)\n\n"
+            f"<i>Envía más archivos o presiona 'Finalizar'.</i>",
+            parse_mode="HTML"
+        )
+
+    else:
+        await message.answer("❌ Por favor envía una foto, video o audio válido")
+
+
+@router.callback_query(UnifiedWizardStates.content_upload_files, F.data == "unified:content:finish_upload")
+async def content_finish_upload(callback: CallbackQuery, state: FSMContext):
+    """Finaliza upload de archivos y muestra confirmación."""
+    data = await state.get_data()
+    file_ids = data.get('file_ids', [])
+
+    if not file_ids:
+        await callback.answer("⚠️ Debes enviar al menos un archivo", show_alert=True)
+        return
+
+    # Mostrar resumen para confirmación
+    type_names = {
+        'photo_set': '🖼️ Galería de Fotos',
+        'video': '🎬 Video',
+        'audio': '🎵 Audio',
+        'mixed': '🎭 Mixto'
+    }
+    tier_names = {
+        'free': '🆓 GRATIS',
+        'vip': '👑 VIP',
+        'premium': '💎 Premium',
+        'gift': '🎁 Regalo'
+    }
+
+    summary = f"""📋 <b>RESUMEN DEL CONTENT SET</b>
+
+<b>Slug:</b> <code>{data.get('content_slug', 'N/A')}</code>
+<b>Nombre:</b> {data.get('content_name', 'N/A')}
+<b>Tipo:</b> {type_names.get(data.get('content_type', ''), 'N/A')}
+<b>Tier:</b> {tier_names.get(data.get('content_tier', ''), 'N/A')}
+<b>Archivos:</b> {len(file_ids)}
+<b>Descripción:</b> {data.get('content_description', 'Sin descripción')}
+
+<b>¿Confirmar creación?</b>
+"""
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Confirmar", callback_data="unified:content:confirm"),
+            InlineKeyboardButton(text="❌ Cancelar", callback_data="unified:wizard:menu")
+        ]
+    ])
+
+    await callback.message.edit_text(
+        summary,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(UnifiedWizardStates.content_confirm)
+    await callback.answer()
+
+
+@router.callback_query(UnifiedWizardStates.content_confirm, F.data == "unified:content:confirm")
+async def content_confirm_creation(callback: CallbackQuery, state: FSMContext, session):
+    """Crea el Content Set."""
+    data = await state.get_data()
+
+    await callback.message.edit_text("⚙️ Creando Content Set...", parse_mode="HTML")
+
+    try:
+        from bot.shop.services.content_service import ContentService
+        from bot.shop.database.enums import ContentType, ContentTier
+
+        content_service = ContentService(session, callback.bot)
+
+        content_set = await content_service.create_content_set(
+            slug=data['content_slug'],
+            name=data['content_name'],
+            description=data.get('content_description'),
+            content_type=ContentType(data['content_type']),
+            tier=ContentTier(data['content_tier']),
+            file_ids=data['file_ids'],
+            created_by=callback.from_user.id
+        )
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="➕ Crear Otro", callback_data="unified:create:content")],
+            [InlineKeyboardButton(text="🔙 Menú Principal", callback_data="unified:wizard:menu")]
+        ])
+
+        await callback.message.edit_text(
+            f"✅ <b>Content Set Creado Exitosamente</b>\n\n"
+            f"<b>🎬 {content_set.name}</b>\n"
+            f"ID: {content_set.id}\n"
+            f"Slug: <code>{content_set.slug}</code>\n"
+            f"Tipo: {content_set.content_type}\n"
+            f"Tier: {content_set.tier}\n"
+            f"Archivos: {len(content_set.file_ids)}\n\n"
+            f"<i>El Content Set está ahora disponible para vincularlo en:</i>\n"
+            f"<i>• 🛒 Items de tienda</i>\n"
+            f"<i>• 🎁 Recompensas</i>\n"
+            f"<i>• 📖 Fragmentos narrativos</i>",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+
+        await session.commit()
+
+    except ValueError as e:
+        await callback.message.edit_text(
+            f"❌ <b>Error de validación:</b>\n\n{str(e)}",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logger.error(f"Error creating content set: {e}")
         await callback.message.edit_text(
             f"❌ <b>Error inesperado:</b>\n\n{str(e)}",
             parse_mode="HTML"

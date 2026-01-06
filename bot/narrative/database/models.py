@@ -80,6 +80,17 @@ class NarrativeFragment(Base):
         String(100), nullable=True
     )  # Telegram file_id
 
+    # Vinculación con Content Set multimedia
+    content_set_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("content_sets.id", ondelete="SET NULL"),
+        nullable=True
+    )  # Content multimedia asociado al fragmento
+    auto_send_content: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True
+    )  # Enviar automáticamente al navegar al fragmento
+
     # Navegación
     order: Mapped[int] = mapped_column(default=0)
     is_entry_point: Mapped[bool] = mapped_column(default=False)  # Inicio de capítulo
@@ -104,11 +115,16 @@ class NarrativeFragment(Base):
         back_populates="fragment",
         cascade="all, delete-orphan"
     )
+    content_set: Mapped[Optional["ContentSet"]] = relationship(
+        "ContentSet",
+        foreign_keys=[content_set_id]
+    )
 
     # Índices
     __table_args__ = (
         Index("idx_chapter_order", "chapter_id", "order"),
         Index("idx_entry_points", "chapter_id", "is_entry_point"),
+        Index("idx_fragment_content_set", "content_set_id"),
     )
 
     def __repr__(self):

@@ -9,12 +9,13 @@ Define los modelos SQLAlchemy 2.0 para:
 - ItemPurchase: Historial de compras
 """
 
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 from datetime import datetime, UTC
+import json
 
 from sqlalchemy import (
     BigInteger, String, Integer, Boolean, DateTime,
-    ForeignKey, Index, Text, Float
+    ForeignKey, Index, Text, Float, JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -82,7 +83,7 @@ class ShopItem(Base):
     Producto de la tienda.
 
     Representa un item que puede comprarse con besitos.
-    Puede ser narrativo (desbloquea contenido), digital, consumible o cosmético.
+    Puede ser narrativo (desbloquea contenido), digital, consumible, cosmético o content set.
 
     Attributes:
         id: ID único del producto
@@ -91,12 +92,13 @@ class ShopItem(Base):
         slug: Identificador URL-friendly
         description: Descripción corta
         long_description: Descripción detallada (HTML permitido)
-        item_type: Tipo de item (narrative, digital, consumable, cosmetic)
+        item_type: Tipo de item (narrative, digital, consumible, cosmetic, content_set)
         rarity: Rareza del item (common, uncommon, rare, epic, legendary)
         price_besitos: Precio en besitos
         icon: Emoji o icono del item
         image_file_id: File ID de Telegram para imagen
         item_metadata: JSON con datos específicos del tipo
+        content_set_id: FK al ContentSet (para items tipo content_set)
         stock: Cantidad disponible (None = ilimitado)
         max_per_user: Máximo que puede tener un usuario (None = ilimitado)
         requires_vip: Si requiere ser VIP para comprar
@@ -133,6 +135,13 @@ class ShopItem(Base):
 
     # Metadata específica del tipo (JSON)
     item_metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Vinculación con Content Set (para items tipo CONTENT_SET)
+    content_set_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("content_sets.id", ondelete="SET NULL"),
+        nullable=True
+    )
 
     # Stock y límites
     stock: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -175,6 +184,10 @@ class ShopItem(Base):
         back_populates="item",
         cascade="all, delete-orphan"
     )
+    content_set: Mapped[Optional["ContentSet"]] = relationship(
+        "ContentSet",
+        foreign_keys=[content_set_id]
+    )
 
     # Índices
     __table_args__ = (
@@ -184,6 +197,7 @@ class ShopItem(Base):
         Index("idx_shop_item_featured", "is_featured"),
         Index("idx_shop_item_order", "order"),
         Index("idx_shop_item_price", "price_besitos"),
+        Index("idx_shop_item_content_set", "content_set_id"),
     )
 
     def __repr__(self) -> str:
@@ -368,3 +382,170 @@ class ItemPurchase(Base):
 
     def __repr__(self) -> str:
         return f"<ItemPurchase(id={self.id}, user={self.user_id}, item={self.item_id}, price={self.price_paid})>"
+
+
+# ============================================================
+# CMS CONTENT SET MODELS
+# ============================================================
+
+
+class ContentSet(Base):
+    """
+    Conjunto de contenido multimedia (photos, videos, audio).
+
+    Almacena contenido multimedia que se puede entregar a usuarios
+    a través de diferentes mecanismos: shop, narrativa, gamificación.
+
+    Attributes:
+        id: ID único del content set
+        slug: Identificador URL-friendly único
+        name: Nombre del content set
+        description: Descripción opcional
+        content_type: Tipo de contenido (photo_set, video, audio, mixed)
+        category: Categoría de uso (teaser, welcome, milestone, gift)
+        tier: Nivel de acceso (free, vip, premium, gift)
+        file_ids: JSON array de Telegram file_ids
+        file_metadata: JSON object con metadata de archivos
+        is_active: Si está activo para uso
+        requires_vip: Si requiere ser VIP para acceder
+        created_by: ID del admin que lo creó
+        created_at: Fecha de creación
+        updated_at: Fecha de última actualización
+    """
+
+    __tablename__ = "content_sets"
+
+    # Identificación
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        nullable=False,
+        index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Clasificación
+    content_type: Mapped[str] = mapped_column(String(20), nullable=False)  # ContentType enum
+    category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # teaser, welcome, etc.
+    tier: Mapped[str] = mapped_column(String(20), nullable=False, default="free")  # ContentTier enum
+
+    # Contenido multimedia (Telegram file_ids)
+    # Almacenado como JSON string en SQLite
+    file_ids_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
+    file_metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="{}")
+
+    # Control de acceso
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    requires_vip: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Auditoría
+    created_by: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False
+    )
+
+    # Índices compuestos
+    __table_args__ = (
+        Index("idx_content_slug", "slug"),
+        Index("idx_content_type_tier", "content_type", "tier"),
+        Index("idx_content_active", "is_active"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<ContentSet(id={self.id}, slug='{self.slug}', name='{self.name}', type='{self.content_type}')>"
+
+    @property
+    def file_ids(self) -> List[str]:
+        """Retorna la lista de file_ids desde JSON."""
+        if not self.file_ids_json:
+            return []
+        try:
+            return json.loads(self.file_ids_json)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    @file_ids.setter
+    def file_ids(self, value: List[str]) -> None:
+        """Guarda la lista de file_ids como JSON."""
+        self.file_ids_json = json.dumps(value) if value else "[]"
+
+    @property
+    def file_metadata(self) -> Dict[str, Any]:
+        """Retorna el diccionario de metadata desde JSON."""
+        if not self.file_metadata_json:
+            return {}
+        try:
+            return json.loads(self.file_metadata_json)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    @file_metadata.setter
+    def file_metadata(self, value: Dict[str, Any]) -> None:
+        """Guarda la metadata como JSON."""
+        self.file_metadata_json = json.dumps(value) if value else "{}"
+
+
+class UserContentAccess(Base):
+    """
+    Registro de acceso de usuario a content sets.
+
+    Auditoría de qué contenido se entregó a qué usuarios y cuándo.
+    Permite tracking y analytics de consumo de contenido.
+
+    Attributes:
+        id: ID único del registro
+        user_id: ID del usuario
+        content_set_id: ID del content set accedido
+        accessed_at: Fecha de acceso
+        delivery_context: Contexto de entrega (shop_purchase, reward_claim, etc.)
+        trigger_type: Tipo de trigger (manual, automatic, achievement)
+    """
+
+    __tablename__ = "user_content_access"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False
+    )
+    content_set_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("content_sets.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    # Tracking
+    accessed_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+        index=True
+    )
+    delivery_context: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True
+    )  # "shop_purchase", "reward_claim", "gift", "narrative"
+    trigger_type: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True
+    )  # "manual", "automatic", "achievement"
+
+    # Índices compuestos
+    __table_args__ = (
+        Index("idx_user_content", "user_id", "content_set_id"),
+        Index("idx_content_access_by_user", "user_id", "accessed_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserContentAccess(id={self.id}, user_id={self.user_id}, content_set_id={self.content_set_id})>"

@@ -53,6 +53,8 @@ class RewardType(str, Enum):
     NARRATIVE_UNLOCK = "narrative_unlock"  # Desbloquea contenido narrativo
     # Cross-module rewards (Fase 3 - Integración VIP)
     VIP_DAYS = "vip_days"  # Otorga días de suscripción VIP
+    # Cross-module rewards (CMS Journey - Integración Content Sets)
+    CONTENT_SET = "content_set"  # Otorga contenido multimedia
 
     def __str__(self) -> str:
         return self.value
