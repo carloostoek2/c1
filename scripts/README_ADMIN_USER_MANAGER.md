@@ -97,7 +97,44 @@ python scripts/admin_user_manager.py reset-narrative 123456789
 ✅ Estado narrativo reseteado exitosamente.
 ```
 
-### 3. Establecer Cantidad Exacta de Besitos
+### 3. Resetear Onboarding Completo
+
+⭐ **RECOMENDADO PARA USUARIOS FREE**
+
+Resetea completamente el proceso de onboarding para que el usuario comience desde cero cuando sea aceptado nuevamente en el canal Free. Esta es la operación más completa para "limpiar" un usuario.
+
+**Incluye:**
+- Progreso narrativo completo
+- Solicitudes Free pendientes (puede volver a solicitar)
+- Estado del ciclo de vida (reset a "new")
+- Estadísticas de interacción
+
+```bash
+python scripts/admin_user_manager.py reset-onboarding <user_id>
+```
+
+**Ejemplo:**
+```bash
+python scripts/admin_user_manager.py reset-onboarding 123456789
+```
+
+**Output:**
+```
+🔄 Reseteando onboarding completo de Juan Pérez...
+   • Progreso narrativo
+   • Solicitudes Free pendientes
+   • Estado del ciclo de vida
+✅ Onboarding reseteado exitosamente.
+ℹ️  El usuario comenzará desde cero al ser aceptado nuevamente.
+```
+
+**Casos de uso:**
+- Usuario de prueba que quieres resetear completamente
+- Usuario que quiere experimentar el onboarding nuevamente
+- Debugging del flujo de onboarding Free
+- Limpiar estado inconsistente
+
+### 4. Establecer Cantidad Exacta de Besitos
 
 Establece el balance de besitos a un valor específico:
 
@@ -118,7 +155,7 @@ python scripts/admin_user_manager.py set-besitos 123456789 1000
 
 **Nota:** Esta operación registra una transacción de auditoría en la tabla `besito_transactions` con el tipo `admin_adjustment`.
 
-### 4. Agregar Besitos
+### 5. Agregar Besitos
 
 Incrementa el balance de besitos del usuario:
 
@@ -139,7 +176,7 @@ python scripts/admin_user_manager.py add-besitos 123456789 500
 
 **Nota:** Esta operación registra una transacción con tipo `admin_grant`.
 
-### 5. Restar Besitos
+### 6. Restar Besitos
 
 Decrementa el balance de besitos del usuario:
 
@@ -162,7 +199,7 @@ python scripts/admin_user_manager.py subtract-besitos 123456789 200
 - Esta operación NO permite besitos negativos (mínimo 0)
 - Registra una transacción con tipo `admin_deduction`
 
-### 6. Resetear Daily Gift
+### 7. Resetear Daily Gift
 
 Resetea el estado del regalo diario, permitiendo al usuario reclamarlo nuevamente:
 
@@ -185,7 +222,7 @@ python scripts/admin_user_manager.py reset-daily-gift 123456789
 - Limpia `last_claim_date` (usuario puede reclamar inmediatamente)
 - Resetea `current_streak` a 0
 
-### 7. Resetear Streaks
+### 8. Resetear Streaks
 
 Resetea las rachas de reacciones del usuario:
 
@@ -208,7 +245,7 @@ python scripts/admin_user_manager.py reset-streaks 123456789
 - Resetea `current_streak` a 0
 - Limpia `last_reaction_date`
 
-### 8. Ver Historial de Transacciones
+### 9. Ver Historial de Transacciones
 
 Muestra las últimas transacciones de besitos del usuario:
 
@@ -249,7 +286,7 @@ python scripts/admin_user_manager.py transactions 123456789 --limit 10
 **Parámetros:**
 - `--limit N`: Cantidad de transacciones a mostrar (default: 20)
 
-### 9. Reset Completo (PELIGROSO)
+### 10. Reset Completo (PELIGROSO)
 
 ⚠️ **ADVERTENCIA:** Esta operación elimina TODO el progreso del usuario.
 
@@ -345,8 +382,12 @@ python scripts/admin_user_manager.py transactions <user_id> --limit 100
 python scripts/admin_user_manager.py info 123456789
 ```
 
-### Testing: Resetear un usuario de prueba
+### Testing: Resetear un usuario de prueba (onboarding completo)
 ```bash
+# Opción recomendada: Solo resetea lo necesario para onboarding
+python scripts/admin_user_manager.py reset-onboarding 123456789
+
+# Opción nuclear: Resetea TODO (incluye besitos)
 python scripts/admin_user_manager.py reset-all 123456789 --confirm
 ```
 
@@ -368,6 +409,11 @@ python scripts/admin_user_manager.py transactions 123456789 --limit 50
 ### Soporte: Permitir a un usuario reclamar el regalo diario nuevamente
 ```bash
 python scripts/admin_user_manager.py reset-daily-gift 123456789
+```
+
+### Debugging: Usuario quiere experimentar el onboarding Free de nuevo
+```bash
+python scripts/admin_user_manager.py reset-onboarding 123456789
 ```
 
 ## 🎯 Casos de Uso

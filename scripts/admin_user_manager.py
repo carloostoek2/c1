@@ -14,6 +14,7 @@ Permite realizar operaciones de mantenimiento y debugging sobre usuarios especí
 Uso:
     python scripts/admin_user_manager.py info <user_id>
     python scripts/admin_user_manager.py reset-narrative <user_id>
+    python scripts/admin_user_manager.py reset-onboarding <user_id>
     python scripts/admin_user_manager.py set-besitos <user_id> <amount>
     python scripts/admin_user_manager.py add-besitos <user_id> <amount>
     python scripts/admin_user_manager.py reset-daily-gift <user_id>
@@ -35,7 +36,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.database.engine import get_session, init_db
-from bot.database.models import User
+from bot.database.models import User, FreeChannelRequest, UserLifecycle
 from bot.gamification.database.models import (
     UserGamification,
     BesitoTransaction,
@@ -126,6 +127,50 @@ class UserManager:
             progress.total_decisions = 0
             progress.chapters_completed = 0
             progress.last_interaction = datetime.now(UTC)
+
+        await self.session.commit()
+        return True
+
+    async def reset_onboarding(self, user_id: int) -> bool:
+        """
+        Resetea el proceso completo de onboarding del usuario.
+
+        Esto prepara al usuario para empezar desde cero cuando sea
+        aceptado nuevamente en el canal Free, incluyendo:
+        - Progreso narrativo completo
+        - Solicitudes Free pendientes
+        - Estado del ciclo de vida (reset a 'new')
+
+        Args:
+            user_id: ID del usuario
+
+        Returns:
+            bool: True si exitoso
+        """
+        # 1. Resetear progreso narrativo
+        await self.reset_narrative_progress(user_id)
+
+        # 2. Limpiar solicitudes Free pendientes
+        await self.session.execute(
+            delete(FreeChannelRequest).where(
+                FreeChannelRequest.user_id == user_id
+            )
+        )
+
+        # 3. Resetear estado del ciclo de vida a 'new'
+        lifecycle_result = await self.session.execute(
+            select(UserLifecycle).where(UserLifecycle.user_id == user_id)
+        )
+        lifecycle = lifecycle_result.scalar_one_or_none()
+
+        if lifecycle:
+            lifecycle.current_state = "new"
+            lifecycle.last_activity = datetime.now(UTC)
+            lifecycle.risk_score = 0
+            lifecycle.messages_sent_count = 0
+            lifecycle.last_message_sent = None
+            lifecycle.do_not_disturb = False
+            lifecycle.state_changed_at = datetime.now(UTC)
 
         await self.session.commit()
         return True
@@ -412,6 +457,31 @@ async def cmd_reset_narrative(args):
             print(f"❌ Error al resetear estado narrativo.")
 
 
+async def cmd_reset_onboarding(args):
+    """Resetea el onboarding completo del usuario."""
+    await init_db()  # Inicializar BD
+    async with get_session() as session:
+        manager = UserManager(session)
+        user = await manager.get_user(args.user_id)
+
+        if not user:
+            print(f"❌ Usuario {args.user_id} no encontrado.")
+            return
+
+        print(f"🔄 Reseteando onboarding completo de {user.full_name}...")
+        print(f"   • Progreso narrativo")
+        print(f"   • Solicitudes Free pendientes")
+        print(f"   • Estado del ciclo de vida")
+
+        success = await manager.reset_onboarding(args.user_id)
+
+        if success:
+            print(f"✅ Onboarding reseteado exitosamente.")
+            print(f"ℹ️  El usuario comenzará desde cero al ser aceptado nuevamente.")
+        else:
+            print(f"❌ Error al resetear onboarding.")
+
+
 async def cmd_set_besitos(args):
     """Establece la cantidad exacta de besitos."""
     await init_db()  # Inicializar BD
@@ -607,6 +677,12 @@ def main():
     )
     parser_reset_narrative.add_argument("user_id", type=int, help="ID del usuario")
 
+    # reset-onboarding
+    parser_reset_onboarding = subparsers.add_parser(
+        "reset-onboarding", help="Resetea el onboarding completo del usuario"
+    )
+    parser_reset_onboarding.add_argument("user_id", type=int, help="ID del usuario")
+
     # set-besitos
     parser_set_besitos = subparsers.add_parser(
         "set-besitos", help="Establece la cantidad exacta de besitos"
@@ -670,6 +746,7 @@ def main():
     commands = {
         "info": cmd_info,
         "reset-narrative": cmd_reset_narrative,
+        "reset-onboarding": cmd_reset_onboarding,
         "set-besitos": cmd_set_besitos,
         "add-besitos": cmd_add_besitos,
         "subtract-besitos": cmd_subtract_besitos,
