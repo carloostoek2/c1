@@ -8,6 +8,7 @@ Responsabilidades:
 - Validación de permisos (VIP, tier)
 """
 
+import json
 import logging
 import asyncio
 from typing import Optional, List, Dict, Any, Tuple
@@ -106,8 +107,8 @@ class ContentService:
             content_type=content_type.value,
             tier=tier.value,
             category=category,
-            file_ids_json=file_ids,  # Usar setter
-            file_metadata_json=file_metadata or {},  # Usar setter
+            file_ids_json=json.dumps(file_ids) if file_ids else "[]",  # Convertir a JSON
+            file_metadata_json=json.dumps(file_metadata or {}) if file_metadata else "{}",  # Convertir a JSON
             created_by=created_by,
             is_active=is_active,
             requires_vip=requires_vip

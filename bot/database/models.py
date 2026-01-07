@@ -118,6 +118,10 @@ class User(Base):
     notification_preferences = relationship("NotificationPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin")
     reengagement_logs = relationship("ReengagementLog", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
 
+    # CMS Journey Relationships
+    content_access = relationship("UserContentAccess", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+
+
     @property
     def full_name(self) -> str:
         """Retorna nombre completo del usuario."""

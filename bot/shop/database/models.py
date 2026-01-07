@@ -19,6 +19,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from bot.narrative.database.models import NarrativeFragment
+from bot.gamification.database.models import Reward
+
 # Importar Base del sistema core
 try:
     from bot.database.base import Base
@@ -186,6 +189,7 @@ class ShopItem(Base):
     )
     content_set: Mapped[Optional["ContentSet"]] = relationship(
         "ContentSet",
+        back_populates="shop_items",
         foreign_keys=[content_set_id]
     )
 
@@ -454,6 +458,25 @@ class ContentSet(Base):
         nullable=False
     )
 
+    # Relationships
+    shop_items: Mapped[List["ShopItem"]] = relationship(
+        "ShopItem",
+        back_populates="content_set"
+    )
+    narrative_fragments: Mapped[List["NarrativeFragment"]] = relationship(
+        "NarrativeFragment",
+        back_populates="content_set"
+    )
+    rewards: Mapped[List["Reward"]] = relationship(
+        "Reward",
+        back_populates="content_set"
+    )
+    user_content_access: Mapped[List["UserContentAccess"]] = relationship(
+        "UserContentAccess",
+        back_populates="content_set",
+        cascade="all, delete-orphan"
+    )
+
     # Índices compuestos
     __table_args__ = (
         Index("idx_content_slug", "slug"),
@@ -540,6 +563,16 @@ class UserContentAccess(Base):
         String(50),
         nullable=True
     )  # "manual", "automatic", "achievement"
+
+    # Relaciones
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="content_access"
+    )
+    content_set: Mapped["ContentSet"] = relationship(
+        "ContentSet",
+        back_populates="user_content_access"
+    )
 
     # Índices compuestos
     __table_args__ = (

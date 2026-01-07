@@ -18,6 +18,7 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.filters.admin import IsAdmin
 from bot.middlewares import DatabaseMiddleware
@@ -783,7 +784,7 @@ async def start_content_wizard(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(UnifiedWizardStates.content_enter_slug)
-async def content_enter_slug(message: Message, state: FSMContext):
+async def content_enter_slug(message: Message, state: FSMContext, session):
     """Recibe slug del content set."""
     if not message.text or len(message.text.strip()) < 2:
         await message.answer("❌ El slug debe tener al menos 2 caracteres")
@@ -793,8 +794,21 @@ async def content_enter_slug(message: Message, state: FSMContext):
 
     # Verificar slug único
     from bot.shop.services.content_service import ContentService
-    content_service = ContentService(state.key)  # Temporal, se reemplazará con sesión real
-    # Nota: En implementación real, aquí se verificaría contra la BD
+    from sqlalchemy import select
+    from bot.shop.database.models import ContentSet
+
+    # Verificar si ya existe un content set con ese slug
+    stmt = select(ContentSet).where(ContentSet.slug == slug_input)
+    result = await session.execute(stmt)
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        await message.answer(
+            f"❌ El slug <code>{slug_input}</code> ya está en uso. "
+            "Por favor usa otro.",
+            parse_mode="HTML"
+        )
+        return
 
     await state.update_data(content_slug=slug_input)
 
@@ -840,7 +854,7 @@ async def content_enter_name(message: Message, state: FSMContext):
 
 
 @router.callback_query(
-    UnifiedWizardStates.content_enter_name,
+    UnifiedWizardStates.content_select_type,
     F.data.startswith("unified:content:type:")
 )
 async def content_select_type(callback: CallbackQuery, state: FSMContext):

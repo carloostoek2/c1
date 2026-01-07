@@ -117,6 +117,7 @@ class NarrativeFragment(Base):
     )
     content_set: Mapped[Optional["ContentSet"]] = relationship(
         "ContentSet",
+        back_populates="narrative_fragments",
         foreign_keys=[content_set_id]
     )
 

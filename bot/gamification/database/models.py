@@ -338,6 +338,7 @@ class Reward(Base):
     )
     content_set: Mapped[Optional["ContentSet"]] = relationship(
         "ContentSet",
+        back_populates="rewards",
         foreign_keys=[content_set_id]
     )
 
