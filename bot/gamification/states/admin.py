@@ -72,6 +72,10 @@ class MissionWizardStates(StatesGroup):
     choose_vip_reward = State()  # Elegir si otorgar VIP
     enter_vip_days = State()  # Cantidad de días VIP
 
+    # Paso 5.4: Content Set como recompensa (CMS Journey)
+    choose_content_set_reward = State()  # Elegir si agregar content set
+    select_content_set = State()  # Seleccionar content set específico
+
     # Paso 6: Confirmación
     confirm = State()
 
