@@ -609,3 +609,122 @@ BESITOS_MESSAGES = {
         "Comience a ganar besitos interactuando con Diana."
     ),
 }
+
+
+# ========================================
+# CONTENT SET MESSAGES (CMS Journey)
+# ========================================
+
+CONTENT_SET_MESSAGES = {
+    # Delivery confirmations
+    "content_delivered": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Diana ha preparado algo especial para usted...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "{description}\n\n"
+        "Disfrútelo con la dedicación que merece.</i>"
+    ),
+    "content_delivered_from_shop": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Su adquisición de <b>{item_name}</b> incluye un regalo de Diana...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "{description}\n\n"
+        "Ella aprecia cuando sus elecciones son tan... perspicaces.</i>"
+    ),
+    "content_delivered_from_reward": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Por completar el encargo, Diana le concede este privilegio...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "{description}\n\n"
+        "Las almas persistentes son recompensadas con la debida atención.</i>"
+    ),
+    "content_delivered_from_narrative": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>La historia continúa, y Diana comparte este fragmento...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "{description}\n\n"
+        "Algunos secretos solo se revelan a quienes siguen el hilo adecuadamente.</i>"
+    ),
+    "content_gift_received": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Un regalo inesperado de Diana...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "{description}\n\n"
+        "Ella ha notado algo en usted que merece este reconocimiento especial.</i>"
+    ),
+    # VIP/Premium requirements
+    "content_vip_required": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Este contenido requiere acceso al círculo exclusivo...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "Diana reserva estas experiencias para almas que han demostrado\n"
+        "verdadera dedicación. El Diván lo espera, si decide dar el siguiente paso.</i>"
+    ),
+    "content_premium_required": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Este contenido pertenece a una categoría aún más selecta...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "Diana solo comparte esto con quienes han alcanzado ciertos niveles\n"
+        "de... comprensión del reino. Quizás en el futuro.</i>"
+    ),
+    "content_gift_only": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Este contenido no puede ser adquirido...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "Solo se entrega como reconocimiento especial de Diana.\n"
+        "Cumpla con los encargos del Diván y quizás sea usted el elegido.</i>"
+    ),
+    # Errors
+    "content_not_found": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>El contenido que busca parece no existir...\n\n"
+        "Permítame consultar los archivos. Quizás haya sido retirado\n"
+        "o nunca estuvo disponible en primer lugar.</i>"
+    ),
+    "content_access_denied": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Este lugar no es para usted... aún.\n\n"
+        "Diana decide quién accede a qué, y yo sigo sus instrucciones\n"
+        "con meticulosa atención. Algunos caminos se abren con el tiempo.</i>"
+    ),
+    "content_no_files": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Curioso... el contenido existe, pero parece estar vacío.\n\n"
+        "Informaré a Diana sobre esta anomalía. Mientras tanto,\n"
+        "regrese más tarde cuando todo esté en orden.</i>"
+    ),
+    "content_delivery_failed": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Hubo un inconveniente al entregar el contenido...\n\n"
+        "No es culpa suya. Permítame investigar qué ha interrumpido\n"
+        "el proceso. Diana desea que esto funcione sin problemas.</i>"
+    ),
+    # Admin messages
+    "content_set_created": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>El conjunto de contenido ha sido creado...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "Diana tiene nuevas experiencias listas para compartir\n"
+        "con los visitantes adecuados.</i>"
+    ),
+    "content_set_updated": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>El conjunto de contenido ha sido actualizado...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "Los ajustes han sido aplicados. Diana aprecia la atención\n"
+        "a los detalles en la curated experience.</i>"
+    ),
+    "content_set_deleted": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>El conjunto de contenido ha sido retirado...\n\n"
+        "<b>{content_name}</b>\n\n"
+        "Ya no estará disponible para nuevos visitantes.\n"
+        "Los que ya lo recibieron conservarán el acceso.</i>"
+    ),
+    "content_set_test_sent": (
+        "🎩 <b>Lucien:</b>\n"
+        "<i>Contenido de prueba enviado correctamente...\n\n"
+        "<b>{content_name}</b> → Usuario {user_id}\n\n"
+        "Diana revisará el resultado con usted.</i>"
+    ),
+}
