@@ -10,6 +10,7 @@ from typing import Optional, List
 
 from aiogram import Router, Bot, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.filters import StateFilter
 

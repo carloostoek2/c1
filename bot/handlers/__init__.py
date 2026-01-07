@@ -39,6 +39,7 @@ from bot.gamification.handlers import (
 )
 from bot.shop.handlers import (
     shop_admin_router,
+    content_admin_router,
     shop_user_router,
     backpack_router,
 )
@@ -94,6 +95,7 @@ def register_all_handlers(dispatcher: Dispatcher) -> None:
 
     # Registrar routers de tienda
     dispatcher.include_router(shop_admin_router)
+    dispatcher.include_router(content_admin_router)
     dispatcher.include_router(shop_user_router)
     dispatcher.include_router(backpack_router)
 
