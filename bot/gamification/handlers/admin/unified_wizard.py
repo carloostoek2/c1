@@ -130,12 +130,29 @@ async def redirect_to_mission_wizard(callback: CallbackQuery, state: FSMContext)
     """Redirige al wizard de misiones existente."""
     await state.clear()
 
-    # Importamos y llamamos al handler de mission_wizard
-    from bot.gamification.handlers.admin.mission_wizard import start_mission_wizard
+    # IMPORTANTE: No podemos modificar callback.data (es inmutable)
+    # Simplementamos la lógica directamente aquí
+    from bot.gamification.states.admin import MissionWizardStates
 
-    # Simulamos el callback con el data correcto
-    callback.data = "gamif:wizard:mission"
-    await start_mission_wizard(callback, state)
+    await state.set_state(MissionWizardStates.select_type)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="🎯 Una Vez", callback_data="wizard:type:one_time"),
+            InlineKeyboardButton(text="📅 Diaria", callback_data="wizard:type:daily")
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Volver", callback_data="gamif:admin:missions")
+        ]
+    ])
+
+    await callback.message.edit_text(
+        "🎯 <b>Wizard de Misiones</b>\n\n"
+        "Selecciona el tipo de misión a crear:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
 
 
 @router.callback_query(F.data == "unified:create:reward")

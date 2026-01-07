@@ -1322,7 +1322,7 @@ async def start_content_set_selection(callback: CallbackQuery, state: FSMContext
 
 
 @router.callback_query(MissionWizardStates.select_content_set, F.data.startswith("wizard:content:select:"))
-async def confirm_content_set_selection(callback: CallbackQuery, state: FSMContext):
+async def confirm_content_set_selection(callback: CallbackQuery, state: FSMContext, session):
     """Confirma selección de content set como recompensa."""
     content_set_id = int(callback.data.split(":")[-1])
 
@@ -1336,7 +1336,9 @@ async def confirm_content_set_selection(callback: CallbackQuery, state: FSMConte
 
     # Obtener info del content set
     from bot.shop.services.content_service import ContentService
-    content_service = ContentService(state.key, callback.bot)
+
+    # Session viene como parámetro del handler (inyectado por DatabaseMiddleware)
+    content_service = ContentService(session, callback.bot)
     content_set = await content_service.get_content_set(content_set_id)
 
     if not content_set:
