@@ -288,9 +288,8 @@ class ContentService:
             if not user:
                 return False, "Usuario no encontrado"
 
-            # TODO: Verificar si el usuario es VIP según tu sistema
-            # if not await self._is_vip_user(user):
-            #     return False, "Este contenido requiere suscripción VIP"
+            if not await self._is_vip_user(user) and not await self._has_active_vip_subscription(user_id):
+                return False, "Este contenido requiere suscripción VIP"
 
         # Verificar acceso previo
         previous_access = await self.get_user_content_access(user_id, content_set_id)
@@ -353,9 +352,15 @@ class ContentService:
 
         try:
             if content_type == ContentType.PHOTO_SET.value:
-                # Enviar fotos una por una
+                # Enviar fotos como álbum usando send_media_group
+                media_group = []
                 for file_id in file_ids:
-                    await self.bot.send_photo(user_id, file_id)
+                    media_group.append({'type': 'photo', 'media': file_id})
+
+                # Dividir en grupos de máximo 10 fotos por álbum (Telegram limit)
+                for i in range(0, len(media_group), 10):
+                    album_batch = media_group[i:i+10]
+                    await self.bot.send_media_group(user_id, album_batch)
                     await asyncio.sleep(0.3)  # Anti rate-limit
 
             elif content_type == ContentType.VIDEO.value:
@@ -544,9 +549,8 @@ class ContentService:
         if not user:
             return False, "Usuario no encontrado"
 
-        # TODO: Implementar verificación VIP según tu sistema
-        # if user.role != "vip" and not await self._has_active_vip_subscription(user_id):
-        #     return False, "Este contenido requiere suscripción VIP"
+        if not await self._is_vip_user(user) and not await self._has_active_vip_subscription(user_id):
+            return False, "Este contenido requiere suscripción VIP"
 
         return True, None
 
@@ -556,12 +560,10 @@ class ContentService:
 
     async def _is_vip_user(self, user: User) -> bool:
         """Verifica si un usuario es VIP."""
-        # TODO: Implementar según tu sistema de roles
-        return getattr(user, 'role', None) == 'vip'
+        return user.is_vip
 
     async def _has_active_vip_subscription(self, user_id: int) -> bool:
         """Verifica si un usuario tiene suscripción VIP activa."""
-        # TODO: Implementar según tu sistema de suscripciones
         from bot.database.models import VIPSubscriber
         from datetime import datetime
 
@@ -570,7 +572,8 @@ class ContentService:
             VIPSubscriber.expiry_date > datetime.now(UTC)
         )
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none() is not None
+        subscription = result.scalar_one_or_none()
+        return subscription is not None
 
     async def add_file_to_content_set(
         self,
@@ -647,3 +650,25 @@ class ContentService:
 
         logger.info(f"Archivo removido del ContentSet {content_set_id}: {file_id}")
         return True
+
+    async def get_content_set_shop_items(
+        self,
+        content_set_id: int
+    ) -> List:
+        """
+        Obtiene los shop items que están asociados a un content set.
+
+        Args:
+            content_set_id: ID del content set
+
+        Returns:
+            Lista de shop items asociados al content set
+        """
+        from bot.shop.database.models import ShopItem
+
+        stmt = select(ShopItem).where(
+            ShopItem.content_set_id == content_set_id
+        )
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

@@ -25,7 +25,7 @@ def upgrade():
     op.create_table(
         'content_sets',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('slug', sa.String(100), nullable=False),
+        sa.Column('slug', sa.String(100), nullable=False, unique=True),
         sa.Column('name', sa.String(200), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('content_type', sa.String(20), nullable=False),
@@ -33,8 +33,8 @@ def upgrade():
         sa.Column('tier', sa.String(20), nullable=False),
         sa.Column('file_ids_json', sa.Text(), nullable=True),
         sa.Column('file_metadata_json', sa.Text(), nullable=True),
-        sa.Column('is_active', sa.Boolean(), nullable=False),
-        sa.Column('requires_vip', sa.Boolean(), nullable=False),
+        sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.true()),
+        sa.Column('requires_vip', sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column('created_by', sa.BigInteger(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), nullable=False),
@@ -90,7 +90,7 @@ def upgrade():
     # ============================================================
     with op.batch_alter_table('narrative_fragments', schema=None) as batch_op:
         batch_op.add_column(sa.Column('content_set_id', sa.Integer(), nullable=True))
-        batch_op.add_column(sa.Column('auto_send_content', sa.Boolean(), nullable=False))
+        batch_op.add_column(sa.Column('auto_send_content', sa.Boolean(), nullable=False, server_default=sa.false()))
 
     # Crear índice para content_set_id
     op.create_index(

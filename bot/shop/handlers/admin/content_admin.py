@@ -97,7 +97,11 @@ async def list_content_sets(callback: CallbackQuery, session: AsyncSession):
     for cs in page_sets:
         status_emoji = "✅" if cs.is_active else "❌"
         tier_emoji = "🆓" if cs.tier == "free" else "👑" if cs.tier == "vip" else "💎"
-        type_emoji = ContentType(cs.content_type).emoji if hasattr(ContentType, '__call__') else "📦"
+        try:
+            content_type = ContentType(cs.content_type)
+            type_emoji = content_type.emoji
+        except ValueError:
+            type_emoji = "📦"
 
         rows.append([
             InlineKeyboardButton(
@@ -165,14 +169,20 @@ async def view_content_set(callback: CallbackQuery, session: AsyncSession):
     fragment_service = FragmentService(session)
     reward_service = RewardService(session)
 
-    # Buscar referencias
-    shop_items = await shop_service.get_items_by_category(1)  # Placeholder
-    shop_with_content = [item for item in shop_items if item.content_set_id == content_set_id]
+    # Buscar referencias de forma eficiente
+    shop_with_content = await content_service.get_content_set_shop_items(content_set_id)
 
-    # TODO: Buscar en fragmentos y rewards cuando se implementen los métodos
+    try:
+        content_type = ContentType(content_set.content_type)
+        type_name = content_type.display_name
+    except ValueError:
+        type_name = content_set.content_type
 
-    type_name = ContentType(content_set.content_type).display_name if hasattr(ContentType, '__call__') else content_set.content_type
-    tier_name = ContentTier(content_set.tier).display_name if hasattr(ContentTier, '__call__') else content_set.tier
+    try:
+        content_tier = ContentTier(content_set.tier)
+        tier_name = content_tier.display_name
+    except ValueError:
+        tier_name = content_set.tier
 
     text = f"""🎬 <b>{content_set.name}</b>
 
@@ -476,3 +486,135 @@ async def toggle_content_set_status(callback: CallbackQuery, state: FSMContext, 
     )
     await state.clear()
     await callback.answer()
+
+
+@router.callback_query(F.data == "admin:content:edit:name")
+async def prompt_edit_content_set_name(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    """Solicita nuevo nombre para content set."""
+    data = await state.get_data()
+    content_set_id = data.get('edit_content_set_id')
+
+    if not content_set_id:
+        await callback.answer("❌ Error: no se pudo identificar el content set", show_alert=True)
+        await state.clear()
+        return
+
+    content_service = ContentService(session, callback.bot)
+    content_set = await content_service.get_content_set(content_set_id)
+
+    if not content_set:
+        await callback.answer("❌ Content set no encontrado", show_alert=True)
+        await state.clear()
+        return
+
+    await callback.message.edit_text(
+        f"✏️ <b>Editar Nombre de Content Set</b>\n\n"
+        f"<b>Actual:</b> {content_set.name}\n\n"
+        f"Ingresa el nuevo nombre:",
+        parse_mode="HTML"
+    )
+    await state.set_state("waiting_content_set_name")
+    await callback.answer()
+
+
+@router.message(StateFilter("waiting_content_set_name"))
+async def edit_content_set_name(message: Message, state: FSMContext, session: AsyncSession):
+    """Actualiza nombre del content set."""
+    if not message.text or len(message.text.strip()) < 3:
+        await message.answer("❌ El nombre debe tener al menos 3 caracteres")
+        return
+
+    new_name = message.text.strip()
+    data = await state.get_data()
+    content_set_id = data.get('edit_content_set_id')
+
+    if not content_set_id:
+        await message.answer("❌ Error: no se pudo identificar el content set")
+        await state.clear()
+        return
+
+    content_service = ContentService(session, message.bot)
+
+    try:
+        await content_service.update_content_set(content_set_id, name=new_name)
+        await session.commit()
+
+        await message.answer(
+            f"✅ <b>Nombre actualizado</b>\n\n"
+            f"Nuevo nombre: <b>{new_name}</b>",
+            parse_mode="HTML"
+        )
+        await state.clear()
+
+    except Exception as e:
+        logger.error(f"Error updating content set name {content_set_id}: {e}")
+        await message.answer(
+            f"❌ <b>Error al actualizar:</b>\n\n{str(e)}",
+            parse_mode="HTML"
+        )
+
+
+@router.callback_query(F.data == "admin:content:edit:description")
+async def prompt_edit_content_set_description(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    """Solicita nueva descripción para content set."""
+    data = await state.get_data()
+    content_set_id = data.get('edit_content_set_id')
+
+    if not content_set_id:
+        await callback.answer("❌ Error: no se pudo identificar el content set", show_alert=True)
+        await state.clear()
+        return
+
+    content_service = ContentService(session, callback.bot)
+    content_set = await content_service.get_content_set(content_set_id)
+
+    if not content_set:
+        await callback.answer("❌ Content set no encontrado", show_alert=True)
+        await state.clear()
+        return
+
+    await callback.message.edit_text(
+        f"✏️ <b>Editar Descripción de Content Set</b>\n\n"
+        f"<b>Actual:</b> {content_set.description or 'Sin descripción'}\n\n"
+        f"Ingresa la nueva descripción:",
+        parse_mode="HTML"
+    )
+    await state.set_state("waiting_content_set_description")
+    await callback.answer()
+
+
+@router.message(StateFilter("waiting_content_set_description"))
+async def edit_content_set_description(message: Message, state: FSMContext, session: AsyncSession):
+    """Actualiza descripción del content set."""
+    if not message.text or len(message.text.strip()) < 10:
+        await message.answer("❌ La descripción debe tener al menos 10 caracteres")
+        return
+
+    new_description = message.text.strip()
+    data = await state.get_data()
+    content_set_id = data.get('edit_content_set_id')
+
+    if not content_set_id:
+        await message.answer("❌ Error: no se pudo identificar el content set")
+        await state.clear()
+        return
+
+    content_service = ContentService(session, message.bot)
+
+    try:
+        await content_service.update_content_set(content_set_id, description=new_description)
+        await session.commit()
+
+        await message.answer(
+            f"✅ <b>Descripción actualizada</b>\n\n"
+            f"Nueva descripción: <b>{new_description}</b>",
+            parse_mode="HTML"
+        )
+        await state.clear()
+
+    except Exception as e:
+        logger.error(f"Error updating content set description {content_set_id}: {e}")
+        await message.answer(
+            f"❌ <b>Error al actualizar:</b>\n\n{str(e)}",
+            parse_mode="HTML"
+        )

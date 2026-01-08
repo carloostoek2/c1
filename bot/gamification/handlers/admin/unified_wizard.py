@@ -809,15 +809,11 @@ async def content_enter_slug(message: Message, state: FSMContext, session):
 
     slug_input = slugify(message.text.strip())
 
-    # Verificar slug único
+    # Verificar slug único usando ContentService
     from bot.shop.services.content_service import ContentService
-    from sqlalchemy import select
-    from bot.shop.database.models import ContentSet
 
-    # Verificar si ya existe un content set con ese slug
-    stmt = select(ContentSet).where(ContentSet.slug == slug_input)
-    result = await session.execute(stmt)
-    existing = result.scalar_one_or_none()
+    content_service = ContentService(session, message.bot)
+    existing = await content_service.get_content_set_by_slug(slug_input)
 
     if existing:
         await message.answer(

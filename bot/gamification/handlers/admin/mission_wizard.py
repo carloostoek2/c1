@@ -19,8 +19,20 @@ from bot.middlewares import DatabaseMiddleware
 from bot.gamification.states.admin import MissionWizardStates
 from bot.gamification.services.container import GamificationContainer
 from bot.gamification.database.enums import MissionType
+from bot.shop.database.enums import ContentTier
 
 PAGE_SIZE = 5
+
+
+def get_tier_emoji(tier_value: str) -> str:
+    """Helper function to get emoji for content tier."""
+    try:
+        tier = ContentTier(tier_value)
+        return tier.emoji
+    except ValueError:
+        # Fallback emojis
+        return "🆓" if tier_value == "free" else "👑" if tier_value == "vip" else "💎"
+
 
 router = Router()
 router.message.filter(IsAdmin())
@@ -1297,7 +1309,7 @@ async def start_content_set_selection(callback: CallbackQuery, state: FSMContext
 
     keyboard_rows = []
     for cs in content_sets:
-        tier_emoji = "🆓" if cs.tier == "free" else "👑" if cs.tier == "vip" else "💎"
+        tier_emoji = get_tier_emoji(cs.tier)
         keyboard_rows.append([
             InlineKeyboardButton(
                 text=f"{tier_emoji} {cs.name}",
@@ -1355,7 +1367,7 @@ async def confirm_content_set_selection(callback: CallbackQuery, state: FSMConte
 
     keyboard = _build_rewards_menu_keyboard()
 
-    tier_emoji = "🆓" if content_set.tier == "free" else "👑" if content_set.tier == "vip" else "💎"
+    tier_emoji = get_tier_emoji(content_set.tier)
 
     await callback.message.edit_text(
         f"✅ Content Set añadido: <b>{tier_emoji} {content_set.name}</b>\n\n"
