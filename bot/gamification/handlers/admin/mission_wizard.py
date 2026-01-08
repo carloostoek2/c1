@@ -19,8 +19,20 @@ from bot.middlewares import DatabaseMiddleware
 from bot.gamification.states.admin import MissionWizardStates
 from bot.gamification.services.container import GamificationContainer
 from bot.gamification.database.enums import MissionType
+from bot.shop.database.enums import ContentTier
 
 PAGE_SIZE = 5
+
+
+def get_tier_emoji(tier_value: str) -> str:
+    """Helper function to get emoji for content tier."""
+    try:
+        tier = ContentTier(tier_value)
+        return tier.emoji
+    except ValueError:
+        # Fallback emojis
+        return "🆓" if tier_value == "free" else "👑" if tier_value == "vip" else "💎"
+
 
 router = Router()
 router.message.filter(IsAdmin())
@@ -1278,6 +1290,121 @@ async def vip_back_to_rewards(callback: CallbackQuery, state: FSMContext):
 
 
 # ========================================
+# PASO 5.4: CONTENT SET COMO RECOMPENSA (Cross-module)
+# ========================================
+
+@router.callback_query(MissionWizardStates.choose_rewards, F.data == "wizard:content:start")
+async def start_content_set_selection(callback: CallbackQuery, state: FSMContext, session):
+    """Inicia selección de content set como recompensa."""
+    from bot.shop.services.content_service import ContentService
+
+    content_service = ContentService(session, callback.bot)
+
+    # Obtener content sets activos
+    content_sets = await content_service.list_content_sets(is_active=True)
+
+    if not content_sets:
+        await callback.answer("⚠️ No hay content sets configurados.", show_alert=True)
+        return
+
+    keyboard_rows = []
+    for cs in content_sets:
+        tier_emoji = get_tier_emoji(cs.tier)
+        keyboard_rows.append([
+            InlineKeyboardButton(
+                text=f"{tier_emoji} {cs.name}",
+                callback_data=f"wizard:content:select:{cs.id}"
+            )
+        ])
+
+    keyboard_rows.append([
+        InlineKeyboardButton(text="🔙 Volver", callback_data="wizard:content:back")
+    ])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_rows)
+
+    await callback.message.edit_text(
+        "🎬 <b>Content Set como Recompensa</b>\n\n"
+        "Selecciona el content set que se otorgará como recompensa:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.select_content_set)
+    await callback.answer()
+
+
+@router.callback_query(MissionWizardStates.select_content_set, F.data.startswith("wizard:content:select:"))
+async def confirm_content_set_selection(callback: CallbackQuery, state: FSMContext, session):
+    """Confirma selección de content set como recompensa."""
+    content_set_id = int(callback.data.split(":")[-1])
+
+    data = await state.get_data()
+    content_rewards = data.get('content_rewards', [])
+
+    # Verificar duplicados
+    if any(cr.get('content_set_id') == content_set_id for cr in content_rewards):
+        await callback.answer("⚠️ Este content set ya está agregado", show_alert=True)
+        return
+
+    # Obtener info del content set
+    from bot.shop.services.content_service import ContentService
+
+    # Session viene como parámetro del handler (inyectado por DatabaseMiddleware)
+    content_service = ContentService(session, callback.bot)
+    content_set = await content_service.get_content_set(content_set_id)
+
+    if not content_set:
+        await callback.answer("❌ Content set no encontrado", show_alert=True)
+        return
+
+    # Agregar a la lista
+    content_rewards.append({
+        'content_set_id': content_set_id,
+        'name': content_set.name,
+        'tier': content_set.tier
+    })
+    await state.update_data(content_rewards=content_rewards)
+
+    keyboard = _build_rewards_menu_keyboard()
+
+    tier_emoji = get_tier_emoji(content_set.tier)
+
+    await callback.message.edit_text(
+        f"✅ Content Set añadido: <b>{tier_emoji} {content_set.name}</b>\n\n"
+        f"¿Deseas agregar más recompensas?",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.choose_rewards)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "wizard:content:back")
+async def content_back_to_rewards(callback: CallbackQuery, state: FSMContext):
+    """Vuelve al menú de recompensas desde content set."""
+    data = await state.get_data()
+    keyboard = _build_rewards_menu_keyboard()
+
+    rewards = data.get('rewards', [])
+    shop_items = data.get('shop_items', [])
+    content_rewards = data.get('content_rewards', [])
+    vip_reward = data.get('vip_reward')
+
+    total = len(rewards) + len(shop_items) + len(content_rewards)
+    if vip_reward:
+        total += 1
+
+    await callback.message.edit_text(
+        f"Paso 5/6: ¿Desbloqueará recompensas adicionales?\n\n"
+        f"Total de recompensas: <b>{total}</b>",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await state.set_state(MissionWizardStates.choose_rewards)
+    await callback.answer()
+
+
+# ========================================
 # CANCELAR
 # ========================================
 
@@ -1301,6 +1428,7 @@ def _build_rewards_menu_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="📦 Item de Tienda", callback_data="wizard:shop:start")],
         [InlineKeyboardButton(text="📖 Condición Narrativa", callback_data="wizard:narrative:start")],
         [InlineKeyboardButton(text="⭐ VIP como Recompensa", callback_data="wizard:vip:start")],
+        [InlineKeyboardButton(text="🎬 Content Set", callback_data="wizard:content:start")],
         [InlineKeyboardButton(text="✅ Finalizar", callback_data="wizard:finish")]
     ])
 

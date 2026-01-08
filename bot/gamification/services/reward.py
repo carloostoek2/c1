@@ -491,6 +491,14 @@ class RewardService:
                         f"Failed to grant shop item for reward {reward.name}: {msg}"
                     )
 
+        # Si es CONTENT_SET, el envío se maneja desde el handler/llamador
+        # que tiene acceso al bot instance. Aquí solo validamos y registramos.
+        if reward.reward_type == RewardType.CONTENT_SET.value:
+            if not reward.content_set_id:
+                logger.warning(f"Content set reward {reward.name} has no content_set_id")
+            # El envío del contenido se hace fuera de este método
+            # ya que requiere la instancia del bot
+
         logger.info(f"User {user_id} obtained reward {reward.name} via {obtained_via.value}")
         return True, f"Recompensa obtenida: {reward.name}", user_reward
 

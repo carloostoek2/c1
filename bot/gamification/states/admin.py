@@ -72,6 +72,10 @@ class MissionWizardStates(StatesGroup):
     choose_vip_reward = State()  # Elegir si otorgar VIP
     enter_vip_days = State()  # Cantidad de días VIP
 
+    # Paso 5.4: Content Set como recompensa (CMS Journey)
+    choose_content_set_reward = State()  # Elegir si agregar content set
+    select_content_set = State()  # Seleccionar content set específico
+
     # Paso 6: Confirmación
     confirm = State()
 
@@ -320,6 +324,16 @@ class UnifiedWizardStates(StatesGroup):
     chapter_select_type = State()
     chapter_enter_order = State()
     chapter_confirm = State()
+
+    # Wizard de ContentSet (inline, no existe wizard separado)
+    content_enter_slug = State()           # Paso 1: Slug único
+    content_enter_name = State()           # Paso 2: Nombre
+    content_enter_description = State()    # Paso 3: Descripción (opcional)
+    content_select_type = State()          # Paso 4: Tipo (photo_set/video/audio/mixed)
+    content_select_tier = State()          # Paso 5: Tier (free/vip/premium)
+    content_upload_files = State()         # Paso 6: Upload archivos (múltiples)
+    content_add_more_files = State()       # Paso 6.1: ¿Agregar más?
+    content_confirm = State()              # Paso 7: Confirmación
 
 
 class ConfigPanelStates(StatesGroup):

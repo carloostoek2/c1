@@ -50,6 +50,9 @@ async def start_reward_wizard(callback: CallbackQuery, state: FSMContext):
             InlineKeyboardButton(text="💰 Besitos", callback_data="wizard:type:besitos")
         ],
         [
+            InlineKeyboardButton(text="🎬 Content Set", callback_data="wizard:type:content_set")
+        ],
+        [
             InlineKeyboardButton(text="❌ Cancelar", callback_data="wizard:cancel")
         ]
     ])
@@ -60,7 +63,8 @@ async def start_reward_wizard(callback: CallbackQuery, state: FSMContext):
         "• <b>Badge:</b> Logro visual (icon + rareza)\n"
         "• <b>Item:</b> Item virtual coleccionable\n"
         "• <b>Permiso:</b> Permiso especial temporal\n"
-        "• <b>Besitos:</b> Besitos adicionales",
+        "• <b>Besitos:</b> Besitos adicionales\n"
+        "• <b>Content Set:</b> Contenido multimedia",
         reply_markup=keyboard,
         parse_mode="HTML"
     )

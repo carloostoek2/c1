@@ -480,6 +480,39 @@ class LucienVoiceService:
             logger.error(f"Falta parámetro en mensaje de besitos {message_type}: {e}")
             return message_template
 
+    async def get_content_set_message(
+        self,
+        message_type: str,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """
+        Obtiene mensaje de Content Set con voz de Lucien.
+
+        Args:
+            message_type: Tipo de mensaje (content_delivered, content_delivered_from_shop,
+                          content_delivered_from_reward, content_delivered_from_narrative,
+                          content_gift_received, content_vip_required, content_premium_required,
+                          content_gift_only, content_not_found, content_access_denied,
+                          content_no_files, content_delivery_failed, content_set_created,
+                          content_set_updated, content_set_deleted, content_set_test_sent)
+            details: Detalles para formatear (content_name, description, item_name, user_id)
+
+        Returns:
+            str: Mensaje formateado
+        """
+        details = details or {}
+        message_template = templates.CONTENT_SET_MESSAGES.get(message_type)
+
+        if not message_template:
+            logger.warning(f"Tipo de mensaje de content set no encontrado: {message_type}")
+            return ""
+
+        try:
+            return message_template.format(**details)
+        except KeyError as e:
+            logger.error(f"Falta parámetro en mensaje de content set {message_type}: {e}")
+            return message_template
+
     def get_voice_characteristics(self) -> Dict[str, str]:
         """
         Obtiene las características de la voz de Lucien para referencia.

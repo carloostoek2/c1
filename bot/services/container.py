@@ -52,6 +52,7 @@ class ServiceContainer:
         self._pricing_service = None
         self._user_service = None
         self._broadcast_service = None
+        self._content_service = None
 
         # ONDA D Services
         self._user_lifecycle_service = None
@@ -197,6 +198,23 @@ class ServiceContainer:
     # ===== ONDA D - LIFECYCLE SERVICES =====
 
     @property
+    def content(self):
+        """
+        Service de gestión de Content Sets multimedia.
+
+        Se carga lazy (solo en primer acceso).
+
+        Returns:
+            ContentService: Instancia del service
+        """
+        if self._content_service is None:
+            from bot.shop.services.content_service import ContentService
+            logger.debug("🔄 Lazy loading: ContentService")
+            self._content_service = ContentService(self._session, self._bot)
+
+        return self._content_service
+
+    @property
     def user_lifecycle(self):
         """Service for managing user lifecycle states."""
         if self._user_lifecycle_service is None:
@@ -261,6 +279,8 @@ class ServiceContainer:
             loaded.append("user")
         if self._broadcast_service is not None:
             loaded.append("broadcast")
+        if self._content_service is not None:
+            loaded.append("content")
 
         return loaded
 

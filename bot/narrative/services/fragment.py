@@ -4,7 +4,7 @@ Servicio de gestión de fragmentos narrativos.
 Proporciona operaciones CRUD y queries sobre fragmentos narrativos.
 """
 import logging
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -359,3 +359,48 @@ class FragmentService:
             message += f"\n\n<i>{fragment.visual_hint}</i>"
 
         return message
+
+    async def send_fragment_content_set(
+        self,
+        fragment: NarrativeFragment,
+        user_id: int,
+        bot
+    ) -> Tuple[bool, str]:
+        """
+        Envía automáticamente el content set asociado a un fragmento narrativo.
+
+        Este método debe llamarse cuando un usuario navega a un fragmento
+        que tiene un content_set_id y auto_send_content=True.
+
+        Args:
+            fragment: Fragmento narrativo con posible content_set
+            user_id: ID del usuario de Telegram
+            bot: Instancia del bot de Telegram
+
+        Returns:
+            Tuple (success, message)
+        """
+        if not fragment.content_set_id:
+            return False, "Fragmento no tiene content set asociado"
+
+        if not fragment.auto_send_content:
+            return False, "Auto-envío desactivado para este fragmento"
+
+        from bot.shop.services.content_service import ContentService
+
+        content_service = ContentService(self._session, bot)
+        success, message = await content_service.send_content_set(
+            user_id=user_id,
+            content_set_id=fragment.content_set_id,
+            context_message=None,  # Sin mensaje extra, va junto al fragmento
+            delivery_context="narrative",
+            trigger_type="automatic"
+        )
+
+        if success:
+            logger.info(
+                f"Content Set {fragment.content_set_id} sent to user {user_id} "
+                f"via narrative fragment {fragment.fragment_key}"
+            )
+
+        return success, message

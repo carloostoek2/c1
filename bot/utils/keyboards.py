@@ -66,7 +66,8 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
     - VIP - Free (gestión de canales)
     - Gamificación
     - Gestión Narrativa
-    - Gestión de Tienda (NUEVO)
+    - Gestión de Tienda
+    - CMS Journey (Content Sets)
     - Configurar Menús
     - Estadísticas - Configuración
 
@@ -81,7 +82,10 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
         ],
         [{"text": "🎮 Gamificación", "callback_data": "admin:gamification"}],
         [{"text": "📖 Gestión Narrativa", "callback_data": "admin:narrative"}],
-        [{"text": "🏪 Gestión de Tienda", "callback_data": "admin:shop"}],
+        [
+            {"text": "🏪 Gestión de Tienda", "callback_data": "admin:shop"},
+            {"text": "🎬 CMS Journey", "callback_data": "admin:content"}
+        ],
         [{"text": "📋 Configurar Menús", "callback_data": "admin:menu_config"}],
         [
             {"text": "📊 Estadísticas", "callback_data": "admin:stats"},

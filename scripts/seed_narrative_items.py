@@ -9,10 +9,15 @@ Crea 21 items narrativos organizados en 4 categorías:
 """
 import asyncio
 import logging
-from datetime import datetime, UTC
+import sys
+from pathlib import Path
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+
+# Agregar directorio raíz al path
+ROOT_DIR = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT_DIR))
 
 from bot.shop.database.models import ItemCategory, ShopItem
 from config import Config

@@ -313,6 +313,12 @@ class Reward(Base):
     reward_metadata: Mapped[Optional[str]] = mapped_column(
         String(1000), nullable=True
     )
+    # Vinculación con Content Set multimedia
+    content_set_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("content_sets.id", ondelete="SET NULL"),
+        nullable=True
+    )  # Content multimedia asociado a la recompensa
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[int] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(
@@ -329,6 +335,15 @@ class Reward(Base):
         "Badge",
         back_populates="reward",
         cascade="all, delete-orphan"
+    )
+    content_set: Mapped[Optional["ContentSet"]] = relationship(
+        "ContentSet",
+        back_populates="rewards",
+        foreign_keys=[content_set_id]
+    )
+
+    __table_args__ = (
+        Index("idx_reward_content_set", "content_set_id"),
     )
 
 
